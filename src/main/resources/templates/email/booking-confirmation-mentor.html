@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Confirmed - [[${appName}]]</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #2D3748; 
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+        }
+        .email-container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .logo-section {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .logo {
+            max-width: 120px;
+            height: auto;
+        }
+        .header { 
+            background: #9a3198; 
+            color: white; 
+            padding: 40px 30px; 
+            text-align: center; 
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 20px solid #9a3198;
+        }
+        .header h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            margin-bottom: 8px; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header p { 
+            font-size: 16px; 
+            opacity: 0.9; 
+            font-weight: 300;
+        }
+        .content { 
+            padding: 40px 30px; 
+            background: white;
+        }
+        .greeting { 
+            font-size: 18px; 
+            margin-bottom: 24px; 
+            color: #2D3748;
+        }
+        .intro-text { 
+            font-size: 16px; 
+            margin-bottom: 32px; 
+            color: #4A5568;
+        }
+        .card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #9a3198;
+        }
+        .meeting-info {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+        }
+        .card h3 { 
+            color: #9a3198; 
+            font-size: 18px; 
+            font-weight: 600; 
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+        .card h3::before {
+            content: '●';
+            color: #9a3198;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .meeting-info h3 {
+            color: #0369a1;
+        }
+        .meeting-info h3::before {
+            color: #0ea5e9;
+        }
+        .detail-row { 
+            display: flex; 
+            margin-bottom: 12px; 
+            align-items: center;
+        }
+        .detail-row:last-child { margin-bottom: 0; }
+        .detail-label { 
+            font-weight: 600; 
+            color: #2D3748; 
+            min-width: 120px; 
+            font-size: 14px;
+        }
+        .detail-value { 
+            color: #4A5568; 
+            font-size: 14px;
+        }
+        .button { 
+            display: inline-block; 
+            padding: 16px 32px; 
+            text-decoration: none; 
+            border-radius: 50px; 
+            margin: 8px 12px; 
+            font-weight: 600; 
+            font-size: 15px;
+            color: #ffffff;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .primary-btn { 
+            background: #9a3198; 
+            color: #ffffff;
+        }
+        .calendar-btn { 
+            background: #0ea5e9; 
+            color: #ffffff;
+        }
+        .info-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            border-left: 4px solid #9a3198;
+        }
+        .footer { 
+            background: #f8fafc; 
+            padding: 30px; 
+            text-align: center; 
+            color: #6b7280;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p { 
+            margin: 8px 0; 
+            font-size: 13px;
+        }
+        .footer a { 
+            color: #9a3198; 
+            text-decoration: none; 
+            font-weight: 500;
+        }
+        .footer a:hover {
+            color: #7c2d92;
+        }
+        @media (max-width: 600px) {
+            .email-container { margin: 10px; border-radius: 12px; }
+            .header, .content { padding: 24px 20px; }
+            .button { padding: 14px 24px; margin: 6px 8px; font-size: 14px; }
+            .detail-row { flex-direction: column; align-items: flex-start; }
+            .detail-label { min-width: auto; margin-bottom: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="logo-section">
+            <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
+        </div>
+        
+        <div class="header">
+            <h1>Session Confirmed!</h1>
+            <p>Your mentorship session has been confirmed</p>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Hi <span th:text="${mentor.firstName ?: 'Mentor'}">Mentor</span>,</p>
+            
+            <p class="intro-text">Great news! Your session with <strong th:text="${mentee.firstName + ' ' + mentee.lastName}">Mentee Name</strong> is now confirmed and scheduled.</p>
+            
+            <div class="card">
+                <h3>Session Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Topic:</span>
+                    <span class="detail-value" th:text="${session.title}">Session Title</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    <span class="detail-value" th:text="${sessionDate}">Session Date</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Time:</span>
+                    <span class="detail-value" th:text="${sessionTime}">Session Time</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Duration:</span>
+                    <span class="detail-value">1 hour</span>
+                </div>
+            </div>
+            
+            <div class="card meeting-info" th:if="${meetingDetails != null}">
+                <h3>Meeting Information</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Meeting URL:</span>
+                    <span class="detail-value"><a th:href="${meetingDetails.meetingUrl}" th:text="${meetingDetails.meetingUrl}" style="color: #0ea5e9;">Meeting Link</a></span>
+                </div>
+                <div class="detail-row" th:if="${meetingDetails.meetingId}">
+                    <span class="detail-label">Meeting ID:</span>
+                    <span class="detail-value" th:text="${meetingDetails.meetingId}">Meeting ID</span>
+                </div>
+                <div class="detail-row" th:if="${meetingDetails.password}">
+                    <span class="detail-label">Password:</span>
+                    <span class="detail-value" th:text="${meetingDetails.password}">Password</span>
+                </div>
+                <p style="margin-top: 16px; font-style: italic; color: #4a5568;"><em>The meeting link has been automatically generated for your session.</em></p>
+            </div>
+            
+            <div class="card" th:if="${session.menteeMessage}">
+                <h3>Message from Mentee</h3>
+                <p th:text="${session.menteeMessage}">Mentee message</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <a style="color: #fff;" th:href="${baseUrl + '/sessions/' + session.id}" class="button primary-btn">View Session Details</a>
+            </div>
+            
+            <!-- Universal Calendar Options -->
+            <div style="text-align: center; margin: 24px 0;">
+                <p style="margin-bottom: 16px; color: #4a5568; font-weight: 600; font-size: 16px;">📅 Add to your calendar:</p>
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 100%;">
+                    <!-- Universal ICS Download (Works with ALL calendars) -->
+                    <a th:href="${baseUrl + '/api/v1/calendar/download/' + session.id}" 
+                       style="
+                        background: #22c55e;
+                        color: #ffffff;
+                        padding: 12px 20px;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        font-size: 13px;
+                        display: inline-block;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                        transition: all 0.3s ease;
+                       ">📱 Download .ics</a>
+                    
+                    <!-- Google Calendar -->
+                    <a th:href="${baseUrl + '/api/v1/calendar/google/' + session.id}" 
+                       target="_blank"
+                       style="
+                        background: #4285f4;
+                        color: #ffffff;
+                        padding: 12px 20px;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        font-size: 13px;
+                        display: inline-block;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                       ">📅 Google</a>
+                    
+                    <!-- Outlook Calendar -->
+                    <a th:href="${baseUrl + '/api/v1/calendar/outlook/' + session.id}" 
+                       target="_blank"
+                       style="
+                        background: #0078d4;
+                        color: #ffffff;
+                        padding: 12px 20px;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        font-size: 13px;
+                        display: inline-block;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                       ">📧 Outlook</a>
+                    
+                    <!-- Yahoo Calendar -->
+                    <a th:href="${baseUrl + '/api/v1/calendar/yahoo/' + session.id}" 
+                       target="_blank"
+                       style="
+                        background: #7b46c1;
+                        color: #ffffff;
+                        padding: 12px 20px;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        font-size: 13px;
+                        display: inline-block;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                       ">🟡 Yahoo</a>
+                </div>
+                <p style="margin-top: 12px; color: #6b7280; font-size: 12px; font-style: italic;">
+                    💡 Tip: The .ics file works with Apple Calendar, Thunderbird, and most calendar apps
+                </p>
+            </div>
+            
+            <div class="info-section">
+                <p>The session has been added to your calendar automatically. Both you and your mentee will receive reminder notifications 24 hours before the session.</p>
+            </div>
+            
+            <p>Best regards,<br><strong>The <span th:text="${appName}">ProsperMentor</span> Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
+            <p><a th:href="${baseUrl}">Visit our platform</a> | <a href="#">Contact Support</a></p>
+        </div>
+    </div>
+</body>
+</html>

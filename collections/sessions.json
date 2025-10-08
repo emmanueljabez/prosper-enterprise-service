@@ -1,0 +1,12 @@
+[{
+	"_id": {
+		"$oid": "6100591a49a99f35f13908fe"
+	},
+	"session_duration": 1,
+	"session_release_duration": 15,
+	"advisee_penalty": 50.0,
+	"advisor_penalty": 10.0,
+	"max_attendees": 10,
+	"_class": "com.myprosper.app.demo.documents.Sessions"
+}]
+

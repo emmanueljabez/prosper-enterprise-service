@@ -1,0 +1,5576 @@
+[{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acc2"
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f2",
+	"sessionDays": [
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acc3"
+	},
+	"advisorId": "60ea94d2d5efdc75988d09ec",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acc5"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acc6"
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f6",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T18:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T19:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acc7"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09f9",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acc8"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fa",
+	"sessionDays": [
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acca"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a0b",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101accb"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a0d",
+	"sessionDays": [
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101accc"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a10",
+	"sessionDays": [
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83832e7a8a40bf101acce"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"sessionDays": [
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101accf"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a12",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acd0"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a13",
+	"sessionDays": [
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acd1"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a16",
+	"sessionDays": [
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T18:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acd2"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a17",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acd3"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a14",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acd7"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a1f",
+	"sessionDays": [
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acd8"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a1b",
+	"sessionDays": [
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acd9"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a1c",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acda"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a20",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acdb"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acdc"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a2e",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acdd"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a2b",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acde"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a31",
+	"sessionDays": [
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101acdf"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a32",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T16:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101ace0"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a2f",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83833e7a8a40bf101ace1"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a34",
+	"sessionDays": [
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101ace3"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a33",
+	"sessionDays": [
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101ace4"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3d",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T03:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101ace5"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3a",
+	"sessionDays": [
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101ace6"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3e",
+	"sessionDays": [
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101ace7"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101ace8"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a42",
+	"sessionDays": [
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T03:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T05:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101ace9"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a45",
+	"sessionDays": [
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T18:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101acea"
+	},
+	"advisorId": "60ea94d7d5efdc75988d0a4a",
+	"sessionDays": [
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T10:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101aceb"
+	},
+	"advisorId": "60ea94d7d5efdc75988d0a48",
+	"sessionDays": [
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T13:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60f83834e7a8a40bf101acec"
+	},
+	"advisorId": "60ea94d7d5efdc75988d0a4c",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-21T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-21T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-21T09:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "N/A",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60fef47849a99f35f1390114"
+	},
+	"advisorId": "60bb4967a3a4d325cf70c8d1",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-26T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-26T07:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-26T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-26T16:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "60fef5d049a99f35f139011a"
+	},
+	"advisorId": "60ea94d2d5efdc75988d09ef",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-26T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-26T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-26T18:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-26T19:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "61001e3649a99f35f1390549"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a18",
+	"sessionDays": [
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-07-27T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-27T15:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-07-27T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-07-27T16:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a7596589e"
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f3",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a7596589f"
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f4",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a0"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09f8",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a1"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fb",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a2"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fc",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a3"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fd",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a4"
+	},
+	"advisorId": "60ea94d3d5efdc75988d09ff",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a5"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a01",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a6"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a03",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a7"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a04",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a8"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a05",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658a9"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a07",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658aa"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a08",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658ab"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a09",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658ac"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a0a",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658ad"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a0c",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658ae"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a0e",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658af"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a0f",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b0"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a15",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b1"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a19",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b2"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a1a",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b3"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a1d",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b4"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a1e",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b5"
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a24",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b6"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a25",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b7"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a27",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b8"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a29",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658b9"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a2a",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210aa227a195a759658ba"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a2c",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658bb"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a37",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658bc"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a38",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658bd"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a39",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658be"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3b",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658bf"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3c",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658c0"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a41",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658c1"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a43",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658c2"
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a47",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658c3"
+	},
+	"advisorId": "60ea94d7d5efdc75988d0a49",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "611210ab227a195a759658c4"
+	},
+	"advisorId": "60ea94d7d5efdc75988d0a4b",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Thursday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-10T17:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-10T18:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "6124b2859501464481c244cf"
+	},
+	"advisorId": "611d2436bb9f7358887ded2e",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-24T03:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-24T04:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-24T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-24T16:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-24T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-24T14:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Sunday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-24T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-24T14:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-24T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-24T15:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-24T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-24T16:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "612b3a81d5d3e84d5bc49b3a"
+	},
+	"advisorId": "611fb0a55056d749116eac3a",
+	"sessionDays": [
+		{
+			"dayName": "Saturday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-29T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T08:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-29T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T09:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-29T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T14:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-29T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T15:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Sunday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-08-29T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T13:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-29T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T14:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-29T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T15:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-08-29T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-08-29T16:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "613e0f2f0d847a3d5c46cf85"
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a35",
+	"sessionDays": [
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-09-12T04:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T05:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T06:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T06:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T07:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T10:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T11:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T15:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T16:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T16:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T17:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T18:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T19:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T07:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T08:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T08:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T09:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T11:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T12:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T13:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2021-09-12T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-12T14:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "6148a57e0d2879551bb2eb8c"
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-09-20T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-20T16:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Tuesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-09-20T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-20T13:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Friday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-09-20T14:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-09-20T15:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "618ba1f873d7853f4bfd3a98"
+	},
+	"advisorId": "617bc25073d7853f4bfd191d",
+	"sessionDays": [
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2021-11-10T05:00:00Z"
+					},
+					"endTime": {
+						"$date": "2021-11-10T06:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+},
+{
+	"_id": {
+		"$oid": "63d90d0cb42b1d68dd4c40e6"
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"sessionDays": [
+		{
+			"dayName": "Monday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2023-01-31T15:00:00Z"
+					},
+					"endTime": {
+						"$date": "2023-01-31T16:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2023-01-31T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2023-01-31T13:00:00Z"
+					}
+				}
+			]
+		},
+		{
+			"dayName": "Wednesday",
+			"sessionTimeSlots": [
+				{
+					"startTime": {
+						"$date": "2023-01-31T13:00:00Z"
+					},
+					"endTime": {
+						"$date": "2023-01-31T14:00:00Z"
+					}
+				},
+				{
+					"startTime": {
+						"$date": "2023-01-31T12:00:00Z"
+					},
+					"endTime": {
+						"$date": "2023-01-31T13:00:00Z"
+					}
+				}
+			]
+		}
+	],
+	"timezone": "Africa/Nairobi",
+	"_class": "com.myprosper.app.demo.documents.AdvisorTimeSlots"
+}]
+

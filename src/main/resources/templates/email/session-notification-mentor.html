@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Session Request - [[${appName}]]</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #2D3748; 
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+        }
+        .email-container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .header { 
+            background: #9a3198; 
+            color: white; 
+            padding: 40px 30px; 
+            text-align: center; 
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 20px solid #9a3198;
+        }
+        .logo-section {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .logo {
+            max-width: 120px;
+            height: auto;
+        }
+        .header h1 { 
+            font-size: 28px; 
+            font-weight: 700; 
+            margin-bottom: 8px; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header p { 
+            font-size: 16px; 
+            opacity: 0.9; 
+            font-weight: 300;
+        }
+        .content { 
+            padding: 40px 30px; 
+            background: white;
+        }
+        .greeting { 
+            font-size: 18px; 
+            margin-bottom: 24px; 
+            color: #2D3748;
+        }
+        .intro-text { 
+            font-size: 16px; 
+            margin-bottom: 32px; 
+            color: #4A5568;
+        }
+        .card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .mentee-info { 
+            background: #f8fafc;
+            border-left: 4px solid #9a3198;
+        }
+        .session-details { 
+            background: #f8fafc;
+            border-left: 4px solid #9a3198;
+        }
+        .mentee-message { 
+            background: #f8fafc;
+            border-left: 4px solid #9a3198;
+        }
+        .card h3 { 
+            color: #9a3198; 
+            font-size: 18px; 
+            font-weight: 600; 
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+        .card h3::before {
+            content: '●';
+            color: #9a3198;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .detail-row { 
+            display: flex; 
+            margin-bottom: 12px; 
+            align-items: center;
+        }
+        .detail-row:last-child { margin-bottom: 0; }
+        .detail-label { 
+            font-weight: 600; 
+            color: #2D3748; 
+            min-width: 120px; 
+            font-size: 14px;
+        }
+        .detail-value { 
+            color: #4A5568; 
+            font-size: 14px;
+        }
+        .action-buttons { 
+            text-align: center; 
+            margin: 40px 0; 
+            padding: 20px 0;
+        }
+        .button { 
+            display: inline-block; 
+            padding: 16px 32px; 
+            text-decoration: none; 
+            border-radius: 50px; 
+            margin: 8px 12px; 
+            font-weight: 600; 
+            font-size: 15px;
+            color: white;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .confirm-btn { 
+            background: #22c55e; 
+            color: #ffffff;
+        }
+        .decline-btn { 
+            background: #ef4444; 
+            color: #ffffff;
+        }
+        .info-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            border-left: 4px solid #9a3198;
+        }
+        .info-section h4 {
+            color: #9a3198;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .info-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .info-section li {
+            padding: 8px 0;
+            color: #2d3748;
+            position: relative;
+            padding-left: 24px;
+        }
+        .info-section li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #9a3198;
+            font-weight: bold;
+        }
+        .important-notice {
+            background: #fef2f2;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+            border-left: 4px solid #ef4444;
+        }
+        .important-notice p {
+            color: #991b1b;
+            font-weight: 500;
+            margin: 0;
+        }
+        .footer { 
+            background: #f8fafc; 
+            padding: 30px; 
+            text-align: center; 
+            color: #6b7280;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p { 
+            margin: 8px 0; 
+            font-size: 13px;
+        }
+        .footer a { 
+            color: #9a3198; 
+            text-decoration: none; 
+            font-weight: 500;
+        }
+        .footer a:hover {
+            color: #7c2d92;
+        }
+        .emoji { font-size: 24px; margin-right: 8px; }
+        @media (max-width: 600px) {
+            .email-container { margin: 10px; border-radius: 12px; }
+            .header, .content { padding: 24px 20px; }
+            .button { padding: 14px 24px; margin: 6px 8px; font-size: 14px; }
+            .detail-row { flex-direction: column; align-items: flex-start; }
+            .detail-label { min-width: auto; margin-bottom: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="logo-section">
+            <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
+        </div>
+        
+        <div class="header">
+            <h1>New Session Request</h1>
+            <p>You have a new mentorship request</p>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Hi <span th:text="${mentor.firstName ?: 'Mentor'}">Mentor</span>,</p>
+            
+            <p class="intro-text">You have received a new session request from <strong th:text="${mentee.firstName + ' ' + mentee.lastName}">Mentee Name</strong>.</p>
+            
+            <div class="card mentee-info">
+                <h3>About Your Mentee</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value" th:text="${mentee.firstName + ' ' + mentee.lastName}">Mentee Name</span>
+                </div>
+                <div class="detail-row" th:if="${mentee.industry}">
+                    <span class="detail-label">Industry:</span>
+                    <span class="detail-value" th:text="${mentee.industry}">Industry</span>
+                </div>
+            </div>
+            
+            <div class="card session-details">
+                <h3>Session Request Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Topic/Skill:</span>
+                    <span class="detail-value" th:text="${session.title ?: 'Mentorship Session'}">Session Title</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Requested Date:</span>
+                    <span class="detail-value" th:text="${sessionDate}">Session Date</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Requested Time:</span>
+                    <span class="detail-value" th:text="${sessionTime}">Session Time</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Duration:</span>
+                    <span class="detail-value">1 hour</span>
+                </div>
+            </div>
+            
+            <div class="card mentee-message" th:if="${session.menteeMessage}">
+                <h3>Message from Mentee</h3>
+                <p th:text="${session.menteeMessage}">Mentee message</p>
+            </div>
+            
+            <div class="action-buttons">
+                <a style="color: #fff;" th:href="${baseUrl + '/sessions/' + session.id + '/confirm'}" class="button confirm-btn">Confirm Session</a>
+                <a style="color: #fff;" th:href="${baseUrl + '/sessions/' + session.id + '/decline'}" class="button decline-btn">Decline Request</a>
+            </div>
+            
+            <div class="info-section">
+                <h4>What happens next</h4>
+                <ul>
+                    <li>If you <strong>confirm</strong>, a meeting link will be automatically generated and shared with both you and the mentee</li>
+                    <li>Both parties will receive reminder notifications 24 hours before the session</li>
+                </ul>
+            </div>
+            
+            <div class="important-notice">
+                <p><strong>Important:</strong> Please respond to this request within 24 hours. If you don't respond, the request will automatically expire.</p>
+            </div>
+
+            <p>Best regards,<br><strong>The <span th:text="${appName}">ProsperMentor</span> Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
+            <p><a th:href="${baseUrl}">Visit our platform</a> | <a href="#">Contact Support</a></p>
+        </div>
+    </div>
+</body>
+</html>

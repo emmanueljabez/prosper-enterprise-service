@@ -1,0 +1,722 @@
+[{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6a6"
+	},
+	"name": "How to Build My Personal Brand",
+	"imgUrl": "/opt/uploads/29001aeb90a74f1880a51682ffe9afd5.jpg",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+	"tagLine": "“Clearly unleashing your superpower to the world.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+		},
+		{
+			"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Personal Strengths"
+		},
+		{
+			"name": "Expertise"
+		},
+		{
+			"name": "Appearance"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6a5"
+	},
+	"name": "My Personal Finance",
+	"imgUrl": "/opt/uploads/8a1da6d9ed8249b5a94276ff1a8469b8.jpg",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Finance-Vero.mp4?alt=media&token=5b80f101-48f8-4420-bc7d-2f46ea489dac",
+	"tagLine": "\"Meeting personal financial goals, whether it’s having enough for short-term financial needs, planning for retirement, or saving for your child's college education.\"",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "30% is allocated to lifestyle expenses, such as dining out and shopping for clothes. 20% goes towards the future: paying down debt and saving both for retirement and for emergencies."
+		},
+		{
+			"name": "50% of your take-home pay or net income (after taxes, that is) toward living essentials, such as rent, utilities, groceries, and transport."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Budgeting"
+		},
+		{
+			"name": "Sources of Income"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6a7"
+	},
+	"name": "How to Enjoy My Life & My Work",
+	"imgUrl": "/opt/uploads/e7bb033157b1474590da35c4066a27df.jpg",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FWork%20Life%20Integration.mp4?alt=media&token=3b21f762-34bf-4278-aae5-0f060959bbae",
+	"tagLine": "“Effectively blending all the areas in your life: work, family, community, personal well-being and health.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Blend work and family responsibilities."
+		},
+		{
+			"name": "Work with a purpose in mind."
+		},
+		{
+			"name": "Simplify ways of doing things."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Kids"
+		},
+		{
+			"name": "Spouse"
+		},
+		{
+			"name": "Fitness"
+		},
+		{
+			"name": "Friends"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6a9"
+	},
+	"name": "My Physical Fitness",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FWork%20Life%20Intergration%201.jpeg?alt=media&token=5710699d-e532-493a-aa83-09632089838c",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FYour%20Physical%20Fitness%20-%20v1.mp4?alt=media&token=1097bd76-209b-48bd-a6c5-6d4f54841e84",
+	"tagLine": "“Developing the ability to perform aspects of sports, occupations and daily activities through proper nutrition,physical exercise,and sufficient rest.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Improve your eating habits."
+		},
+		{
+			"name": "Start small.Walk a little extra. From the parking. Take the Stairs.Go dancing, play a sport or work out in a gym."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Daily routine."
+		},
+		{
+			"name": "Curbing cravings."
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6aa"
+	},
+	"name": "How to Start a Business",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FStarting%20a%20Business.jpg?alt=media&token=4d384431-49e2-49bb-9bda-15b41ddca42a",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPaul%20Muhami.mp4?alt=media&token=75079ed8-c676-467a-85dc-975e734cb07c",
+	"tagLine": "There are things that every business needs to do to get off the ground.You want to make sure you prepare thoroughly before starting a business.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Define how you will make money."
+		},
+		{
+			"name": "Determine how to retain customers and build loyalty."
+		},
+		{
+			"name": "Figure out how to market."
+		},
+		{
+			"name": "Describe product or service you want to offer."
+		},
+		{
+			"name": "Identify business opportunity."
+		},
+		{
+			"name": "Think through how to fund the business and the burn rate."
+		},
+		{
+			"name": "Do industry and competition analysis."
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6ab"
+	},
+	"name": "Other",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FOther%20Advice.jpg?alt=media&token=2d6e50ac-dcaf-4363-a93c-f451480d8423",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FGeneral%20Advise.mp4?alt=media&token=38773608-c727-424e-a983-396e3a8d7597",
+	"tagLine": "Self-improvement is the improvement of one's knowledge, status, or character by one's own efforts. It's the quest to make ourselves better in any and every facet of life.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Identify your objectives. If you don't have specific goals in mind yet, think about what you ultimately want to accomplish. Picture yourself a year from now, two years from now, five years from now: What is it you're doing?"
+		},
+		{
+			"name": "Growth in yourself eventually leads you to new opportunities, opportunities that don’t come about until you grow into the person who is ready for them. All you have to do is focus on self-improvement"
+		},
+		{
+			"name": "The most effective way of finding out how to get better is to ask the people around you to make a list of what you’re best at and where you could make improvements. Take the list of improvements and work on them one by one."
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6ac"
+	},
+	"name": "My Emotional Intelligence",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FEmotional%20Intelligence2%20copy.jpg?alt=media&token=5fed9bdc-f065-469e-9c4f-a19e15d5838b",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FStephen%20Olieka%20%20-%20Emotional%20Intelligence.mp4?alt=media&token=1141501f-a930-468c-bab0-5b8f6b419def",
+	"tagLine": "“Developing the ability to identify and manage one's own emotions, as well as the emotions of others.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": " Recognize your own emotions and how they affect your thoughts and behavior.Control impulsive feelings and behaviors, manage your emotions in healthy ways."
+		},
+		{
+			"name": "Understand the emotions, needs, and concerns of other people, pick up on emotional cues.Develop and maintain good relationships, communicate clearly, inspire and influence others, work well in a team, and manage conflict."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Social awareness"
+		},
+		{
+			"name": "Self awareness"
+		},
+		{
+			"name": "Relationship management"
+		},
+		{
+			"name": "Self management"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6ad"
+	},
+	"name": "Overcoming Procrastination",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FOvercoming%20Procrastination.jpg?alt=media&token=cfb9727b-80b0-4b30-984f-b4d42c5b902d",
+	"videoURL": "",
+	"tagLine": "“Overcoming the habit of delaying, postponing putting off work  that needs to be accomplished by a certain deadline for no particular reason.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Break down big tasks into smaller components. Optimize your environment.Get an accountability partner."
+		},
+		{
+			"name": "Drop the perfectionism.Focus on your “why”.Reward good behaviour"
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Environment"
+		},
+		{
+			"name": "Stop excuses"
+		},
+		{
+			"name": "Accountability partner"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6af"
+	},
+	"name": "My Meaningful Relationships",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2Fmeaniful%20relationships.jpg?alt=media&token=eeeb4ec9-6f46-4696-96c8-4f5a42930a26",
+	"videoURL": "",
+	"tagLine": "A happy life is one where we are satisfied with life’s circumstances and it can be strengthened by meaningfulness. A meaningful relationship is one that advances our well-being.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "In order to learn how to build relationships, it’s important to understand what makes for a meaningful relationship. It is characterised as a relationship that is of personal significance, is healthy, caring, and long-lasting, and is one we couldn’t do without. It’s with a person who helps us grow, supports and encourages us and is there for us when we need them."
+		},
+		{
+			"name": "Meaningful relationships don’t simply happen. Of course, sometimes, the ingredients are naturally already there. But usually we make meaning, separately as individuals by making sure we’re being clear, compassionate and thoughtful."
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2aa5a9f8402c1cf6b0"
+	},
+	"name": "Building My Personal Resilience",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FPersonal%20Resilience.jpg?alt=media&token=02334a21-da99-4dec-8140-5b86e35fe27d",
+	"videoURL": "",
+	"tagLine": "“Developing the ability to withstand, adapt to, and recover from stress and adversity, maintain or return to a state of mental health wellbeing by using effective coping strategies.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Develop realistic life goals for guidance and a sense of purpose."
+		},
+		{
+			"name": "Nurture a positive view of yourself."
+		},
+		{
+			"name": "Take positive action."
+		},
+		{
+			"name": "Cherish social support and interaction."
+		},
+		{
+			"name": "Treat problems as a learning process."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Positivity"
+		},
+		{
+			"name": "Bouncing Back"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b2"
+	},
+	"name": "How to Choose a Career",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FChoosing%20a%20Career.jpg?alt=media&token=d188e281-d3d9-4961-bfae-612400bce013",
+	"videoURL": "",
+	"tagLine": "Choosing a career is not an easy thing; it should be a carefully thought-out process.Choosing a career is far from choosing a job or choosing a company to work with. Your career is what you hope to do in your entire working life.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Know your talent.Know your priorities in life.What you are passionate about.Your values.Your personality.Your interests.Your skills."
+		},
+		{
+			"name": "While some people are lucky to know what they want to do for the rest of their lives, others are not so sure and they only stumble on a suitable career path by luck or trial and error. It is also tempting to take a career path that supposedly pays well, which might be the case, but you derive no satisfaction from it."
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b3"
+	},
+	"name": "How to Grow My Business",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FBusiness%20Growth.jpg?alt=media&token=842b8f57-5015-4ce3-bd9e-a669fcfc5682",
+	"tagLine": "If you buckle down, clear your mind, and just look at things in perspective, you can easily identify ways you can grow your business and make more money.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Form strategic partnerships"
+		},
+		{
+			"name": "Build brand awareness"
+		},
+		{
+			"name": "Offer great products/services that meet the needs"
+		},
+		{
+			"name": "Understand your customers needs"
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b4"
+	},
+	"name": "How to Show Up & Boss Up",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosper-app.appspot.com/o/topics%2Fpic-3.jpg?alt=media&token=312bee65-6550-4113-aa0d-17d893df3870",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FExecutive%20Presence.mp4?alt=media&token=bbcd5b06-9d05-42a3-880a-430138b4bf70",
+	"tagLine": "“Consistently inspiring confidence in others through your expertise, communication and appearance.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Develop your own original voice."
+		},
+		{
+			"name": "Signal to the world that you know your stuff with immense breadth and depth."
+		},
+		{
+			"name": "Instill confidence in others; bosses, peers, juniors."
+		},
+		{
+			"name": "Command attention."
+		},
+		{
+			"name": "Dress well."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Appearance"
+		},
+		{
+			"name": "Expertise"
+		},
+		{
+			"name": "Confidence"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b5"
+	},
+	"name": "How to Strategically Network",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FStrategic%20Networking.jpg?alt=media&token=1278a5f5-3a85-4026-b9b8-ca50470f35aa",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FArt%20of%20Networking-Martha.mp4?alt=media&token=d9f37b04-c66f-4e12-8fae-5c56e5bcdf3a",
+	"tagLine": "“Bringing value to yourself and others through the powerful currency of relationships. Your network is your net worth!”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Focus on immediate network as a start."
+		},
+		{
+			"name": "Reach out to others long before you need anything."
+		},
+		{
+			"name": "Connect your plan to people, places, things that will help you achieve the plan."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Plan for networking"
+		},
+		{
+			"name": "Build a network"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b6"
+	},
+	"name": "My Mental Health",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FYour%20Mental%20Health.jpg?alt=media&token=1c462bbd-1c25-4abb-9151-3d659dbc2e28",
+	"videoURL": "",
+	"tagLine": "Mental health includes our emotional, psychological, and social well-being. It affects how we think, feel, and act. It also helps determine how we handle stress, relate to others, and make choices.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Positive mental health allows people to: (1)Realize their full potential, (2)Cope with the stresses of life (3)Work productively (4)Make meaningful contributions to their communities"
+		},
+		{
+			"name": "Ways to maintain positive mental health include: (1)Getting professional help, (2)Connecting with others (3)Staying positive, (4)Getting physically active (4)Helping others, (5)Getting enough sleep (6)Developing coping skills"
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b7"
+	},
+	"name": "How to Advance My Career",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+	"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Explore your options. Strive for higher than current position."
+		},
+		{
+			"name": "Create your future.Set goals to get you where you want to be."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Promotion."
+		},
+		{
+			"name": "Grow my business."
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b8"
+	},
+	"name": "How to Write a Stellar CV",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FCV%20Photo.jpeg?alt=media&token=6d25d34e-bcd2-4ff0-8fb6-1eb1f6b7fe30",
+	"videoURL": "",
+	"tagLine": "The only way to do great work is to love what you do.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Make Sure It’s Well Structured. Use Power Words that Knock them Out."
+		},
+		{
+			"name": "Make It Evidenced Based.Use PAR - Problem Action Result - Approach in Describing your Experiences. "
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6b9"
+	},
+	"name": "How to Ace the Interview",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FC-Suite%20Interview1.jpeg?alt=media&token=bfd10dfb-ef60-4386-8d2e-9849c4c803bd",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAce%20the%20Interview1.mp4?alt=media&token=9282162e-424d-4d4a-ae47-486a3b07fbfe",
+	"tagLine": "\"Promoting your personal leadership style and brand while addressing industry knowledge, skill, insight, and experience.\"",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Know your leadership style and be ready to give examples.Break the ice.Tell your story."
+		},
+		{
+			"name": "Prepare and rehearse your answers to the tough questions.Demonstrate your industry and company-specific knowledge."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Industry knowledge"
+		},
+		{
+			"name": "Areas of development"
+		},
+		{
+			"name": "Strengths"
+		},
+		{
+			"name": "Leadership style"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6ba"
+	},
+	"name": "Discovering My Truest Self",
+	"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/51b4ea68b1644f77986f7d0cc4fddd7d.jpeg",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FSelf%20Awareness%20-%20Robin.mp4?alt=media&token=f68ffcdc-10db-466e-ad8c-f5bbe73e047f",
+	"tagLine": "\"Seeing yourself clearly and objectively through reflection and introspection.\"",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Your core personality.Understand your super powers.Your talents."
+		},
+		{
+			"name": "Follow your heart and intuition.What you are passionate about."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Blind spots"
+		},
+		{
+			"name": "Strengths"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6bb"
+	},
+	"name": "How to Negotiate the Best Deal",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosper-app.appspot.com/o/topics%2FArt%20of%20Negotiation.jpg?alt=media&token=b498a8d4-dad4-43c1-9c28-1b62222aa1dc",
+	"videoURL": "",
+	"tagLine": "“Creatively balancing interests to make joint decisions on resource allocation and get best deal.\"",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Maximize value.Expand the pie.Strengthen your negotiating power, your leverage."
+		},
+		{
+			"name": "Build and utilize relationships."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Salary Negotiation."
+		},
+		{
+			"name": "Contract Negotation."
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6bc"
+	},
+	"name": "Increasing My Personal Productivity",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FPersonal%20Productivity3.jpg?alt=media&token=9947c6c6-fbf7-4f33-b3f6-cc5c4e401900",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Productivity.mp4?alt=media&token=3389c51e-d833-4493-aa2e-70ce0a410fc4",
+	"tagLine": "\"Completing the actions that move you closer to accomplishing your goals in a manner that brings balance and ease into your life.\"",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Evaluating the objective into actionable items."
+		},
+		{
+			"name": "Completing the individual actionable items."
+		},
+		{
+			"name": "Setting meaningful and measurable objectives."
+		},
+		{
+			"name": "Reviewing and acknowledging your progress."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "SMART Goals"
+		},
+		{
+			"name": "Goal Getting."
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6bd"
+	},
+	"name": "How to Build My Online Presence",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FDigital%20Presence2.jpg?alt=media&token=d24eec2d-4960-43bc-b3e3-9d295337409a",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FDigital%20Presence.mp4?alt=media&token=dff468ca-0dab-4d15-b629-4f1921f52ad7",
+	"tagLine": "Revamp your online presence! Stand out! ",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Build your brand identity online.Drive visibility.Build online engagement."
+		},
+		{
+			"name": "Reinvent your profile on social media platforms."
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Clarify your brand identity, Make a total overhaul on your digital platforms and drive content to build your online reputation. "
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6be"
+	},
+	"name": "My Healthy Body",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FYour%20Healthy%20Body.jpeg?alt=media&token=86c91c3f-eb77-4d48-8422-a078e401c775",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FYour%20Healthy%20Body.mp4?alt=media&token=0b0139de-61a6-415e-b2e6-2c0338daa4f1",
+	"tagLine": "Wealth without health is pointless.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "You are, really, what your body absorbs, forming correct healthy habits is invaluable. You are fearfully and wonderfully made, so you are accountable for your health."
+		},
+		{
+			"name": "Your body is designed to self-heal, learn to assist it.Disease is the body’s way of communicating that something needs adjusting."
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6bf"
+	},
+	"name": "Starting a Career",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FC%20Suite%20Interview1.jpg?alt=media&token=9adc1bf4-9220-4220-a6f9-cc2f696028eb",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FProsper%20Career%20Fair1%20-%2005Nov2020.mp4?alt=media&token=632d6a71-fcf1-4983-ba95-e4b59bca361a",
+	"tagLine": "Develop a clear picture of your interests, motivations, values and skills.",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Know what you do best. Make a list of what you enjoy doing and what you do best.List your training and experience. Volunteering counts. Unusual classes count."
+		},
+		{
+			"name": "Narrow the list to a few possible careers — no more than three or four.Now think about jobs. What occupations require your talents? Use non-traditional ways of finding a job."
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "60e26c2ba5a9f8402c1cf6c0"
+	},
+	"name": "Creating My Ability to Adapt to Change",
+	"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FAgility.jpeg?alt=media&token=f3cb3b43-ca18-4e07-a9a3-1e7d059b7f30",
+	"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAgility%20and%20Adaptability.mp4?alt=media&token=fbbbf0e4-948c-4d3a-98f0-84a72158100d",
+	"tagLine": "Are you a Disruptor? Position yourself to succeed in the ever-changing corporate world. ",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Capitalize on changing market trends"
+		},
+		{
+			"name": "Become adaptable - Today's premium skill "
+		},
+		{
+			"name": "Step up your ability to respond swiftly to an ever-changing world"
+		}
+	],
+	"focusAreas": [
+		{
+			"name": "Build your muscle to assess shifts in the market, re-imagine the new normal and adapt quickly"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+},
+{
+	"_id": {
+		"$oid": "614504793c17b867aaabbdb3"
+	},
+	"name": "How to Find a Job",
+	"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/e677acca7da54cfd9c5a3a5e2ed39814.jpeg",
+	"videoURL": "",
+	"tagLine": "“I never dreamed about success. I worked for it.” — Estee Lauder",
+	"topicStatus": "LIVE",
+	"topicTips": [
+		{
+			"name": "Know your career goals. "
+		},
+		{
+			"name": "Plan ahead. "
+		},
+		{
+			"name": "Use all job search resources.  Research companies. "
+		},
+		{
+			"name": "Get resume and cover letter help. Customize your resume."
+		},
+		{
+			"name": "Apply with confidence. "
+		},
+		{
+			"name": "Schedule informational interview"
+		}
+	],
+	"focusAreas": [],
+	"_class": "com.myprosper.app.demo.documents.Topics"
+}]
+

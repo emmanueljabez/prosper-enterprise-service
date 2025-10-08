@@ -1,0 +1,3190 @@
+[{
+	"_id": {
+		"$oid": "61153a478189c27d7e7f99a2"
+	},
+	"bookingStatus": "CONFIRMED"
+},
+{
+	"_id": {
+		"$oid": "612339dc3d5d0c342c99fbb9"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"adviseeId": "61161b98b423de35db7c3109",
+	"startTime": {
+		"$date": "2021-08-26T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "UPCOMING",
+	"created": {
+		"$date": "2021-08-23T06:02:04.784Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "61155915b423de35db7c2ed4"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "61155560b423de35db7c2eca"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254798446935",
+			"adviseeId": "61161b98b423de35db7c3109"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT"
+},
+{
+	"_id": {
+		"$oid": "6127c4ead5d3e84d5bc493e4"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b8"
+		},
+		"name": "How to Write a Stellar CV",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FCV%20Photo.jpeg?alt=media&token=6d25d34e-bcd2-4ff0-8fb6-1eb1f6b7fe30",
+		"videoURL": "",
+		"tagLine": "The only way to do great work is to love what you do.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Make Sure It’s Well Structured. Use Power Words that Knock them Out."
+			},
+			{
+				"name": "Make It Evidenced Based.Use PAR - Problem Action Result - Approach in Describing your Experiences. "
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"adviseeId": "60ef1582c5a4202d053992be",
+	"startTime": {
+		"$date": "2021-08-30T16:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-08-26T16:44:26.247Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 1000,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "CONFIRMED",
+			"phoneNumber": "+254792964604",
+			"adviseeId": "60ef159ac5a4202d05399572"
+		},
+		{
+			"amount": 1000,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "CONFIRMED",
+			"phoneNumber": "+254720482575",
+			"adviseeId": "60fab59d8e60d14fb0a045a7"
+		},
+		{
+			"amount": 1000,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "CONFIRMED",
+			"phoneNumber": "+254725382933",
+			"adviseeId": "60ef15b4c5a4202d05399846"
+		},
+		{
+			"amount": 1000,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "CONFIRMED",
+			"phoneNumber": "+12409948719",
+			"adviseeId": "61268128550df6684348ea36"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "612e2bf72aa5eada4e5fc9eb"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a17",
+	"adviseeId": "6115370b8189c27d7e7f9999",
+	"startTime": {
+		"$date": "2021-08-31T16:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-08-23T06:02:04.784Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"groupSessionAttendees": [],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "612f1eeef3f7b7314f83a749"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"adviseeId": "6115370b8189c27d7e7f9999",
+	"startTime": {
+		"$date": "2021-09-10T09:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-09-01T06:34:22.59Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "612f86d3f3f7b7314f83a829"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "61041048d370ac7472131be1",
+	"startTime": {
+		"$date": "2021-09-08T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-09-01T13:57:39.941Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "612f325ff3f7b7314f83a774"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"adviseeId": "61155560b423de35db7c2eca",
+	"startTime": {
+		"$date": "2021-09-07T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-01T07:57:19.497Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254722228123",
+			"adviseeId": "61155915b423de35db7c2ed4"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254798446935",
+			"adviseeId": "61161b98b423de35db7c3109"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254721610054",
+			"adviseeId": "61155560b423de35db7c2eca"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "613ee5d3cc9e5925e20087a0"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "61155560b423de35db7c2eca",
+	"startTime": {
+		"$date": "2021-09-15T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-13T05:46:59.929Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254798446935",
+			"adviseeId": "61161b98b423de35db7c3109"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254722228123",
+			"adviseeId": "61155915b423de35db7c2ed4"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254721610054",
+			"adviseeId": "61155560b423de35db7c2eca"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "613ee620cc9e5925e20087a2"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "6116ad2145cc045bc9df4ada",
+	"startTime": {
+		"$date": "2021-09-17T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-13T05:48:16.249Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254724728508",
+			"adviseeId": "611a006cca0f556b5375a1bf"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254706926393",
+			"adviseeId": "612375e93d5d0c342c99fc3a"
+		},
+		{
+			"amount": 1667,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254792487977",
+			"adviseeId": "6116ad2145cc045bc9df4ada"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "613ee663cc9e5925e20087a3"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"adviseeId": "6133f85cf3f7b7314f83b1a8",
+	"startTime": {
+		"$date": "2021-09-16T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-13T05:49:23.191Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254727885558",
+			"adviseeId": "61364cf03e4f7134b582c410"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+250781155491",
+			"adviseeId": "6133f85cf3f7b7314f83b1a8"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "613ee689cc9e5925e20087a5"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "613b4541c85e632853b977df",
+	"startTime": {
+		"$date": "2021-09-17T06:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-13T05:50:01.602Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254792667998",
+			"adviseeId": "613ba834c85e632853b978b4"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254727237670",
+			"adviseeId": "613b4541c85e632853b977df"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "614459b323b54a6bed60be59"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6ab"
+		},
+		"name": "Other",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FOther%20Advice.jpg?alt=media&token=2d6e50ac-dcaf-4363-a93c-f451480d8423",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FGeneral%20Advise.mp4?alt=media&token=38773608-c727-424e-a983-396e3a8d7597",
+		"tagLine": "Self-improvement is the improvement of one's knowledge, status, or character by one's own efforts. It's the quest to make ourselves better in any and every facet of life.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Identify your objectives. If you don't have specific goals in mind yet, think about what you ultimately want to accomplish. Picture yourself a year from now, two years from now, five years from now: What is it you're doing?"
+			},
+			{
+				"name": "Growth in yourself eventually leads you to new opportunities, opportunities that don’t come about until you grow into the person who is ready for them. All you have to do is focus on self-improvement"
+			},
+			{
+				"name": "The most effective way of finding out how to get better is to ask the people around you to make a list of what you’re best at and where you could make improvements. Take the list of improvements and work on them one by one."
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "60ea94d3d5efdc75988d0a02",
+	"startTime": {
+		"$date": "2021-09-20T15:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-09-17T09:02:43.048Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"sessionEndTime": {
+		"$date": "2021-09-20T15:11:23.48Z"
+	},
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "614835400d2879551bb2ea96"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "612375e93d5d0c342c99fc3a",
+	"startTime": {
+		"$date": "2021-09-24T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-20T07:16:16.701Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254724728508",
+			"adviseeId": "611a006cca0f556b5375a1bf"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254706926393",
+			"adviseeId": "612375e93d5d0c342c99fc3a"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "614835be0d2879551bb2ea98"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "61364cf03e4f7134b582c410",
+	"startTime": {
+		"$date": "2021-09-23T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-20T07:18:22.634Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+250781155491",
+			"adviseeId": "6133f85cf3f7b7314f83b1a8"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254727885558",
+			"adviseeId": "61364cf03e4f7134b582c410"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "614835ff0d2879551bb2ea99"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "613ba834c85e632853b978b4",
+	"startTime": {
+		"$date": "2021-09-27T15:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-20T07:19:27.871Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254727237670",
+			"adviseeId": "613b4541c85e632853b977df"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254792667998",
+			"adviseeId": "613ba834c85e632853b978b4"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "614836310d2879551bb2ea9b"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "613f589dcc9e5925e2008899",
+	"startTime": {
+		"$date": "2021-09-22T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-20T07:20:17.339Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254706898722",
+			"adviseeId": "60ef1587c5a4202d05399356"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254725042227",
+			"adviseeId": "613f589dcc9e5925e2008899"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "614836770d2879551bb2ea9c"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "61429a4ccc9e5925e2008f90",
+	"startTime": {
+		"$date": "2021-09-24T06:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-20T07:21:27Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254707557967",
+			"adviseeId": "61407a0bcc9e5925e2008b05"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+255786092056",
+			"adviseeId": "61429a4ccc9e5925e2008f90"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "614836970d2879551bb2ea9d"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"adviseeId": "614830ce0d2879551bb2ea8a",
+	"startTime": {
+		"$date": "2021-09-23T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-09-20T07:21:59.358Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254707805178",
+			"adviseeId": "6142fff7f387b25fecda7f54"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254725810809",
+			"adviseeId": "614830ce0d2879551bb2ea8a"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6148a8ce0d2879551bb2eb94"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6ab"
+		},
+		"name": "Other",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FOther%20Advice.jpg?alt=media&token=2d6e50ac-dcaf-4363-a93c-f451480d8423",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FGeneral%20Advise.mp4?alt=media&token=38773608-c727-424e-a983-396e3a8d7597",
+		"tagLine": "Self-improvement is the improvement of one's knowledge, status, or character by one's own efforts. It's the quest to make ourselves better in any and every facet of life.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Identify your objectives. If you don't have specific goals in mind yet, think about what you ultimately want to accomplish. Picture yourself a year from now, two years from now, five years from now: What is it you're doing?"
+			},
+			{
+				"name": "Growth in yourself eventually leads you to new opportunities, opportunities that don’t come about until you grow into the person who is ready for them. All you have to do is focus on self-improvement"
+			},
+			{
+				"name": "The most effective way of finding out how to get better is to ask the people around you to make a list of what you’re best at and where you could make improvements. Take the list of improvements and work on them one by one."
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "60ea94d3d5efdc75988d0a02",
+	"startTime": {
+		"$date": "2021-09-21T12:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "STARTED",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-09-20T15:29:18.191Z"
+	},
+	"sessionStartTime": {
+		"$date": "2021-09-20T15:36:56.069Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"sessionEndTime": {
+		"$date": "2021-09-21T12:58:52.527Z"
+	},
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6152fd0571169544a525d328"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b8"
+		},
+		"name": "How to Write a Stellar CV",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FCV%20Photo.jpeg?alt=media&token=6d25d34e-bcd2-4ff0-8fb6-1eb1f6b7fe30",
+		"videoURL": "",
+		"tagLine": "The only way to do great work is to love what you do.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Make Sure It’s Well Structured. Use Power Words that Knock them Out."
+			},
+			{
+				"name": "Make It Evidenced Based.Use PAR - Problem Action Result - Approach in Describing your Experiences. "
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"adviseeId": "60ea94d5d5efdc75988d0a33",
+	"startTime": {
+		"$date": "2021-10-04T16:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "STARTED",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-09-28T11:31:17.781Z"
+	},
+	"sessionStartTime": {
+		"$date": "2021-10-04T16:17:50.489Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"sessionEndTime": {
+		"$date": "2021-10-04T16:26:12.729Z"
+	},
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "615334c271169544a525d3a4"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b9"
+		},
+		"name": "How to Ace the Interview",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FC-Suite%20Interview1.jpeg?alt=media&token=bfd10dfb-ef60-4386-8d2e-9849c4c803bd",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAce%20the%20Interview1.mp4?alt=media&token=9282162e-424d-4d4a-ae47-486a3b07fbfe",
+		"tagLine": "\"Promoting your personal leadership style and brand while addressing industry knowledge, skill, insight, and experience.\"",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Know your leadership style and be ready to give examples.Break the ice.Tell your story."
+			},
+			{
+				"name": "Prepare and rehearse your answers to the tough questions.Demonstrate your industry and company-specific knowledge."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Industry knowledge"
+			},
+			{
+				"name": "Areas of development"
+			},
+			{
+				"name": "Strengths"
+			},
+			{
+				"name": "Leadership style"
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"adviseeId": "615332a371169544a525d39e",
+	"startTime": {
+		"$date": "2021-10-04T17:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "STARTED",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-09-28T15:29:06.531Z"
+	},
+	"sessionStartTime": {
+		"$date": "2021-10-04T17:00:14.943Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"sessionEndTime": {
+		"$date": "2021-10-04T18:00:10.052Z"
+	},
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "615ebffc73d7853f4bfcdb8b"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b8"
+		},
+		"name": "How to Write a Stellar CV",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FCV%20Photo.jpeg?alt=media&token=6d25d34e-bcd2-4ff0-8fb6-1eb1f6b7fe30",
+		"videoURL": "",
+		"tagLine": "The only way to do great work is to love what you do.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Make Sure It’s Well Structured. Use Power Words that Knock them Out."
+			},
+			{
+				"name": "Make It Evidenced Based.Use PAR - Problem Action Result - Approach in Describing your Experiences. "
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"adviseeId": "60ef15b3c5a4202d05399838",
+	"startTime": {
+		"$date": "2021-10-11T16:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-10-07T09:38:04.896Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6167f68973d7853f4bfcef36"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d5d5efdc75988d0a31",
+	"adviseeId": "60ef157cc5a4202d0539920c",
+	"startTime": {
+		"$date": "2021-10-16T12:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-10-14T09:21:13.907Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254722622909",
+			"adviseeId": "60ef158dc5a4202d053993fa"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254721855595",
+			"adviseeId": "60ef157cc5a4202d0539920c"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6167f81173d7853f4bfcef3a"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b9"
+		},
+		"name": "How to Ace the Interview",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FC-Suite%20Interview1.jpeg?alt=media&token=bfd10dfb-ef60-4386-8d2e-9849c4c803bd",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAce%20the%20Interview1.mp4?alt=media&token=9282162e-424d-4d4a-ae47-486a3b07fbfe",
+		"tagLine": "\"Promoting your personal leadership style and brand while addressing industry knowledge, skill, insight, and experience.\"",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Know your leadership style and be ready to give examples.Break the ice.Tell your story."
+			},
+			{
+				"name": "Prepare and rehearse your answers to the tough questions.Demonstrate your industry and company-specific knowledge."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Industry knowledge"
+			},
+			{
+				"name": "Areas of development"
+			},
+			{
+				"name": "Strengths"
+			},
+			{
+				"name": "Leadership style"
+			}
+		]
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "60ef1578c5a4202d053991a6",
+	"startTime": {
+		"$date": "2021-10-19T12:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-10-14T09:27:45.757Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254725156212",
+			"adviseeId": "60ef1585c5a4202d05399304"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254704054487",
+			"adviseeId": "60ef1578c5a4202d053991a6"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6167f8b973d7853f4bfcef3d"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a20",
+	"adviseeId": "60ef1595c5a4202d053994da",
+	"startTime": {
+		"$date": "2021-10-18T04:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-10-14T09:30:33.916Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254719476252",
+			"adviseeId": "60ef15b8c5a4202d053998ba"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254721359370",
+			"adviseeId": "60ef1595c5a4202d053994da"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6167fc8d73d7853f4bfcef46"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6aa"
+		},
+		"name": "How to Start a Business",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FStarting%20a%20Business.jpg?alt=media&token=4d384431-49e2-49bb-9bda-15b41ddca42a",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPaul%20Muhami.mp4?alt=media&token=75079ed8-c676-467a-85dc-975e734cb07c",
+		"tagLine": "There are things that every business needs to do to get off the ground.You want to make sure you prepare thoroughly before starting a business.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Define how you will make money."
+			},
+			{
+				"name": "Determine how to retain customers and build loyalty."
+			},
+			{
+				"name": "Figure out how to market."
+			},
+			{
+				"name": "Describe product or service you want to offer."
+			},
+			{
+				"name": "Identify business opportunity."
+			},
+			{
+				"name": "Think through how to fund the business and the burn rate."
+			},
+			{
+				"name": "Do industry and competition analysis."
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"adviseeId": "60ef159bc5a4202d053995a4",
+	"startTime": {
+		"$date": "2021-10-15T09:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-10-14T09:46:53.714Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254722453534",
+			"adviseeId": "60ef15b2c5a4202d05399808"
+		},
+		{
+			"amount": 2500,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+14045422025",
+			"adviseeId": "60ef159bc5a4202d053995a4"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6174f8dc73d7853f4bfd0ad6"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b4"
+		},
+		"name": "How to Show Up & Boss Up",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosper-app.appspot.com/o/topics%2Fpic-3.jpg?alt=media&token=312bee65-6550-4113-aa0d-17d893df3870",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FExecutive%20Presence.mp4?alt=media&token=bbcd5b06-9d05-42a3-880a-430138b4bf70",
+		"tagLine": "“Consistently inspiring confidence in others through your expertise, communication and appearance.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Develop your own original voice."
+			},
+			{
+				"name": "Signal to the world that you know your stuff with immense breadth and depth."
+			},
+			{
+				"name": "Instill confidence in others; bosses, peers, juniors."
+			},
+			{
+				"name": "Command attention."
+			},
+			{
+				"name": "Dress well."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Appearance"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Confidence"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"adviseeId": "60ef157ac5a4202d053991de",
+	"startTime": {
+		"$date": "2021-10-26T09:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-10-24T06:10:36.733Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6174f97973d7853f4bfd0ad9"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"adviseeId": "60ef157ac5a4202d053991de",
+	"startTime": {
+		"$date": "2021-10-26T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2021-10-24T06:13:13.382Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"rescheduledBy": "60ef157ac5a4202d053991de",
+	"sessionEndTime": {
+		"$date": "2021-10-26T08:04:44.407Z"
+	},
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "61c8d19473d7853f4bfdbcd4"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a18",
+	"adviseeId": "61c8ce8a73d7853f4bfdbccc",
+	"startTime": {
+		"$date": "2022-01-08T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2021-12-26T20:33:24.105Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "61d2ce5e73d7853f4bfdd226"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a0e",
+	"adviseeId": "61992ce673d7853f4bfd5747",
+	"startTime": {
+		"$date": "2022-01-18T17:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "STARTED",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2022-01-03T10:22:22.111Z"
+	},
+	"sessionStartTime": {
+		"$date": "2022-01-18T17:00:45.767Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"rescheduledBy": "61992ce673d7853f4bfd5747",
+	"sessionEndTime": {
+		"$date": "2022-01-18T17:10:58.188Z"
+	},
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "62017f5a73d7853f4bfe34c3"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6ab"
+		},
+		"name": "Other",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FOther%20Advice.jpg?alt=media&token=2d6e50ac-dcaf-4363-a93c-f451480d8423",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FGeneral%20Advise.mp4?alt=media&token=38773608-c727-424e-a983-396e3a8d7597",
+		"tagLine": "Self-improvement is the improvement of one's knowledge, status, or character by one's own efforts. It's the quest to make ourselves better in any and every facet of life.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Identify your objectives. If you don't have specific goals in mind yet, think about what you ultimately want to accomplish. Picture yourself a year from now, two years from now, five years from now: What is it you're doing?"
+			},
+			{
+				"name": "Growth in yourself eventually leads you to new opportunities, opportunities that don’t come about until you grow into the person who is ready for them. All you have to do is focus on self-improvement"
+			},
+			{
+				"name": "The most effective way of finding out how to get better is to ask the people around you to make a list of what you’re best at and where you could make improvements. Take the list of improvements and work on them one by one."
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "62017ee273d7853f4bfe34c0",
+	"startTime": {
+		"$date": "2022-02-14T06:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2022-02-07T20:21:46.609Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "62b2de32b42b1d68dd49cfb4"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d2d5efdc75988d09ec",
+	"adviseeId": "60ea94d3d5efdc75988d0a02",
+	"startTime": {
+		"$date": "2022-06-24T11:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "STARTED",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2022-06-22T09:17:38.654Z"
+	},
+	"sessionStartTime": {
+		"$date": "2022-06-22T09:17:54.956Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "62d6b858b42b1d68dd4a1c3a"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "62d6b7cbb42b1d68dd4a1c37",
+	"startTime": {
+		"$date": "2022-07-25T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2022-07-19T13:57:44.707Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "62ecde90b42b1d68dd4a4b5d"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6bd"
+		},
+		"name": "How to Build My Online Presence",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FDigital%20Presence2.jpg?alt=media&token=d24eec2d-4960-43bc-b3e3-9d295337409a",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FDigital%20Presence.mp4?alt=media&token=dff468ca-0dab-4d15-b629-4f1921f52ad7",
+		"tagLine": "Revamp your online presence! Stand out! ",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Build your brand identity online.Drive visibility.Build online engagement."
+			},
+			{
+				"name": "Reinvent your profile on social media platforms."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Clarify your brand identity, Make a total overhaul on your digital platforms and drive content to build your online reputation. "
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "60ef157ac5a4202d053991de",
+	"startTime": {
+		"$date": "2022-08-08T06:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2022-08-05T09:10:40.575Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "62ed02bfb42b1d68dd4a4bac"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6bd"
+		},
+		"name": "How to Build My Online Presence",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FDigital%20Presence2.jpg?alt=media&token=d24eec2d-4960-43bc-b3e3-9d295337409a",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FDigital%20Presence.mp4?alt=media&token=dff468ca-0dab-4d15-b629-4f1921f52ad7",
+		"tagLine": "Revamp your online presence! Stand out! ",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Build your brand identity online.Drive visibility.Build online engagement."
+			},
+			{
+				"name": "Reinvent your profile on social media platforms."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Clarify your brand identity, Make a total overhaul on your digital platforms and drive content to build your online reputation. "
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "60ef157ac5a4202d053991de",
+	"startTime": {
+		"$date": "2022-08-08T06:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2022-08-05T11:45:03.905Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "633e9799b42b1d68dd4af97e"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b9"
+		},
+		"name": "How to Ace the Interview",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FC-Suite%20Interview1.jpeg?alt=media&token=bfd10dfb-ef60-4386-8d2e-9849c4c803bd",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAce%20the%20Interview1.mp4?alt=media&token=9282162e-424d-4d4a-ae47-486a3b07fbfe",
+		"tagLine": "\"Promoting your personal leadership style and brand while addressing industry knowledge, skill, insight, and experience.\"",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Know your leadership style and be ready to give examples.Break the ice.Tell your story."
+			},
+			{
+				"name": "Prepare and rehearse your answers to the tough questions.Demonstrate your industry and company-specific knowledge."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Industry knowledge"
+			},
+			{
+				"name": "Areas of development"
+			},
+			{
+				"name": "Strengths"
+			},
+			{
+				"name": "Leadership style"
+			}
+		]
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "60ea94d3d5efdc75988d0a02",
+	"startTime": {
+		"$date": "2022-10-10T15:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2022-10-06T08:53:45.901Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "635786e2b42b1d68dd4b2dba"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6ab"
+		},
+		"name": "Other",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FOther%20Advice.jpg?alt=media&token=2d6e50ac-dcaf-4363-a93c-f451480d8423",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FGeneral%20Advise.mp4?alt=media&token=38773608-c727-424e-a983-396e3a8d7597",
+		"tagLine": "Self-improvement is the improvement of one's knowledge, status, or character by one's own efforts. It's the quest to make ourselves better in any and every facet of life.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Identify your objectives. If you don't have specific goals in mind yet, think about what you ultimately want to accomplish. Picture yourself a year from now, two years from now, five years from now: What is it you're doing?"
+			},
+			{
+				"name": "Growth in yourself eventually leads you to new opportunities, opportunities that don’t come about until you grow into the person who is ready for them. All you have to do is focus on self-improvement"
+			},
+			{
+				"name": "The most effective way of finding out how to get better is to ask the people around you to make a list of what you’re best at and where you could make improvements. Take the list of improvements and work on them one by one."
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"adviseeId": "63578649b42b1d68dd4b2db7",
+	"startTime": {
+		"$date": "2022-10-31T16:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2022-10-25T06:49:06.605Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "63d3d702b42b1d68dd4c35c8"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6ab"
+		},
+		"name": "Other",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FOther%20Advice.jpg?alt=media&token=2d6e50ac-dcaf-4363-a93c-f451480d8423",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FGeneral%20Advise.mp4?alt=media&token=38773608-c727-424e-a983-396e3a8d7597",
+		"tagLine": "Self-improvement is the improvement of one's knowledge, status, or character by one's own efforts. It's the quest to make ourselves better in any and every facet of life.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Identify your objectives. If you don't have specific goals in mind yet, think about what you ultimately want to accomplish. Picture yourself a year from now, two years from now, five years from now: What is it you're doing?"
+			},
+			{
+				"name": "Growth in yourself eventually leads you to new opportunities, opportunities that don’t come about until you grow into the person who is ready for them. All you have to do is focus on self-improvement"
+			},
+			{
+				"name": "The most effective way of finding out how to get better is to ask the people around you to make a list of what you’re best at and where you could make improvements. Take the list of improvements and work on them one by one."
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"adviseeId": "60ef1592c5a4202d0539948e",
+	"startTime": {
+		"$date": "2023-02-01T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2023-01-27T13:52:02.55Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "641195f5b42b1d68dd4cb933"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b8"
+		},
+		"name": "How to Write a Stellar CV",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FCV%20Photo.jpeg?alt=media&token=6d25d34e-bcd2-4ff0-8fb6-1eb1f6b7fe30",
+		"videoURL": "",
+		"tagLine": "The only way to do great work is to love what you do.",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Make Sure It’s Well Structured. Use Power Words that Knock them Out."
+			},
+			{
+				"name": "Make It Evidenced Based.Use PAR - Problem Action Result - Approach in Describing your Experiences. "
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d3d5efdc75988d0a02",
+	"adviseeId": "60ef159ac5a4202d05399572",
+	"startTime": {
+		"$date": "2023-03-20T15:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2023-03-15T09:55:01.798Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "64199e38b42b1d68dd4cca54"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b9"
+		},
+		"name": "How to Ace the Interview",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FC-Suite%20Interview1.jpeg?alt=media&token=bfd10dfb-ef60-4386-8d2e-9849c4c803bd",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAce%20the%20Interview1.mp4?alt=media&token=9282162e-424d-4d4a-ae47-486a3b07fbfe",
+		"tagLine": "\"Promoting your personal leadership style and brand while addressing industry knowledge, skill, insight, and experience.\"",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Know your leadership style and be ready to give examples.Break the ice.Tell your story."
+			},
+			{
+				"name": "Prepare and rehearse your answers to the tough questions.Demonstrate your industry and company-specific knowledge."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Industry knowledge"
+			},
+			{
+				"name": "Areas of development"
+			},
+			{
+				"name": "Strengths"
+			},
+			{
+				"name": "Leadership style"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a17",
+	"adviseeId": "6419981cb42b1d68dd4cca46",
+	"startTime": {
+		"$date": "2023-03-24T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2023-03-21T12:08:24.972Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "643ae257b42b1d68dd4d10f2"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "643ae109b42b1d68dd4d10ee",
+	"startTime": {
+		"$date": "2023-05-05T06:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2023-04-15T17:43:51.19Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "64a7e267b42b1d68dd5182b0"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "64a7284cb42b1d68dd518121",
+	"startTime": {
+		"$date": "2023-07-10T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2023-07-07T10:01:11.974Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "64a7e280b42b1d68dd5182b2"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "64a7284cb42b1d68dd518121",
+	"startTime": {
+		"$date": "2023-07-10T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2023-07-07T10:01:36.063Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "64a7e364b42b1d68dd5182b6"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "64a7284cb42b1d68dd518121",
+	"startTime": {
+		"$date": "2023-07-10T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2023-07-07T10:05:24.314Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "65152b86b42b1d68dd52679c"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "65152968b42b1d68dd526795",
+	"startTime": {
+		"$date": "2023-10-03T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2023-09-28T07:30:14.22Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6538aed580d7ad2280574be8"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/5a17e464d3074129925e33eeef59c53e.jpeg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a11",
+	"adviseeId": "64a7284cb42b1d68dd518121",
+	"startTime": {
+		"$date": "2023-10-26T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2023-10-25T05:59:49.787Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "655ae131e4e70a21cda09148"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "655ae075e4e70a21cda09146",
+	"startTime": {
+		"$date": "2023-11-27T07:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "CONFIRMED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "SENT",
+	"fifteenMinutesReminderStatus": "SENT",
+	"created": {
+		"$date": "2023-11-20T04:31:45.054Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "PAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "658d6dd6e4e70a21cda0fcea"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "614504793c17b867aaabbdb3"
+		},
+		"name": "How to Find a Job",
+		"imgUrl": "https://myprosper-email-assets.s3-eu-west-1.amazonaws.com/e677acca7da54cfd9c5a3a5e2ed39814.jpeg",
+		"videoURL": "",
+		"tagLine": "“I never dreamed about success. I worked for it.” — Estee Lauder",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Know your career goals. "
+			},
+			{
+				"name": "Plan ahead. "
+			},
+			{
+				"name": "Use all job search resources.  Research companies. "
+			},
+			{
+				"name": "Get resume and cover letter help. Customize your resume."
+			},
+			{
+				"name": "Apply with confidence. "
+			},
+			{
+				"name": "Schedule informational interview"
+			}
+		],
+		"focusAreas": []
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"adviseeId": "658d6a13e4e70a21cda0fce1",
+	"startTime": {
+		"$date": "2024-01-05T10:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2023-12-28T12:45:10.799Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6638b55defdc3561e1a6da4b"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6c0"
+		},
+		"name": "Creating My Ability to Adapt to Change",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FAgility.jpeg?alt=media&token=f3cb3b43-ca18-4e07-a9a3-1e7d059b7f30",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAgility%20and%20Adaptability.mp4?alt=media&token=fbbbf0e4-948c-4d3a-98f0-84a72158100d",
+		"tagLine": "Are you a Disruptor? Position yourself to succeed in the ever-changing corporate world. ",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Capitalize on changing market trends"
+			},
+			{
+				"name": "Become adaptable - Today's premium skill "
+			},
+			{
+				"name": "Step up your ability to respond swiftly to an ever-changing world"
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Build your muscle to assess shifts in the market, re-imagine the new normal and adapt quickly"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"adviseeId": "6638b4f0efdc3561e1a6da4a",
+	"startTime": {
+		"$date": "2024-05-10T09:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2024-05-06T10:47:57.268Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6638b571efdc3561e1a6da4e"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6c0"
+		},
+		"name": "Creating My Ability to Adapt to Change",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FAgility.jpeg?alt=media&token=f3cb3b43-ca18-4e07-a9a3-1e7d059b7f30",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAgility%20and%20Adaptability.mp4?alt=media&token=fbbbf0e4-948c-4d3a-98f0-84a72158100d",
+		"tagLine": "Are you a Disruptor? Position yourself to succeed in the ever-changing corporate world. ",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Capitalize on changing market trends"
+			},
+			{
+				"name": "Become adaptable - Today's premium skill "
+			},
+			{
+				"name": "Step up your ability to respond swiftly to an ever-changing world"
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Build your muscle to assess shifts in the market, re-imagine the new normal and adapt quickly"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"adviseeId": "6638b4f0efdc3561e1a6da4a",
+	"startTime": {
+		"$date": "2024-05-10T09:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2024-05-06T10:48:17.825Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6638b5a1efdc3561e1a6da50"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6c0"
+		},
+		"name": "Creating My Ability to Adapt to Change",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FAgility.jpeg?alt=media&token=f3cb3b43-ca18-4e07-a9a3-1e7d059b7f30",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAgility%20and%20Adaptability.mp4?alt=media&token=fbbbf0e4-948c-4d3a-98f0-84a72158100d",
+		"tagLine": "Are you a Disruptor? Position yourself to succeed in the ever-changing corporate world. ",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Capitalize on changing market trends"
+			},
+			{
+				"name": "Become adaptable - Today's premium skill "
+			},
+			{
+				"name": "Step up your ability to respond swiftly to an ever-changing world"
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Build your muscle to assess shifts in the market, re-imagine the new normal and adapt quickly"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"adviseeId": "6638b4f0efdc3561e1a6da4a",
+	"startTime": {
+		"$date": "2024-05-10T09:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2024-05-06T10:49:05.18Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6703b13c8e8cbe2ae6fb1b23"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6c0"
+		},
+		"name": "Creating My Ability to Adapt to Change",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FAgility.jpeg?alt=media&token=f3cb3b43-ca18-4e07-a9a3-1e7d059b7f30",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAgility%20and%20Adaptability.mp4?alt=media&token=fbbbf0e4-948c-4d3a-98f0-84a72158100d",
+		"tagLine": "Are you a Disruptor? Position yourself to succeed in the ever-changing corporate world. ",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Capitalize on changing market trends"
+			},
+			{
+				"name": "Become adaptable - Today's premium skill "
+			},
+			{
+				"name": "Step up your ability to respond swiftly to an ever-changing world"
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Build your muscle to assess shifts in the market, re-imagine the new normal and adapt quickly"
+			}
+		]
+	},
+	"advisorId": "60ea94d4d5efdc75988d0a21",
+	"adviseeId": "6703aec48e8cbe2ae6fb1b1c",
+	"startTime": {
+		"$date": "2024-10-25T09:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "GROUP",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2024-10-07T10:00:28.854Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"groupSessionAttendees": [
+		{
+			"amount": 1250,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254795492114"
+		},
+		{
+			"amount": 1250,
+			"invitationStatus": "PENDING",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254750800223"
+		},
+		{
+			"amount": 1250,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254726986042",
+			"adviseeId": "6703bd2e8e8cbe2ae6fb1b3c"
+		},
+		{
+			"amount": 1250,
+			"invitationStatus": "ACCEPTED",
+			"paymentStatus": "PENDING",
+			"phoneNumber": "+254743223140",
+			"adviseeId": "6703aec48e8cbe2ae6fb1b1c"
+		}
+	],
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "670fa9f28e8cbe2ae6fb3482"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "/opt/uploads/e4eadce26e94487eb4c23dd3d9ad98f8.jpg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "670fa98f8e8cbe2ae6fb3480",
+	"startTime": {
+		"$date": "2024-10-21T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2024-10-16T11:56:34.61Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "670faa078e8cbe2ae6fb3484"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "/opt/uploads/e4eadce26e94487eb4c23dd3d9ad98f8.jpg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "670fa98f8e8cbe2ae6fb3480",
+	"startTime": {
+		"$date": "2024-10-21T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2024-10-16T11:56:55.956Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "670faa1b8e8cbe2ae6fb3486"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2aa5a9f8402c1cf6a6"
+		},
+		"name": "How to Build My Personal Brand",
+		"imgUrl": "/opt/uploads/e4eadce26e94487eb4c23dd3d9ad98f8.jpg",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FPersonal%20Branding%20final.mp4?alt=media&token=7594f361-f096-4e11-8318-c97c1bd83f89",
+		"tagLine": "“Clearly unleashing your superpower to the world.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Differentiate yourself from others.  Your superpower.Who you are, what you do, why you do it, how you do it."
+			},
+			{
+				"name": "Showcase your brand, building presence and visibility.Stand out from the crowd with clarity and consistency."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Personal Strengths"
+			},
+			{
+				"name": "Expertise"
+			},
+			{
+				"name": "Appearance"
+			}
+		]
+	},
+	"advisorId": "60ea94d6d5efdc75988d0a3f",
+	"adviseeId": "670fa98f8e8cbe2ae6fb3480",
+	"startTime": {
+		"$date": "2024-10-21T14:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2024-10-16T11:57:15.38Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "68887e9259a1893cf82a36d8"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b9"
+		},
+		"name": "How to Ace the Interview",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FC-Suite%20Interview1.jpeg?alt=media&token=bfd10dfb-ef60-4386-8d2e-9849c4c803bd",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FAce%20the%20Interview1.mp4?alt=media&token=9282162e-424d-4d4a-ae47-486a3b07fbfe",
+		"tagLine": "\"Promoting your personal leadership style and brand while addressing industry knowledge, skill, insight, and experience.\"",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Know your leadership style and be ready to give examples.Break the ice.Tell your story."
+			},
+			{
+				"name": "Prepare and rehearse your answers to the tough questions.Demonstrate your industry and company-specific knowledge."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Industry knowledge"
+			},
+			{
+				"name": "Areas of development"
+			},
+			{
+				"name": "Strengths"
+			},
+			{
+				"name": "Leadership style"
+			}
+		]
+	},
+	"advisorId": "60ea94d2d5efdc75988d09f5",
+	"adviseeId": "68887e3e59a1893cf82a36d6",
+	"startTime": {
+		"$date": "2025-08-12T12:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2025-07-29T07:56:02.049Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+},
+{
+	"_id": {
+		"$oid": "6891eba759a1893cf82a4a96"
+	},
+	"topic": {
+		"_id": {
+			"$oid": "60e26c2ba5a9f8402c1cf6b7"
+		},
+		"name": "How to Advance My Career",
+		"imgUrl": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/topics%2FProfessional%20Growth%20copy.jpg?alt=media&token=6db53671-51be-40ad-ad6d-ae8c1dae5294",
+		"videoURL": "https://firebasestorage.googleapis.com/v0/b/prosperappprod.appspot.com/o/videos%2FCareer%20Growth%20final.mp4?alt=media&token=87a0f7bd-3c39-419a-9fee-548ab1447b91",
+		"tagLine": "“Competently climbing your professional ladder in corporate or business.”",
+		"topicStatus": "LIVE",
+		"topicTips": [
+			{
+				"name": "Explore your options. Strive for higher than current position."
+			},
+			{
+				"name": "Create your future.Set goals to get you where you want to be."
+			}
+		],
+		"focusAreas": [
+			{
+				"name": "Promotion."
+			},
+			{
+				"name": "Grow my business."
+			}
+		]
+	},
+	"advisorId": "60ea94d3d5efdc75988d09fe",
+	"adviseeId": "6891ea9f59a1893cf82a4a93",
+	"startTime": {
+		"$date": "2025-08-11T06:00:00Z"
+	},
+	"duration": 1,
+	"sessionType": "INDIVIDUAL",
+	"sessionStatus": "PAST",
+	"bookingStatus": "EXPIRED",
+	"sessionCallStatus": "PENDING",
+	"twentyFourHourReminderStatus": "NOT_SENT",
+	"fifteenMinutesReminderStatus": "NOT_SENT",
+	"created": {
+		"$date": "2025-08-05T11:31:51.553Z"
+	},
+	"amount": 5000.0,
+	"paymentStatus": "UNPAID",
+	"_class": "com.myprosper.app.demo.documents.AdvisorSessions"
+}]
+

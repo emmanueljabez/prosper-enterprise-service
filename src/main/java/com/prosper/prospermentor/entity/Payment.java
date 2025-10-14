@@ -258,6 +258,8 @@ public class Payment {
     public enum PaymentType {
         SESSION_BOOKING,    // Payment for individual session
         SUBSCRIPTION,       // Payment for subscription
+        UPGRADE,           // Payment for subscription upgrade (prorated)
+        ADDON,             // Payment for subscription add-ons (e.g., extra sessions)
         TOP_UP,            // Account top-up
         REFUND             // Refund payment
     }

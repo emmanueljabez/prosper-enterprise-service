@@ -81,16 +81,14 @@ public class SecurityConfig {
                 
                 // Demo endpoints (public endpoint only)
                 .requestMatchers("/api/demo/public").permitAll()
-                
                 // Test endpoints (public for debugging)
                 .requestMatchers("/api/test/**").permitAll()
-                
                 // Session booking endpoints (for testing)
                 .requestMatchers("/api/v1/sessions/**").permitAll()
-                
                 // Calendar endpoints (for testing)
                 .requestMatchers("/api/calendar/**").permitAll()
-                
+                 .requestMatchers("/api/v1/payments/confirmc2b").permitAll()
+                 .requestMatchers("/api/v1/payments/status/**").permitAll()
                 // Public mentor endpoints (to browse mentors)
                 .requestMatchers( "/api/v1/profiles/mentors/**").permitAll()
 

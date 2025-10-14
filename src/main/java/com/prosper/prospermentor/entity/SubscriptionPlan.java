@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +11,8 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -95,9 +98,42 @@ public class SubscriptionPlan {
 
     /**
      * Additional features or benefits (JSON or comma-separated)
+     * @deprecated Use planFeatures relationship instead for structured feature management
      */
     @Column(name = "features", columnDefinition = "TEXT")
     private String features;
+
+    /**
+     * Billing type for this plan
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_type", nullable = false, length = 20)
+    private BillingType billingType = BillingType.RECURRING;
+
+    /**
+     * Yearly cost (for annual billing option)
+     */
+    @Column(name = "yearly_cost", precision = 10, scale = 2)
+    private BigDecimal yearlyCost;
+
+    /**
+     * Whether this plan allows purchasing add-ons (like extra sessions)
+     */
+    @Column(name = "allows_addons", nullable = false)
+    private Boolean allowsAddons = false;
+
+    /**
+     * Cost per add-on session (if applicable)
+     */
+    @Column(name = "addon_session_cost", precision = 10, scale = 2)
+    private BigDecimal addonSessionCost;
+
+    /**
+     * Plan features - structured relationship with features
+     */
+    @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    @JsonManagedReference
+    private List<PlanFeature> planFeatures = new ArrayList<>();
 
     /**
      * Audit fields
@@ -143,5 +179,62 @@ public class SubscriptionPlan {
             return "Free";
         }
         return String.format("%s %s", currency, cost);
+    }
+
+    /**
+     * Check if plan has a specific feature
+     */
+    public boolean hasFeature(String featureCode) {
+        return planFeatures.stream()
+            .anyMatch(pf -> pf.getFeature().getCode().equals(featureCode)
+                         && pf.getEnabled()
+                         && pf.isAvailable());
+    }
+
+    /**
+     * Get the limit for a specific feature
+     * Returns 0 if feature not found, -1 if unlimited, or the specific limit
+     */
+    public Integer getFeatureLimit(String featureCode) {
+        return planFeatures.stream()
+            .filter(pf -> pf.getFeature().getCode().equals(featureCode) && pf.getEnabled())
+            .map(PlanFeature::getLimitValue)
+            .findFirst()
+            .orElse(0);
+    }
+
+    /**
+     * Get a specific feature configuration
+     */
+    public PlanFeature getPlanFeature(String featureCode) {
+        return planFeatures.stream()
+            .filter(pf -> pf.getFeature().getCode().equals(featureCode))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * Add a feature to this plan
+     */
+    public void addFeature(PlanFeature planFeature) {
+        planFeatures.add(planFeature);
+        planFeature.setPlan(this);
+    }
+
+    /**
+     * Remove a feature from this plan
+     */
+    public void removeFeature(PlanFeature planFeature) {
+        planFeatures.remove(planFeature);
+        planFeature.setPlan(null);
+    }
+
+    /**
+     * Billing type enumeration
+     */
+    public enum BillingType {
+        RECURRING,    // Monthly/yearly recurring subscription
+        ONE_TIME,     // One-time payment (like Summit access)
+        FREE          // Free tier (no billing)
     }
 }

@@ -1,6 +1,6 @@
 package com.prosper.prospermentor.service;
 
-import com.prosper.prospermentor.controller.dto.SessionDtos.CreateSessionRequestDto;
+import com.prosper.prospermentor.dto.CreateSessionRequestDto;
 import com.prosper.prospermentor.entity.*;
 import com.prosper.prospermentor.repository.*;
 import com.prosper.prospermentor.service.meeting.MeetingDetails;
@@ -66,7 +66,7 @@ public class SessionBookingService {
                 request.getMenteeId(), request.getMentorId());
 
         // Check subscription limits
-        UUID menteeId = request.getMenteeId();
+        UUID menteeId = UUID.fromString(request.getMenteeId());
         boolean canBook = subscriptionService.canBookSession(menteeId);
 
         if (!canBook) {
@@ -78,10 +78,10 @@ public class SessionBookingService {
         //validateSessionRequest(request);
 
         // Get entities
-        Profile mentor = profileRepository.findById(request.getMentorId())
+        Profile mentor = profileRepository.findById(UUID.fromString(request.getMentorId()))
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
-        Profile mentee = profileRepository.findById(request.getMenteeId())
+        Profile mentee = profileRepository.findById(UUID.fromString(request.getMenteeId()))
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         // Validate roles
@@ -93,7 +93,7 @@ public class SessionBookingService {
             throw new IllegalArgumentException("User is not a mentee");
         }
 
-        Skill skill = skillRepository.findById(request.getSkillId())
+        Skill skill = skillRepository.findById(UUID.fromString(request.getSkillId()))
                 .orElseThrow(() -> new IllegalArgumentException("Skill not found"));
         
         // Check mentor availability
@@ -101,9 +101,9 @@ public class SessionBookingService {
         
         // Create session
         Session session = new Session();
-        session.setMentorId(request.getMentorId());
-        session.setMenteeId(request.getMenteeId());
-        session.setSkillId(request.getSkillId());
+        session.setMentorId(UUID.fromString((request.getMentorId())));
+        session.setMenteeId(UUID.fromString(request.getMenteeId()));
+        session.setSkillId(UUID.fromString(request.getSkillId()));
         session.setTitle( skill.getName());
         session.setDescription("Session requested by mentee");
         session.setScheduledStart(request.getScheduledStart());
@@ -111,7 +111,7 @@ public class SessionBookingService {
         session.setMeetingPlatform(request.getMeetingPlatform());
         session.setMenteeMessage(request.getMenteeMessage());
         // Get mentor profile for hourly rate (since it's not in base Profile entity)
-        MentorProfile mentorProfile = mentorProfileRepository.findById(request.getMentorId())
+        MentorProfile mentorProfile = mentorProfileRepository.findById(UUID.fromString(request.getMentorId()))
                 .orElse(null);
         session.setPrice(mentorProfile != null ? mentorProfile.getHourlyRate() : null);
         session.setCurrency("KES");

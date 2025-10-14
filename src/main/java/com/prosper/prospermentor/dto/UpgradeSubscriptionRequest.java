@@ -20,4 +20,7 @@ public class UpgradeSubscriptionRequest {
 
     @NotNull(message = "New plan ID is required")
     private UUID newPlanId;
+
+    @NotNull(message = "Phone number is required for payment")
+    private String phoneNumber;
 }

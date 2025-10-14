@@ -147,22 +147,22 @@ public class AuthController {
     public ResponseEntity<Object> updateProfile(
             Authentication authentication,
             @RequestBody Map<String, Object> updates) {
-        
+
         if (authentication != null) {
             try {
                 String userId = null;
-                
+
                 // Handle both UserDetails and legacy SupabaseUserPrincipal
                 if (authentication.getPrincipal() instanceof SupabaseUserDetails userDetails) {
                     userId = userDetails.getUserId();
                 } else if (authentication.getPrincipal() instanceof SupabaseUserPrincipal principal) {
                     userId = principal.getUserId();
                 }
-                
+
                 if (userId != null) {
                     UUID userUuid = UUID.fromString(userId);
                     var updatedProfile = profileService.updateProfile(userUuid, updates);
-                    
+
                     if (updatedProfile.isPresent()) {
                         return ResponseEntity.ok(updatedProfile.get());
                     } else {
@@ -179,9 +179,35 @@ public class AuthController {
                         .body(Map.of("error", "Failed to update profile: " + e.getMessage()));
             }
         }
-        
+
         return ResponseEntity.status(401)
                 .body(Map.of("error", "Authentication required"));
+    }
+
+    /**
+     * Get user profile by userId (for viewing other users' profiles)
+     * This endpoint allows fetching any user's basic profile by their userId
+     */
+    @GetMapping("/profile/{userId}")
+    public ResponseEntity<Object> getProfileByUserId(@PathVariable String userId) {
+        try {
+            UUID userUuid = UUID.fromString(userId);
+            var profile = profileService.getBasicProfile(userUuid);
+
+            if (profile.isPresent()) {
+                return ResponseEntity.ok(profile.get());
+            } else {
+                return ResponseEntity.status(404)
+                        .body(Map.of("error", "Profile not found"));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Invalid user ID format"));
+        } catch (Exception e) {
+            log.error("Error fetching profile by userId: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to fetch profile"));
+        }
     }
 
     /**

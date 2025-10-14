@@ -50,33 +50,7 @@ public class SessionDtos {
         private String avatarUrl;
         private Boolean isAvailable;
     }
-    
-    /**
-     * Request DTO for creating a session
-     */
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CreateSessionRequestDto {
-        
-        @NotNull(message = "Mentor ID is required")
-        private UUID mentorId;
-        
-        @NotNull(message = "Mentee ID is required")
-        private UUID menteeId;
-        
-        @NotNull(message = "Skill ID is required")
-        private UUID skillId;
-        
-        @NotNull(message = "Scheduled start time is required")
-        private ZonedDateTime scheduledStart;
-        
-        @NotNull(message = "Meeting platform is required")
-        private Session.MeetingPlatform meetingPlatform;
-        
-        private String menteeMessage;
-    }
+
     
     /**
      * Request DTO for confirming a session
@@ -128,6 +102,7 @@ public class SessionDtos {
         private BigDecimal price;
         private String currency;
         private Session.PaymentStatus paymentStatus;
+        private Boolean paymentRequired;
         private String menteeMessage;
         private String mentorResponse;
         private String calendarEventId;
@@ -207,5 +182,18 @@ public class SessionDtos {
         private ZonedDateTime startDate;
         private ZonedDateTime endDate;
         private int sessionDurationMinutes;
+    }
+
+    /**
+     * DTO for session booking error with payment requirement
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SessionBookingErrorDto {
+        private String message;
+        private Boolean paymentRequired;
+        private Integer remainingSessions;
     }
 }

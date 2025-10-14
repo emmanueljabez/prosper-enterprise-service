@@ -1,9 +1,7 @@
 package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.dto.*;
-import com.prosper.prospermentor.entity.Payment;
-import com.prosper.prospermentor.entity.Subscription;
-import com.prosper.prospermentor.entity.SubscriptionPlan;
+import com.prosper.prospermentor.entity.*;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.repository.SubscriptionPlanRepository;
 import com.prosper.prospermentor.repository.SubscriptionRepository;
@@ -12,9 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service for managing user subscriptions
@@ -27,13 +28,19 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final MpesaService mpesaService;
+    private final com.prosper.prospermentor.repository.SubscriptionAddonRepository addonRepository;
+    private final com.prosper.prospermentor.repository.FeatureRepository featureRepository;
 
     public SubscriptionService(SubscriptionRepository subscriptionRepository,
                                SubscriptionPlanRepository subscriptionPlanRepository,
-                               MpesaService mpesaService) {
+                               MpesaService mpesaService,
+                               com.prosper.prospermentor.repository.SubscriptionAddonRepository addonRepository,
+                               com.prosper.prospermentor.repository.FeatureRepository featureRepository) {
         this.subscriptionRepository = subscriptionRepository;
         this.subscriptionPlanRepository = subscriptionPlanRepository;
         this.mpesaService = mpesaService;
+        this.addonRepository = addonRepository;
+        this.featureRepository = featureRepository;
     }
 
     /**
@@ -45,7 +52,7 @@ public class SubscriptionService {
     }
 
     /**
-     * Check if user can book a session (has available sessions in subscription)
+     * Check if user can book a session (has available sessions in subscription or add-ons)
      */
     @Transactional(readOnly = true)
     public boolean canBookSession(UUID userId) {
@@ -63,15 +70,24 @@ public class SubscriptionService {
             return true;
         }
 
-        // Check if user has available sessions
+        // Check if user has available sessions in subscription
         boolean hasAvailable = subscription.hasAvailableSessions();
 
-        if (!hasAvailable) {
-            log.info("User {} has exhausted their subscription sessions ({}/{})",
-                    userId, subscription.getSessionsUsed(), subscription.getSessionsPerMonth());
+        if (hasAvailable) {
+            return true;
         }
 
-        return hasAvailable;
+        // Check if user has add-on sessions available
+        int addonSessions = getAddonSessionsRemaining(subscription.getId());
+        if (addonSessions > 0) {
+            log.info("User {} has {} add-on sessions remaining", userId, addonSessions);
+            return true;
+        }
+
+        log.info("User {} has exhausted their subscription sessions ({}/{}) and no add-ons",
+                userId, subscription.getSessionsUsed(), subscription.getSessionsPerMonth());
+
+        return false;
     }
 
     /**
@@ -314,9 +330,9 @@ public class SubscriptionService {
     }
 
     /**
-     * Upgrade user's subscription
+     * Upgrade user's subscription with proration
      */
-    public ApiResponse<Subscription> upgradeSubscription(UpgradeSubscriptionRequest request) {
+    public ApiResponse<SubscriptionUpgradeResponse> upgradeSubscription(UpgradeSubscriptionRequest request) {
         log.info("Upgrading subscription for user {} to plan {}", request.getUserId(), request.getNewPlanId());
 
         Optional<Subscription> subscriptionOpt = getActiveSubscription(request.getUserId());
@@ -336,12 +352,139 @@ public class SubscriptionService {
         }
 
         Subscription subscription = subscriptionOpt.get();
+        SubscriptionPlan currentPlan = subscription.getPlan();
 
         // Check if new plan is actually an upgrade (higher cost)
-        if (subscription.getPlan() != null &&
-            newPlan.getCost().compareTo(subscription.getPlan().getCost()) <= 0) {
+        if (currentPlan != null && newPlan.getCost().compareTo(currentPlan.getCost()) <= 0) {
             return ApiResponse.error("Cannot upgrade to same or lower plan");
         }
+
+        // Validate phone number
+        if (request.getPhoneNumber() == null || request.getPhoneNumber().isEmpty()) {
+            return ApiResponse.error("Phone number is required for upgrade payment");
+        }
+
+        // Calculate prorated amount
+        java.math.BigDecimal proratedAmount = calculateProratedUpgradeAmount(subscription, currentPlan, newPlan);
+
+        log.info("Calculated prorated amount for upgrade: {} {}", proratedAmount, newPlan.getCurrency());
+
+        // If prorated amount is zero or negative (shouldn't happen due to upgrade check), handle gracefully
+        if (proratedAmount.compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            return ApiResponse.error("Invalid prorated amount calculated. Please contact support.");
+        }
+
+        try {
+            // Initiate payment for prorated amount
+            Payment payment = mpesaService.initiateSTKPush(
+                request.getUserId(),
+                null, // sessionId - not applicable
+                subscription.getId(),
+                Payment.PaymentType.UPGRADE,
+                proratedAmount,
+                request.getPhoneNumber(),
+                String.format("Upgrade to %s plan (prorated)", newPlan.getName())
+            );
+
+            log.info("Payment initiated for subscription upgrade {} with payment ID {}",
+                subscription.getId(), payment.getId());
+
+            // Store the target plan ID in payment metadata for callback processing
+            payment.setMetadata(String.format("{\"targetPlanId\":\"%s\"}", newPlan.getId().toString()));
+
+            // Mark subscription as pending upgrade (we'll update it upon payment confirmation)
+            // For now, we'll keep the subscription as is and let the payment callback handle the upgrade
+
+            SubscriptionUpgradeResponse response = new SubscriptionUpgradeResponse();
+            response.setSubscription(subscription);
+            response.setPayment(payment);
+            response.setProratedAmount(proratedAmount);
+            response.setNewPlan(newPlan);
+            response.setMessage("Payment initiated. Subscription will be upgraded after payment confirmation.");
+
+            return ApiResponse.success("Payment initiated for upgrade. Please complete payment on your phone.", response);
+
+        } catch (Exception e) {
+            log.error("Failed to initiate payment for subscription upgrade {}: {}",
+                subscription.getId(), e.getMessage(), e);
+
+            return ApiResponse.error("Failed to initiate payment: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Calculate prorated upgrade amount
+     * Formula: (Days remaining / Total days in period) * Current plan cost + New plan cost - Current plan cost
+     * Simplified: New plan cost - (Days used / Total days) * Current plan cost
+     */
+    private java.math.BigDecimal calculateProratedUpgradeAmount(
+            Subscription subscription,
+            SubscriptionPlan currentPlan,
+            SubscriptionPlan newPlan) {
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime periodStart = subscription.getCurrentPeriodStart();
+        LocalDateTime periodEnd = subscription.getCurrentPeriodEnd();
+
+        // Calculate total days in current period
+        long totalDays = java.time.temporal.ChronoUnit.DAYS.between(periodStart, periodEnd);
+
+        // Calculate days remaining in current period
+        long daysRemaining = java.time.temporal.ChronoUnit.DAYS.between(now, periodEnd);
+
+        // Ensure we don't have negative values
+        if (daysRemaining < 0) daysRemaining = 0;
+        if (totalDays <= 0) totalDays = 1; // Prevent division by zero
+
+        // Calculate unused portion of current plan
+        java.math.BigDecimal unusedRatio = java.math.BigDecimal.valueOf(daysRemaining)
+            .divide(java.math.BigDecimal.valueOf(totalDays), 4, java.math.RoundingMode.HALF_UP);
+
+        java.math.BigDecimal unusedCurrentPlanValue = currentPlan.getCost()
+            .multiply(unusedRatio);
+
+        // Prorated amount = (New plan cost for remaining period) - (Unused current plan value)
+        // Since we're upgrading for the remaining period, we charge:
+        // New plan cost * (days remaining / total days) - unused current plan value
+        // But to keep it simple and fair, we can just charge the difference for the remaining period
+
+        java.math.BigDecimal newPlanProratedCost = newPlan.getCost()
+            .multiply(unusedRatio);
+
+        java.math.BigDecimal proratedAmount = newPlanProratedCost.subtract(unusedCurrentPlanValue);
+
+        // Ensure the amount is positive
+        if (proratedAmount.compareTo(java.math.BigDecimal.ZERO) < 0) {
+            proratedAmount = java.math.BigDecimal.ZERO;
+        }
+
+        log.info("Proration calculation: totalDays={}, daysRemaining={}, unusedRatio={}, " +
+                 "currentPlanCost={}, newPlanCost={}, unusedCurrentValue={}, proratedAmount={}",
+                 totalDays, daysRemaining, unusedRatio,
+                 currentPlan.getCost(), newPlan.getCost(), unusedCurrentPlanValue, proratedAmount);
+
+        return proratedAmount.setScale(2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Complete subscription upgrade after payment confirmation
+     * This should be called from the payment callback handler
+     */
+    public ApiResponse<Subscription> completeSubscriptionUpgrade(UUID subscriptionId, UUID newPlanId) {
+        log.info("Completing subscription upgrade for subscription {} to plan {}", subscriptionId, newPlanId);
+
+        Optional<Subscription> subscriptionOpt = subscriptionRepository.findById(subscriptionId);
+        if (subscriptionOpt.isEmpty()) {
+            return ApiResponse.error("Subscription not found");
+        }
+
+        Optional<SubscriptionPlan> newPlanOpt = subscriptionPlanRepository.findById(newPlanId);
+        if (newPlanOpt.isEmpty()) {
+            return ApiResponse.error("New subscription plan not found");
+        }
+
+        Subscription subscription = subscriptionOpt.get();
+        SubscriptionPlan newPlan = newPlanOpt.get();
 
         subscription.setPlan(newPlan);
         subscription.setSessionsPerMonth(newPlan.getSessionsPerPeriod());
@@ -352,8 +495,7 @@ public class SubscriptionService {
 
         subscription = subscriptionRepository.save(subscription);
 
-        log.info("Upgraded subscription {} for user {} to plan {}",
-                subscription.getId(), request.getUserId(), newPlan.getName());
+        log.info("Completed upgrade for subscription {} to plan {}", subscriptionId, newPlan.getName());
 
         return ApiResponse.success("Subscription upgraded successfully", subscription);
     }
@@ -659,5 +801,248 @@ public class SubscriptionService {
         log.info("Toggled subscription plan {} to {}", planId, savedPlan.getIsActive() ? "active" : "inactive");
 
         return ApiResponse.success("Subscription plan status updated successfully", savedPlan);
+    }
+
+    // ========== FEATURE-BASED ACCESS METHODS ==========
+
+    /**
+     * Check if user can access a specific feature
+     */
+    @Transactional(readOnly = true)
+    public boolean canAccessFeature(UUID userId, String featureCode) {
+        Optional<Subscription> subscriptionOpt = getActiveSubscription(userId);
+
+        if (subscriptionOpt.isEmpty()) {
+            log.debug("User {} has no active subscription for feature {}", userId, featureCode);
+            return false;
+        }
+
+        Subscription subscription = subscriptionOpt.get();
+        SubscriptionPlan plan = subscription.getPlan();
+
+        if (plan == null) {
+            return false;
+        }
+
+        boolean hasAccess = plan.hasFeature(featureCode);
+        log.debug("User {} {} access to feature {}", userId, hasAccess ? "has" : "does not have", featureCode);
+
+        return hasAccess;
+    }
+
+    /**
+     * Get all features available to a user with their limits
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUserFeatures(UUID userId) {
+        Optional<Subscription> subscriptionOpt = getActiveSubscription(userId);
+
+        if (subscriptionOpt.isEmpty()) {
+            return Map.of(
+                "tier", "none",
+                "features", List.of(),
+                "sessionsRemaining", 0,
+                "addonSessions", 0
+            );
+        }
+
+        Subscription subscription = subscriptionOpt.get();
+        SubscriptionPlan plan = subscription.getPlan();
+
+        List<Map<String, Object>> features = plan.getPlanFeatures().stream()
+            .filter(PlanFeature::getEnabled)
+            .filter(PlanFeature::isAvailable)
+            .map(pf -> {
+                Map<String, Object> featureMap = new HashMap<>();
+                featureMap.put("code", pf.getFeature().getCode());
+                featureMap.put("name", pf.getFeature().getName());
+                featureMap.put("description", pf.getFeature().getDescription());
+                featureMap.put("type", pf.getFeature().getType().toString());
+                featureMap.put("limit", pf.getLimitValue());
+                featureMap.put("unlimited", pf.isUnlimited());
+                return featureMap;
+            })
+            .collect(Collectors.toList());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("tier", plan.getName());
+        result.put("planCode", plan.getCode());
+        result.put("features", features);
+        result.put("sessionsRemaining", subscription.getRemainingSessionsCount());
+        result.put("addonSessions", getAddonSessionsRemaining(subscription.getId()));
+        result.put("allowsAddons", plan.getAllowsAddons());
+        result.put("addonSessionCost", plan.getAddonSessionCost());
+
+        return result;
+    }
+
+    /**
+     * Get feature limit for a user
+     */
+    @Transactional(readOnly = true)
+    public Integer getUserFeatureLimit(UUID userId, String featureCode) {
+        Optional<Subscription> subscriptionOpt = getActiveSubscription(userId);
+
+        if (subscriptionOpt.isEmpty()) {
+            return 0;
+        }
+
+        return subscriptionOpt.get().getPlan().getFeatureLimit(featureCode);
+    }
+
+    // ========== ADD-ON MANAGEMENT METHODS ==========
+
+    /**
+     * Get remaining add-on sessions for a subscription
+     */
+    @Transactional(readOnly = true)
+    public int getAddonSessionsRemaining(UUID subscriptionId) {
+        Integer remaining = addonRepository.getTotalRemainingUnits(
+            subscriptionId,
+            "EXTRA_SESSION",
+            LocalDateTime.now()
+        );
+        return remaining != null ? remaining : 0;
+    }
+
+    /**
+     * Purchase add-on sessions
+     */
+    public ApiResponse<SubscriptionAddon> purchaseAddonSessions(String userId, int quantity, String phoneNumber) {
+        log.info("User {} purchasing {} add-on sessions", userId, quantity);
+
+        Optional<Subscription> subscriptionOpt = getActiveSubscription(UUID.fromString(userId));
+        if (subscriptionOpt.isEmpty()) {
+            return ApiResponse.error("No active subscription found");
+        }
+
+        Subscription subscription = subscriptionOpt.get();
+        SubscriptionPlan plan = subscription.getPlan();
+
+        if (!plan.getAllowsAddons()) {
+            return ApiResponse.error("This subscription plan does not allow add-ons");
+        }
+
+        if (plan.getAddonSessionCost() == null) {
+            return ApiResponse.error("Add-on pricing not configured for this plan");
+        }
+
+        if (quantity <= 0 || quantity > 50) {
+            return ApiResponse.error("Invalid quantity. Must be between 1 and 50");
+        }
+
+        java.math.BigDecimal totalCost = plan.getAddonSessionCost().multiply(java.math.BigDecimal.valueOf(quantity));
+
+        // Create addon record
+        SubscriptionAddon addon = new SubscriptionAddon();
+        addon.setSubscription(subscription);
+        addon.setAddonType("EXTRA_SESSION");
+        addon.setAddonName("Extra 1:1 Sessions");
+        addon.setQuantity(quantity);
+        addon.setUsed(0);
+        addon.setTotalCost(totalCost);
+        addon.setCurrency(plan.getCurrency());
+        addon.setStatus(SubscriptionAddon.AddonStatus.ACTIVE);
+        // Set expiry to end of subscription period
+        addon.setExpiresAt(subscription.getCurrentPeriodEnd());
+
+        addon = addonRepository.save(addon);
+
+        try {
+            // Initiate payment via Mpesa
+            Payment payment = mpesaService.initiateSTKPush(
+                UUID.fromString(userId),
+                null,
+                subscription.getId(),
+                Payment.PaymentType.ADDON,
+                totalCost,
+                phoneNumber,
+                String.format("Purchase %d extra sessions", quantity)
+            );
+
+            addon.setPaymentId(payment.getId());
+            addon = addonRepository.save(addon);
+
+            log.info("Created addon {} with payment {}", addon.getId(), payment.getId());
+
+            return ApiResponse.success("Payment initiated for add-on sessions", addon);
+
+        } catch (Exception e) {
+            log.error("Failed to initiate payment for addon: {}", e.getMessage(), e);
+            // Delete the addon since payment failed
+            addonRepository.delete(addon);
+            return ApiResponse.error("Failed to initiate payment: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Consume a session (tries subscription first, then add-ons)
+     */
+    public void consumeSessionSmart(UUID userId) {
+        Optional<Subscription> subscriptionOpt = getActiveSubscription(userId);
+
+        if (subscriptionOpt.isEmpty()) {
+            throw new IllegalStateException("No active subscription found for user: " + userId);
+        }
+
+        Subscription subscription = subscriptionOpt.get();
+
+        // Try to use subscription sessions first
+        if (subscription.hasAvailableSessions()) {
+            subscription.incrementSessionsUsed();
+            subscriptionRepository.save(subscription);
+            log.info("Consumed subscription session for user {}. Sessions used: {}/{}",
+                    userId, subscription.getSessionsUsed(), subscription.getSessionsPerMonth());
+            return;
+        }
+
+        // If no subscription sessions, try add-ons
+        List<SubscriptionAddon> addons = addonRepository.findActiveAddonsWithRemaining(
+            subscription.getId(),
+            LocalDateTime.now()
+        );
+
+        if (addons.isEmpty()) {
+            throw new IllegalStateException("No available sessions (subscription or add-ons) for user: " + userId);
+        }
+
+        // Use the oldest addon first (FIFO)
+        SubscriptionAddon addon = addons.get(0);
+        addon.consumeUnit();
+        addonRepository.save(addon);
+
+        log.info("Consumed add-on session for user {}. Add-on used: {}/{} (addon: {})",
+                userId, addon.getUsed(), addon.getQuantity(), addon.getId());
+    }
+
+    /**
+     * Get user's add-ons
+     */
+    @Transactional(readOnly = true)
+    public List<SubscriptionAddon> getUserAddons(UUID userId) {
+        Optional<Subscription> subscriptionOpt = getActiveSubscription(userId);
+
+        if (subscriptionOpt.isEmpty()) {
+            return List.of();
+        }
+
+        return addonRepository.findBySubscriptionIdOrderByPurchasedAtDesc(subscriptionOpt.get().getId());
+    }
+
+    /**
+     * Process expired add-ons (scheduled job)
+     */
+    public void processExpiredAddons() {
+        log.info("Processing expired add-ons");
+
+        List<SubscriptionAddon> expiredAddons = addonRepository.findExpiredAddons(LocalDateTime.now());
+
+        for (SubscriptionAddon addon : expiredAddons) {
+            addon.setStatus(SubscriptionAddon.AddonStatus.EXPIRED);
+            addonRepository.save(addon);
+            log.info("Marked addon {} as expired", addon.getId());
+        }
+
+        log.info("Processed {} expired add-ons", expiredAddons.size());
     }
 }

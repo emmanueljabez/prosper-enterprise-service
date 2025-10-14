@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.controller;
 
+import com.prosper.prospermentor.dto.MpesaCallbackDTO;
 import com.prosper.prospermentor.entity.Payment;
 import com.prosper.prospermentor.service.MpesaService;
 import com.prosper.prospermentor.repository.PaymentRepository;
@@ -225,10 +226,11 @@ public class PaymentController {
      * Mpesa callback endpoint
      * This endpoint receives callbacks from Safaricom after payment processing
      */
-    @PostMapping("/mpesa/callback")
+    @PostMapping("/confirmc2b")
     @Operation(summary = "Mpesa callback", description = "Webhook endpoint for Mpesa payment callbacks")
-    public ResponseEntity<Map<String, Object>> mpesaCallback(@RequestBody String callbackData) {
-        log.info("Received Mpesa callback");
+    public ResponseEntity<Map<String, Object>> confirmc2b(@RequestBody MpesaCallbackDTO callbackData) {
+        log.info("Received Mpesa callback - CheckoutRequestID: {}, ResultCode: {}",
+                callbackData.getCheckoutRequestId(), callbackData.getResultCode());
 
         try {
             mpesaService.handleCallback(callbackData);

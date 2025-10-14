@@ -1,0 +1,29 @@
+-- Create mentor_availability table with days and timeslots
+CREATE TABLE IF NOT EXISTS mentor_availability (
+    id BIGSERIAL PRIMARY KEY,
+    mentor_id UUID NOT NULL,
+    day_of_week VARCHAR(10) NOT NULL CHECK (day_of_week IN ('MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY')),
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Ensure end_time is after start_time
+    CONSTRAINT valid_time_range CHECK (end_time > start_time),
+
+    -- Prevent overlapping time slots for the same mentor on the same day
+    CONSTRAINT unique_mentor_day_time UNIQUE (mentor_id, day_of_week, start_time, end_time)
+);
+
+-- Create index for faster queries
+CREATE INDEX idx_mentor_availability_mentor_id ON mentor_availability(mentor_id);
+CREATE INDEX idx_mentor_availability_day ON mentor_availability(day_of_week);
+CREATE INDEX idx_mentor_availability_active ON mentor_availability(is_active);
+
+-- Add comment to table
+COMMENT ON TABLE mentor_availability IS 'Stores mentor availability schedules with days of week and time slots';
+COMMENT ON COLUMN mentor_availability.day_of_week IS 'Day of the week (MONDAY to SUNDAY)';
+COMMENT ON COLUMN mentor_availability.start_time IS 'Start time of availability slot';
+COMMENT ON COLUMN mentor_availability.end_time IS 'End time of availability slot';
+COMMENT ON COLUMN mentor_availability.is_active IS 'Whether this availability slot is currently active';

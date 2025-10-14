@@ -2,6 +2,7 @@ package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.controller.dto.ApiResponse;
 import com.prosper.prospermentor.controller.dto.SessionDtos.*;
+import com.prosper.prospermentor.dto.CreateSessionRequestDto;
 import com.prosper.prospermentor.entity.Session;
 import com.prosper.prospermentor.service.SessionBookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,6 +38,7 @@ public class SessionController {
     }
 
     /**
+     *
      * Book a new mentorship session
      */
     @PostMapping("/book")
@@ -49,7 +51,7 @@ public class SessionController {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Mentor not available at requested time")
     })
     public ResponseEntity<ApiResponse<SessionResponseDto>> bookSession(
-            @Valid @RequestBody CreateSessionRequestDto request) {
+            @RequestBody CreateSessionRequestDto request) {
         
         log.info("Booking session request: mentee {} -> mentor {} for skill {}", 
                 request.getMenteeId(), request.getMentorId(), request.getSkillId());
@@ -71,6 +73,28 @@ public class SessionController {
             log.error("Invalid booking request: {}", e.getMessage());
             ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error(e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
+        } catch (IllegalStateException e) {
+            log.error("Subscription limit reached: {}", e.getMessage());
+
+            // Get the mentee ID to check remaining sessions
+            UUID menteeId = UUID.fromString(request.getMenteeId());
+            int remainingSessions = sessionBookingService.getRemainingSessionsCount(menteeId);
+
+            // Create error details with payment requirement information
+            SessionBookingErrorDto errorData = SessionBookingErrorDto.builder()
+                    .message(e.getMessage())
+                    .paymentRequired(true)
+                    .remainingSessions(remainingSessions)
+                    .build();
+
+            ApiResponse<SessionBookingErrorDto> errorResponse = ApiResponse.<SessionBookingErrorDto>builder()
+                    .status("error")
+                    .message(e.getMessage())
+                    .data(errorData)
+                    .timestamp(java.time.LocalDateTime.now())
+                    .build();
+
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body((ApiResponse<SessionResponseDto>) (ApiResponse<?>) errorResponse);
         } catch (Exception e) {
             log.error("Error booking session: {}", e.getMessage(), e);
             ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error("Failed to create session booking");
@@ -326,6 +350,10 @@ public class SessionController {
      * Convert Session entity to response DTO
      */
     private SessionResponseDto convertToResponseDto(Session session) {
+        // Determine if payment is required for this session
+        // Payment is required if the user cannot book sessions (subscription limit reached)
+        boolean paymentRequired = !sessionBookingService.canUserBookSession(session.getMenteeId());
+
         return SessionResponseDto.builder()
                 .id(session.getId())
                 .mentorId(session.getMentorId())
@@ -342,6 +370,7 @@ public class SessionController {
                 .price(session.getPrice())
                 .currency(session.getCurrency())
                 .paymentStatus(session.getPaymentStatus())
+                .paymentRequired(paymentRequired)
                 .menteeMessage(session.getMenteeMessage())
                 .mentorResponse(session.getMentorResponse())
                 .calendarEventId(session.getCalendarEventId())

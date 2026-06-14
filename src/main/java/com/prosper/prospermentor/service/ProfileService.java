@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.service;
 
+import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.MenteeProfile;
 import com.prosper.prospermentor.entity.MentorProfile;
 import com.prosper.prospermentor.entity.Profile;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +35,101 @@ public class ProfileService {
     private final MentorProfileRepository mentorProfileRepository;
 
     /**
+     * Create a new profile for a user
+     */
+    public Optional<Map<String, Object>> createProfile(UUID userId, String email, String role) {
+        log.info("Creating profile for user: {} with role: {}", email, role);
+
+        try {
+            // Check if profile already exists
+            if (profileRepository.existsById(userId)) {
+                log.warn("Profile already exists for user ID: {}", userId);
+                return getCompleteProfile(userId);
+            }
+
+            // Create new profile
+            Profile profile = new Profile();
+            profile.setId(userId);
+            profile.setEmail(email);
+            profile.setUsername(generateUniqueUsername(email, null, null));
+            profile.setRole(role != null ? role : "mentee");
+            profile.setIsVerified(false);
+
+            // Save profile
+            Profile savedProfile = profileRepository.save(profile);
+            log.info("Profile created successfully for user: {}", email);
+
+            // Return complete profile
+            return getCompleteProfile(savedProfile.getId());
+
+        } catch (Exception e) {
+            log.error("Error creating profile for user {}: {}", email, e.getMessage(), e);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Create a new profile for a user with additional details
+     */
+    public Optional<Map<String, Object>> createProfileWithDetails(
+            UUID userId,
+            String email,
+            String role,
+            String firstName,
+            String lastName,
+            String phoneNumber,
+            String dateOfBirth) {
+        log.info("Creating profile with details for user: {} with role: {}", email, role);
+
+        try {
+            // Check if profile already exists
+            if (profileRepository.existsById(userId)) {
+                log.warn("Profile already exists for user ID: {}", userId);
+                return getCompleteProfile(userId);
+            }
+
+            // Create new profile
+            Profile profile = new Profile();
+            profile.setId(userId);
+            profile.setEmail(email);
+            profile.setUsername(generateUniqueUsername(email, firstName, lastName));
+            profile.setRole(role != null ? role : "mentee");
+            profile.setFirstName(firstName);
+            profile.setLastName(lastName);
+            profile.setPhone(phoneNumber);
+
+            // Parse and set date of birth if provided
+            if (dateOfBirth != null && !dateOfBirth.trim().isEmpty()) {
+                try {
+                    profile.setDob(java.time.LocalDate.parse(dateOfBirth));
+                } catch (Exception e) {
+                    log.warn("Failed to parse date of birth: {}", dateOfBirth);
+                }
+            }
+
+            profile.setIsVerified(false);
+
+            // Save profile
+            Profile savedProfile = profileRepository.save(profile);
+            log.info("Profile with details created successfully for user: {}", email);
+
+            // Return complete profile
+            return getCompleteProfile(savedProfile.getId());
+
+        } catch (Exception e) {
+            log.error("Error creating profile with details for user {}: {}", email, e.getMessage(), e);
+            return Optional.empty();
+        }
+    }
+
+    /**
      * Get complete profile information for a user by their ID
      */
     public Optional<Map<String, Object>> getCompleteProfile(UUID userId) {
         log.debug("Fetching complete profile for user ID: {}", userId);
-        
-        Optional<Profile> profileOpt = profileRepository.findById(userId);
+
+        // Use findByIdWithCompany to eagerly fetch the company relationship
+        Optional<Profile> profileOpt = profileRepository.findByIdWithCompany(userId);
         if (profileOpt.isEmpty()) {
             log.warn("Profile not found for user ID: {}", userId);
             return Optional.empty();
@@ -46,7 +137,7 @@ public class ProfileService {
 
         Profile profile = profileOpt.get();
         Map<String, Object> completeProfile = new HashMap<>();
-        
+
         // Add basic profile information
         completeProfile.put("id", profile.getId());
         completeProfile.put("email", profile.getEmail());
@@ -69,6 +160,11 @@ public class ProfileService {
         completeProfile.put("linkedinUrl", profile.getLinkedinUrl());
         completeProfile.put("favouriteQuote", profile.getFavouriteQuote());
         completeProfile.put("country", profile.getCountry());
+
+        // Add company information if linked
+        if (profile.getCompany() != null) {
+            completeProfile.put("company", createCompanyMap(profile.getCompany()));
+        }
 
         // Add role-specific profile information
         String role = profile.getRole();
@@ -101,6 +197,11 @@ public class ProfileService {
     public Optional<Profile> getBasicProfile(UUID userId) {
         log.debug("Fetching basic profile for user ID: {}", userId);
         return profileRepository.findById(userId);
+    }
+
+    public Optional<Profile> getProfileWithCompany(UUID userId) {
+        log.debug("Fetching profile with company for user ID: {}", userId);
+        return profileRepository.findByIdWithCompany(userId);
     }
 
     /**
@@ -245,6 +346,23 @@ public class ProfileService {
     }
 
     /**
+     * Create a map representation of Company
+     */
+    private Map<String, Object> createCompanyMap(Company company) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", company.getId());
+        map.put("name", company.getName());
+        map.put("emailAddress", company.getEmailAddress());
+        map.put("phoneNumber", company.getPhoneNumber());
+        map.put("logoUrl", company.getLogoUrl());
+        map.put("isActive", company.getIsActive());
+        map.put("registrationCompleted", company.getRegistrationCompleted());
+        map.put("createdAt", company.getCreatedAt());
+        map.put("updatedAt", company.getUpdatedAt());
+        return map;
+    }
+
+    /**
      * Update basic profile information
      */
     public Optional<Profile> updateProfile(UUID userId, Map<String, Object> updates) {
@@ -293,5 +411,78 @@ public class ProfileService {
         Profile savedProfile = profileRepository.save(profile);
         log.debug("Successfully updated profile for user ID: {}", userId);
         return Optional.of(savedProfile);
+    }
+
+    /**
+     * Generate a unique username for a profile.
+     */
+    public String generateUniqueUsername(String email, String firstName, String lastName) {
+        String baseUsername = buildBaseUsername(email, firstName, lastName);
+        String candidate = baseUsername;
+
+        if (!profileRepository.existsByUsername(candidate)) {
+            return candidate;
+        }
+
+        for (int suffix = 2; suffix <= 99; suffix++) {
+            candidate = baseUsername + "_" + suffix;
+            if (!profileRepository.existsByUsername(candidate)) {
+                return candidate;
+            }
+        }
+
+        String uuidSuffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        return baseUsername + "_" + uuidSuffix;
+    }
+
+    private String buildBaseUsername(String email, String firstName, String lastName) {
+        String preferredCandidate = joinNameParts(firstName, lastName);
+        if (preferredCandidate == null || preferredCandidate.isBlank()) {
+            preferredCandidate = extractEmailPrefix(email);
+        }
+
+        String normalized = normalizeUsername(preferredCandidate);
+        if (normalized == null || normalized.isBlank()) {
+            normalized = "user_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        }
+
+        return normalized;
+    }
+
+    private String joinNameParts(String firstName, String lastName) {
+        String first = firstName == null ? "" : firstName.trim();
+        String last = lastName == null ? "" : lastName.trim();
+
+        String combined = (first + "_" + last).replaceAll("^_+|_+$", "");
+        return combined.isBlank() ? null : combined;
+    }
+
+    private String extractEmailPrefix(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return null;
+        }
+
+        String normalizedEmail = email.trim().toLowerCase();
+        int atIndex = normalizedEmail.indexOf('@');
+        return atIndex > 0 ? normalizedEmail.substring(0, atIndex) : normalizedEmail;
+    }
+
+    private String normalizeUsername(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_+|_+$", "");
+
+        if (normalized.length() > 24) {
+            normalized = normalized.substring(0, 24).replaceAll("_+$", "");
+        }
+
+        return normalized;
     }
 }

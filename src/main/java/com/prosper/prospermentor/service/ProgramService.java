@@ -1,10 +1,14 @@
 package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.controller.dto.ProgramDtos;
+import com.prosper.prospermentor.entity.MentorProfile;
+import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.entity.Program;
 import com.prosper.prospermentor.entity.ProgramMentor;
 import com.prosper.prospermentor.repository.ProgramRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +68,49 @@ public class ProgramService {
     }
 
     /**
+     * Get all programs with mentors
+     */
+    @Transactional(readOnly = true)
+    public List<Program> getAllProgramsWithMentors() {
+        log.debug("Fetching all programs with mentors");
+        return programRepository.findAllWithMentors();
+    }
+
+    /**
+     * Get all programs with mentors (paginated)
+     */
+    @Transactional(readOnly = true)
+    public Page<Program> getAllProgramsWithMentorsPaginated(Pageable pageable) {
+        log.debug("Fetching programs with mentors - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        return programRepository.findAllWithMentorsPaginated(pageable);
+    }
+
+    /**
+     * Get all programs with mentors (paginated) with optional search
+     */
+    @Transactional(readOnly = true)
+    public Page<Program> getAllProgramsWithMentorsPaginated(String searchTerm, Pageable pageable) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            log.debug("Fetching all programs with mentors - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+            return programRepository.findAllWithMentorsPaginated(pageable);
+        } else {
+            log.debug("Searching programs by name: '{}' with mentors - page: {}, size: {}", searchTerm, pageable.getPageNumber(), pageable.getPageSize());
+            return programRepository.findByNameContainingIgnoreCaseWithMentorsPaginated(searchTerm.trim(), pageable);
+        }
+    }
+
+    /**
+     * Get all LIVE programs with mentors
+     */
+    @Transactional(readOnly = true)
+    public List<ProgramDtos.ProgramWithMentorsDto> getLiveProgramsWithMentors() {
+        log.debug("Fetching LIVE programs with mentors");
+        return programRepository.findLiveProgramsWithMentors().stream()
+                .map(this::convertToProgramWithMentorsDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Get program by ID with mentors
      */
     @Transactional(readOnly = true)
@@ -75,23 +122,32 @@ public class ProgramService {
     }
 
     /**
+     * Search programs by name with mentors
+     */
+    @Transactional(readOnly = true)
+    public List<ProgramDtos.ProgramWithMentorsDto> searchProgramsByNameWithMentors(String name) {
+        log.debug("Searching programs with name containing: {} (with mentors)", name);
+        return programRepository.findByNameContainingIgnoreCaseWithMentors(name).stream()
+                .map(this::convertToProgramWithMentorsDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get programs by status with mentors
+     */
+    @Transactional(readOnly = true)
+    public List<ProgramDtos.ProgramWithMentorsDto> getProgramsByStatusWithMentors(Program.ProgramStatus status) {
+        log.debug("Fetching programs with status: {} (with mentors)", status);
+        return programRepository.findByStatusWithMentors(status).stream()
+                .map(this::convertToProgramWithMentorsDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Convert Program entity to ProgramWithMentorsDto
      */
     private ProgramDtos.ProgramWithMentorsDto convertToProgramWithMentorsDto(Program program) {
-        List<ProgramDtos.ProgramMentorDto> mentorDtos = program.getProgramMentors().stream()
-                .map(pm -> ProgramDtos.ProgramMentorDto.builder()
-                        .id(pm.getMentor().getId())
-                        .title(pm.getMentor().getTitle())
-                        .company(pm.getMentor().getCompany())
-                        .yearsExperience(pm.getMentor().getYearsExperience())
-                        .hourlyRate(pm.getMentor().getHourlyRate())
-                        .rating(pm.getMentor().getRating())
-                        .totalSessions(pm.getMentor().getTotalSessions())
-                        .bio(pm.getMentor().getBio())
-                        .avatarUrl(pm.getMentor().getAvatarUrl())
-                        .isAvailable(pm.getMentor().getIsAvailable())
-                        .build())
-                .collect(Collectors.toList());
+        List<ProgramMentor> mentorDtos = program.getProgramMentors();
 
         return ProgramDtos.ProgramWithMentorsDto.builder()
                 .id(program.getId())

@@ -247,20 +247,6 @@
             <div style="text-align: center; margin: 24px 0;">
                 <p style="margin-bottom: 16px; color: #4a5568; font-weight: 600; font-size: 16px;">📅 Add to your calendar:</p>
                 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 100%;">
-                    <!-- Universal ICS Download (Works with ALL calendars) -->
-                    <a th:href="${baseUrl + '/api/v1/calendar/download/' + session.id}" 
-                       style="
-                        background: #22c55e;
-                        color: #ffffff;
-                        padding: 12px 20px;
-                        text-decoration: none;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        font-size: 13px;
-                        display: inline-block;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                        transition: all 0.3s ease;
-                       ">📱 Download .ics</a>
                     
                     <!-- Google Calendar -->
                     <a th:href="${baseUrl + '/api/v1/calendar/google/' + session.id}" 
@@ -278,7 +264,7 @@
                        ">📅 Google</a>
                     
                     <!-- Outlook Calendar -->
-                    <a th:href="${baseUrl + '/api/v1/calendar/outlook/' + session.id}" 
+                    <a th:href="${baseUrl + '/api/v1/calendar/outlook/' + session.id}"
                        target="_blank"
                        style="
                         background: #0078d4;
@@ -291,12 +277,12 @@
                         display: inline-block;
                         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
                        ">📧 Outlook</a>
-                    
-                    <!-- Yahoo Calendar -->
-                    <a th:href="${baseUrl + '/api/v1/calendar/yahoo/' + session.id}" 
-                       target="_blank"
+
+                    <!-- Download ICS (Universal) -->
+                    <a th:href="${baseUrl + '/api/v1/calendar/download/' + session.id}"
+                       download
                        style="
-                        background: #7b46c1;
+                        background: #10b981;
                         color: #ffffff;
                         padding: 12px 20px;
                         text-decoration: none;
@@ -305,7 +291,8 @@
                         font-size: 13px;
                         display: inline-block;
                         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                       ">🟡 Yahoo</a>
+                       ">📥 Download (.ics)</a>
+
                 </div>
                 <p style="margin-top: 12px; color: #6b7280; font-size: 12px; font-style: italic;">
                     💡 Tip: The .ics file works with Apple Calendar, Thunderbird, and most calendar apps

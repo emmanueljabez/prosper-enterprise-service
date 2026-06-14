@@ -5,240 +5,525 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Session Request - [[${appName}]]</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            line-height: 1.6; 
-            color: #2D3748; 
-            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-            padding: 20px;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        .email-container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            background: white; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+        body {
+            width: 100%;
+            margin: 0;
+            background: #f4fbf8;
+            color: #17201f;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.5;
         }
-        .logo-section {
-            background: white;
-            padding: 20px;
+
+        a {
+            color: inherit;
+        }
+
+        .preheader {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            color: transparent;
+        }
+
+        .page {
+            width: 100%;
+            background: #f4fbf8;
+            padding: 16px 0 0;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            padding: 0 18px;
+        }
+
+        .logo-wrap {
+            padding: 0 0 34px;
             text-align: center;
-            border-bottom: 1px solid #e2e8f0;
         }
+
         .logo {
-            max-width: 120px;
+            display: inline-block;
+            width: 78px;
+            max-width: 78px;
             height: auto;
+            border: 0;
         }
-        .header { 
-            background: #9a3198; 
-            color: white; 
-            padding: 40px 30px; 
-            text-align: center; 
+
+        .status-chip {
+            display: inline-block;
+            margin-bottom: 14px;
+            padding: 6px 13px;
+            border-radius: 14px;
+            background: #ffd5f0;
+            color: #9b3699;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+
+        .headline {
+            margin: 0 0 12px;
+            color: #17201f;
+            font-size: 30px;
+            font-weight: 800;
+            line-height: 1.16;
+        }
+
+        .intro {
+            color: #40504c;
+            font-size: 15px;
+            line-height: 1.45;
+            margin-bottom: 22px;
+        }
+
+        .intro strong {
+            color: #17201f;
+        }
+
+        .booking-card {
+            position: relative;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 28px 24px 26px;
+            box-shadow: 0 16px 36px rgba(0, 73, 64, 0.07);
+        }
+
+        .booking-header {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 22px;
+        }
+
+        .booking-status-title {
+            color: #008f7c;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .pending-pill {
+            display: inline-block;
+            padding: 5px 11px;
+            border-radius: 14px;
+            background: #edf4f1;
+            color: #17201f;
+            font-size: 11px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .pending-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-right: 6px;
+            border-radius: 50%;
+            background: #9b3699;
+            vertical-align: 1px;
+        }
+
+        .mentee-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .avatar-cell {
+            width: 66px;
+            vertical-align: top;
+            padding-bottom: 26px;
+        }
+
+        .avatar-wrap {
+            position: relative;
+            display: inline-block;
+            width: 56px;
+            height: 56px;
+            border-radius: 13px;
+            overflow: hidden;
+            background: #edf4f1;
+        }
+
+        .avatar-wrap img {
+            display: block;
+            width: 56px;
+            height: 56px;
+            border: 0;
+            object-fit: cover;
+        }
+
+        .verified-badge {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: #008f7c;
+            color: #ffffff;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .mentee-name {
+            margin: 0;
+            color: #9b3699;
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+
+        .mentee-role {
+            margin: 1px 0 3px;
+            color: #51605d;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .verified-text {
+            color: #007b6b;
+            font-size: 9px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .divider {
+            height: 1px;
+            margin: 0 0 18px;
+            background: #e5ece9;
+        }
+
+        .section-label {
+            color: #52615e;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.7px;
+            margin-bottom: 9px;
+            text-transform: uppercase;
+        }
+
+        .topic-row {
+            color: #17201f;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .topic-mark {
+            display: inline-block;
+            width: 9px;
+            height: 9px;
+            margin-right: 6px;
+            border-left: 2px solid #9b3699;
+            border-bottom: 2px solid #9b3699;
+            transform: skew(-12deg);
+        }
+
+        .mentee-message {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5ece9;
+            color: #40504c;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .tile-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0;
+            margin: 16px 0 32px;
+        }
+
+        .tile-gap {
+            width: 14px;
+        }
+
+        .detail-tile {
+            width: 50%;
+            background: #f0f7f4;
+            border-radius: 16px;
+            padding: 18px 20px;
+            vertical-align: top;
+        }
+
+        .tile-icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #008f7c;
+            border-radius: 2px;
+            margin-bottom: 12px;
+        }
+
+        .time-icon {
+            border-radius: 50%;
             position: relative;
         }
-        .header::after {
-            content: '';
+
+        .time-icon:before {
+            content: "";
             position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 20px solid #9a3198;
+            left: 5px;
+            top: 2px;
+            width: 2px;
+            height: 5px;
+            background: #008f7c;
         }
-        .header h1 { 
-            font-size: 28px; 
-            font-weight: 700; 
-            margin-bottom: 8px; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+        .time-icon:after {
+            content: "";
+            position: absolute;
+            left: 5px;
+            top: 6px;
+            width: 5px;
+            height: 2px;
+            background: #008f7c;
         }
-        .header p { 
-            font-size: 16px; 
-            opacity: 0.9; 
-            font-weight: 300;
-        }
-        .content { 
-            padding: 40px 30px; 
-            background: white;
-        }
-        .greeting { 
-            font-size: 18px; 
-            margin-bottom: 24px; 
-            color: #2D3748;
-        }
-        .intro-text { 
-            font-size: 16px; 
-            margin-bottom: 32px; 
-            color: #4A5568;
-        }
-        .card {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 24px;
-            margin: 24px 0;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #9a3198;
-        }
-        .card h3 { 
-            color: #9a3198; 
-            font-size: 18px; 
-            font-weight: 600; 
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-        }
-        .card h3::before {
-            content: '●';
-            color: #9a3198;
-            font-size: 12px;
-            margin-right: 8px;
-        }
-        .detail-row { 
-            display: flex; 
-            margin-bottom: 12px; 
-            align-items: center;
-        }
-        .detail-row:last-child { margin-bottom: 0; }
-        .detail-label { 
-            font-weight: 600; 
-            color: #2D3748; 
-            min-width: 120px; 
-            font-size: 14px;
-        }
-        .detail-value { 
-            color: #4A5568; 
-            font-size: 14px;
-        }
-        .action-buttons { 
-            text-align: center; 
-            margin: 40px 0; 
-            padding: 20px 0;
-        }
-        .button { 
-            display: inline-block; 
-            padding: 16px 32px; 
-            text-decoration: none; 
-            border-radius: 50px; 
-            margin: 8px 12px; 
-            font-weight: 600; 
-            font-size: 15px;
-            color: #ffffff;
-            transition: all 0.3s ease;
+
+        .tile-label {
+            color: #52615e;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.7px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
-        .confirm-btn { 
-            background: #22c55e; 
+
+        .tile-value {
+            color: #17201f;
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-top: 4px;
+        }
+
+        .session-type {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .session-type td {
+            background: #008f7c;
             color: #ffffff;
+            padding: 17px 20px;
         }
-        .decline-btn { 
-            background: #ef4444; 
+
+        .session-type .left {
+            border-radius: 11px 0 0 11px;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .session-type .right {
+            border-radius: 0 11px 11px 0;
+            font-size: 10px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .video-icon {
+            display: inline-block;
+            width: 14px;
+            height: 11px;
+            margin-right: 8px;
+            border: 2px solid #ffffff;
+            border-radius: 2px;
+            vertical-align: -1px;
+        }
+
+        .button {
+            display: block;
+            width: 100%;
+            margin: 0 0 12px;
+            padding: 15px 18px;
+            border-radius: 28px;
+            font-size: 16px;
+            font-weight: 800;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .accept {
+            background: #008f7c;
             color: #ffffff;
+            box-shadow: 0 10px 18px rgba(0, 123, 107, 0.18);
         }
-        .calendar-btn { 
-            background: #0ea5e9; 
-            color: #ffffff;
+
+        .decline {
+            background: transparent;
+            border: 2px solid #9b3699;
+            color: #9b3699;
         }
-        .important-notice {
-            background: #fef2f2;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 24px 0;
-            border-left: 4px solid #ef4444;
-        }
-        .important-notice p {
-            color: #991b1b;
-            font-weight: 500;
-            margin: 0;
-        }
-        .footer { 
-            background: #f8fafc; 
-            padding: 30px; 
-            text-align: center; 
-            color: #6b7280;
-            border-top: 1px solid #e2e8f0;
-        }
-        .footer p { 
-            margin: 8px 0; 
+
+        .reschedule {
+            display: block;
+            color: #17201f;
             font-size: 13px;
+            font-weight: 700;
+            padding: 6px 0 34px;
+            text-align: center;
+            text-decoration: none;
         }
-        .footer a { 
-            color: #9a3198; 
-            text-decoration: none; 
-            font-weight: 500;
+
+        .footer {
+            background: #edf4f1;
+            border-radius: 14px 14px 0 0;
+            color: #65706e;
+            margin: 0;
+            padding: 34px 22px 28px;
+            text-align: center;
         }
-        .footer a:hover {
-            color: #7c2d92;
+
+        .footer-links {
+            margin-bottom: 26px;
         }
-        @media (max-width: 600px) {
-            .email-container { margin: 10px; border-radius: 12px; }
-            .header, .content { padding: 24px 20px; }
-            .button { padding: 14px 24px; margin: 6px 8px; font-size: 14px; }
-            .detail-row { flex-direction: column; align-items: flex-start; }
-            .detail-label { min-width: auto; margin-bottom: 4px; }
+
+        .footer-links a {
+            color: #65706e;
+            display: inline-block;
+            font-size: 12px;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        .copyright {
+            color: #65706e;
+            font-size: 11px;
+        }
+
+        @media (max-width: 480px) {
+            .shell {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .headline {
+                font-size: 29px;
+            }
+
+            .booking-card {
+                padding: 28px 24px 26px;
+            }
+
+            .detail-tile {
+                padding: 18px 18px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="logo-section">
-            <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
-        </div>
-        
-        <div class="header">
-            <h1>New Session Request</h1>
-            <p>You have a new mentorship request</p>
-        </div>
-        
-        <div class="content">
-            <p class="greeting">Hi <span th:text="${mentor.firstName ?: 'Mentor'}">Mentor</span>,</p>
-            
-            <p class="intro-text">You have received a new session request from <strong th:text="${mentee.firstName + ' ' + mentee.lastName}">Mentee Name</strong>.</p>
-            
-            <div class="card">
-                <h3>Session Request Details</h3>
-                <div class="detail-row">
-                    <span class="detail-label">Topic:</span>
-                    <span class="detail-value" th:text="${session.title}">Skill Name</span>
+    <div class="preheader">
+        New mentorship session request from [[${mentee.firstName}]].
+    </div>
+
+    <div class="page">
+        <div class="shell">
+            <div class="logo-wrap">
+                <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
+            </div>
+
+            <div class="status-chip">PENDING REQUEST</div>
+            <h1 class="headline">Booking<br>in progress.</h1>
+
+            <p class="intro" th:text="${'Dear ' + (mentor.firstName ?: 'Mentor') + ','}">Dear Mentor,</p>
+            <p class="intro">
+                <strong th:text="${#strings.trim((mentee.firstName ?: '') + ' ' + (mentee.lastName ?: ''))}">Mentee Name</strong>
+                has requested a mentorship session with you.
+            </p>
+
+            <div class="booking-card">
+                <table class="booking-header" role="presentation">
+                    <tr>
+                        <td class="booking-status-title">Booking status</td>
+                        <td style="text-align: right;">
+                            <span class="pending-pill"><span class="pending-dot"></span>Pending</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="mentee-table" role="presentation">
+                    <tr>
+                        <td class="avatar-cell">
+                            <span class="avatar-wrap">
+                                <img th:if="${mentee.avatarUrl != null and !mentee.avatarUrl.isBlank()}"
+                                     th:src="${mentee.avatarUrl}"
+                                     alt="">
+                            </span>
+                        </td>
+                        <td style="vertical-align: top;">
+                            <p class="mentee-name" th:text="${#strings.trim((mentee.firstName ?: '') + ' ' + (mentee.lastName ?: ''))}">Alex Ogango</p>
+                            <p class="mentee-role">Mentee</p>
+                            <p class="verified-text">VERIFIED MENTEE</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="divider"></div>
+
+                <p class="section-label">SESSION TOPIC</p>
+                <p class="topic-row"><span class="topic-mark"></span><span th:text="${session.title}">Editorial Strategy</span></p>
+
+                <div class="mentee-message" th:if="${session.menteeMessage != null and !session.menteeMessage.isBlank()}">
+                    <p class="section-label">MESSAGE FROM MENTEE</p>
+                    <p th:text="${session.menteeMessage}">Mentee message</p>
                 </div>
-                <div class="detail-row">
-                    <span class="detail-label">Requested Date:</span>
-                    <span class="detail-value" th:text="${sessionDate}">Session Date</span>
+            </div>
+
+            <table class="tile-table" role="presentation">
+                <tr>
+                    <td class="detail-tile">
+                        <span class="tile-icon"></span>
+                        <p class="tile-label">DATE</p>
+                        <p class="tile-value" th:text="${sessionDate}">Oct 24, 2026</p>
+                    </td>
+                    <td class="tile-gap"></td>
+                    <td class="detail-tile">
+                        <span class="tile-icon time-icon"></span>
+                        <p class="tile-label">TIME</p>
+                        <p class="tile-value" th:text="${sessionTime}">10:00 AM</p>
+                    </td>
+                </tr>
+            </table>
+
+            <table class="session-type" role="presentation">
+                <tr>
+                    <td class="left"><span class="video-icon"></span>Video Call Session</td>
+                    <td class="right" th:text="${session.durationMinutes + ' Minutes'}">60 Minutes</td>
+                </tr>
+            </table>
+
+            <a class="button accept"
+               th:href="${frontendUrl + '/app/sessions/review/' + session.id + '?action=accept'}"
+               href="https://enterprise.prospermentor.com">
+                Accept Session
+            </a>
+            <a class="button decline"
+               th:href="${frontendUrl + '/app/sessions/review/' + session.id + '?action=decline'}"
+               href="https://enterprise.prospermentor.com">
+                Decline Request
+            </a>
+            <a class="reschedule"
+               th:href="${frontendUrl + '/app/sessions/review/' + session.id}"
+               href="https://enterprise.prospermentor.com">
+                Reschedule Session
+            </a>
+
+            <div class="footer">
+                <div class="footer-links">
+                    <a href="mailto:support@prospermentor.com">Support</a>
+                    <a th:href="${baseUrl}" href="https://prospermentor.com">Privacy Policy</a>
+                    <a th:href="${baseUrl}" href="https://prospermentor.com">Unsubscribe</a>
                 </div>
-                <div class="detail-row">
-                    <span class="detail-label">Requested Time:</span>
-                    <span class="detail-value" th:text="${sessionTime}">Session Time</span>
-                </div>
+                <p class="copyright">&copy; 2026 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
             </div>
-            
-            <div class="card" th:if="${session.menteeMessage}">
-                <h3>Message from Mentee</h3>
-                <p th:text="${session.menteeMessage}">Mentee message</p>
-            </div>
-            
-            <div class="action-buttons">
-                <a style="color: #fff;" href="#" class="button confirm-btn">Confirm Session</a>
-                <a style="color: #fff;" href="#" class="button decline-btn">Decline Request</a>
-            </div>
-            
-            <div class="important-notice">
-                <p><strong>Important:</strong> Please respond to this request within 24 hours. If you confirm the session, a meeting link will be automatically generated and shared with both you and the mentee.</p>
-            </div>
-            
-            <p>Best regards,<br><strong>The <span th:text="${appName}">ProsperMentor</span> Team</strong></p>
-        </div>
-        
-        <div class="footer">
-            <p>&copy; 2025 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
-            <p><a th:href="${baseUrl}">Visit our platform</a> | <a href="#">Contact Support</a></p>
         </div>
     </div>
 </body>
 </html>
-

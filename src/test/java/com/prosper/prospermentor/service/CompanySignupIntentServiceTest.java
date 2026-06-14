@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -69,5 +70,19 @@ class CompanySignupIntentServiceTest {
         assertThat(intent.getTargetSessionCount()).isEqualTo(40);
         assertThat(intent.getToken()).isNotBlank();
         assertThat(intent.getStatus()).isEqualTo(CompanySignupIntent.SignupIntentStatus.PENDING);
+    }
+
+    @Test
+    void requirePurchasableIntent_shouldAllowCompletedIntentForActivationPurchase() {
+        CompanySignupIntent intent = new CompanySignupIntent();
+        intent.setToken("intent-token");
+        intent.setStatus(CompanySignupIntent.SignupIntentStatus.COMPLETED);
+        intent.setExpiresAt(LocalDateTime.now().plusDays(3));
+
+        when(companySignupIntentRepository.findByToken("intent-token")).thenReturn(Optional.of(intent));
+
+        CompanySignupIntent resolved = companySignupIntentService.requirePurchasableIntent("intent-token");
+
+        assertThat(resolved).isSameAs(intent);
     }
 }

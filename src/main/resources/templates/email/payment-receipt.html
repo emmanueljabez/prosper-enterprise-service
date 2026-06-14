@@ -5,346 +5,453 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Receipt - [[${appName}]]</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #2D3748;
-            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-            padding: 20px;
+            width: 100%;
+            margin: 0;
+            background: #f3faf7;
+            color: #17201f;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.5;
         }
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 16px;
+
+        a {
+            color: inherit;
+        }
+
+        .preheader {
+            display: none;
+            max-height: 0;
             overflow: hidden;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            opacity: 0;
+            color: transparent;
         }
-        .logo-section {
-            background: white;
-            padding: 20px;
+
+        .page {
+            width: 100%;
+            background:
+                radial-gradient(circle at 80% 13%, rgba(111, 221, 203, 0.22), transparent 28%),
+                #f3faf7;
+            padding: 24px 0 0;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            padding: 0 18px 0;
+        }
+
+        .logo-wrap {
             text-align: center;
-            border-bottom: 1px solid #e2e8f0;
+            padding: 0 0 34px;
         }
+
         .logo {
-            max-width: 120px;
+            width: 122px;
+            max-width: 122px;
             height: auto;
+            border: 0;
+            display: inline-block;
         }
-        .header {
-            background: linear-gradient(135deg, #9b3699 0%, #7d2a7b 100%);
-            color: white;
-            padding: 40px 30px;
+
+        .eyebrow {
+            color: #007b6b;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin: 0 0 8px 6px;
+        }
+
+        .headline {
+            margin: 0 0 28px 6px;
+            color: #171d1c;
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1.18;
+        }
+
+        .headline .success {
+            color: #9b3699;
+        }
+
+        .amount-label {
+            margin: 0 0 4px 6px;
+            color: #4d5b58;
+            font-size: 14px;
+        }
+
+        .amount {
+            margin: 0 0 38px 6px;
+            color: #007b6b;
+            font-size: 44px;
+            font-weight: 800;
+            line-height: 1.05;
+        }
+
+        .receipt-card {
+            position: relative;
+            background: #ffffff;
+            border-radius: 22px;
+            padding: 30px 30px 34px;
+            box-shadow: 0 18px 40px rgba(0, 73, 64, 0.08);
+        }
+
+        .receipt-card:before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 30px;
+            width: 45px;
+            height: 4px;
+            background: #86f1d9;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .label {
+            color: #77817f;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .receipt-number {
+            color: #1e2624;
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+
+        .customer-line {
+            color: #697673;
+            font-size: 12px;
+            margin-bottom: 28px;
+        }
+
+        .service-card {
+            background: #edf4f1;
+            border-radius: 21px;
+            padding: 22px;
+            margin: 0 0 28px;
+        }
+
+        .service-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .service-label {
+            color: #9b3699;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 0 0 4px;
+        }
+
+        .service-title {
+            color: #17201f;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.35;
+            padding: 0 16px 16px 0;
+        }
+
+        .avatar-cell {
+            width: 54px;
+            padding: 0 0 16px;
+            vertical-align: top;
+            text-align: right;
+        }
+
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: #ffffff;
+            display: inline-block;
+            overflow: hidden;
+        }
+
+        .avatar img {
+            width: 42px;
+            height: 42px;
+            object-fit: cover;
+            display: block;
+            border: 0;
+        }
+
+        .date-row {
+            color: #56625f;
+            font-size: 14px;
+            padding: 0 0 26px;
+        }
+
+        .calendar-icon {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid #007b6b;
+            border-radius: 2px;
+            margin: 0 8px 0 0;
+            vertical-align: -2px;
+        }
+
+        .rate-label {
+            color: #2f3a38;
+            font-size: 14px;
+            padding: 0;
+        }
+
+        .rate-amount {
+            color: #17201f;
+            font-size: 16px;
+            font-weight: 800;
+            padding: 0;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .payment-row {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .method-badge {
+            width: 38px;
+            height: 25px;
+            border-radius: 7px;
+            background: #e3ebe8;
+            color: #71807c;
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 800;
+            line-height: 25px;
             text-align: center;
+            text-transform: uppercase;
+        }
+
+        .masked-method {
+            color: #25302e;
+            font-size: 13px;
+            font-weight: 700;
+            padding-left: 14px;
+        }
+
+        .paid-via {
+            color: #7b8583;
+            font-size: 12px;
+            text-align: right;
+        }
+
+        .cta-wrap {
+            padding: 82px 6px 30px;
+            text-align: center;
+        }
+
+        .cta {
+            display: block;
+            width: 100%;
+            max-width: 308px;
+            margin: 0 auto;
+            padding: 16px 24px;
+            border-radius: 30px;
+            background: #008f7c;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 12px 20px rgba(0, 123, 107, 0.22);
+        }
+
+        .cta-icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #ffffff;
+            border-radius: 3px;
+            margin-left: 8px;
+            vertical-align: -4px;
             position: relative;
         }
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 20px solid #7d2a7b;
-        }
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .success-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 8px;
-        }
-        .content {
-            padding: 40px 30px;
-            background: white;
-        }
-        .receipt-number-section {
-            text-align: center;
-            margin: 24px 0;
-        }
-        .section-title {
-            font-size: 14px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        .receipt-number {
-            background: #fff3cd;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
-            border: 2px dashed #ffc107;
-            color: #856404;
-            display: inline-block;
-        }
-        .card {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 24px;
-            margin: 24px 0;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        .customer-info { border-left: 4px solid #9b3699; }
-        .payment-details { border-left: 4px solid #9b3699; }
-        .item-details { border-left: 4px solid #9b3699; }
 
-        .card h3 {
-            color: #9b3699;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
+        .cta-icon:after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 7px;
+            height: 7px;
+            border-top: 2px solid #ffffff;
+            border-right: 2px solid #ffffff;
         }
-        .card h3::before {
-            content: '●';
-            color: #9b3699;
-            font-size: 12px;
-            margin-right: 8px;
-        }
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            align-items: flex-start;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .detail-row:last-child {
-            margin-bottom: 0;
-            border-bottom: none;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #2D3748;
-            font-size: 14px;
-            flex-shrink: 0;
-            width: 140px;
-        }
-        .detail-value {
-            color: #4A5568;
-            font-size: 14px;
-            text-align: right;
-            font-weight: 600;
-        }
-        .amount-section {
-            background: linear-gradient(135deg, #faf5fa 0%, #f3e8f3 100%);
-            border-radius: 12px;
-            padding: 24px;
-            margin: 32px 0;
-            border: 2px solid #9b3699;
-        }
-        .subtotal-row {
-            display: flex;
-            justify-content: space-between;
-            padding-bottom: 12px;
-            margin-bottom: 12px;
-            border-bottom: 1px solid #d4a0d3;
-        }
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 24px;
-            font-weight: bold;
-            color: #6b1f69;
-        }
-        .support-info {
-            background: #f0f9ff;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 24px 0;
-            border-left: 4px solid #2196F3;
-        }
-        .support-info strong {
-            color: #1e40af;
-            font-size: 16px;
-        }
-        .support-info p {
-            margin: 8px 0 0 0;
-            color: #1e3a8a;
-        }
-        .support-info a {
-            color: #2196F3;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        .footer {
-            background: #f8fafc;
-            padding: 30px;
+
+        .support {
+            color: #7b8583;
+            font-size: 11px;
             text-align: center;
-            color: #6b7280;
-            border-top: 1px solid #e2e8f0;
+            padding-bottom: 50px;
         }
-        .footer p {
-            margin: 8px 0;
+
+        .support a {
+            color: #007b6b;
+            text-decoration: none;
+        }
+
+        .footer {
+            background: #edf4f1;
+            border-radius: 14px 14px 0 0;
+            color: #65706e;
+            margin: 0 -18px;
+            padding: 36px 24px 28px;
+            text-align: center;
+        }
+
+        .footer-links {
+            margin-bottom: 28px;
+        }
+
+        .footer-links a {
+            color: #65706e;
+            display: inline-block;
+            font-size: 13px;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        .copyright {
+            color: #65706e;
             font-size: 13px;
         }
-        .footer a {
-            color: #9b3699;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .footer a:hover {
-            color: #7d2a7b;
-        }
-        @media (max-width: 600px) {
-            .email-container { margin: 10px; border-radius: 12px; }
-            .header, .content { padding: 24px 20px; }
-            .detail-row { flex-direction: column; }
-            .detail-label { width: auto; margin-bottom: 4px; }
-            .detail-value { text-align: left; }
-            .total-row { font-size: 20px; }
+
+        @media (max-width: 480px) {
+            .page {
+                padding-top: 22px;
+            }
+
+            .shell {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+
+            .headline {
+                font-size: 34px;
+            }
+
+            .amount {
+                font-size: 42px;
+            }
+
+            .receipt-card {
+                padding: 30px;
+            }
+
+            .cta-wrap {
+                padding-top: 82px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="logo-section">
-            <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
-        </div>
+    <div class="preheader">
+        Your payment receipt from [[${appName}]] is ready.
+    </div>
 
-        <div class="header">
-            <h1>Payment Receipt</h1>
-        </div>
-
-        <div class="content">
-            <!-- Receipt Number -->
-            <div class="receipt-number-section">
-                <div class="section-title">Receipt Number</div>
-                <div class="receipt-number" th:text="${payment.mpesaReceiptNumber}">RXG12345678</div>
+    <div class="page">
+        <div class="shell">
+            <div class="logo-wrap">
+                <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
             </div>
 
-            <!-- Customer Information -->
-            <div class="card customer-info">
-                <h3>Customer Information</h3>
-                <div class="detail-row">
-                    <span class="detail-label">Name</span>
-                    <span class="detail-value" th:text="${customerName}">Customer Name</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Email</span>
-                    <span class="detail-value" th:text="${profile.email}">customer@example.com</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Phone</span>
-                    <span class="detail-value" th:text="${payment.phoneNumber ?: 'N/A'}">+254712345678</span>
-                </div>
-            </div>
+            <p class="eyebrow">THANK YOU</p>
+            <h1 class="headline">Payment<br><span class="success">Successful.</span></h1>
 
-            <!-- Payment Details -->
-            <div class="card payment-details">
-                <h3>Payment Details</h3>
-                <div class="detail-row">
-                    <span class="detail-label">Payment Date</span>
-                    <span class="detail-value" th:text="${paymentDate}">Jan 15, 2025 14:30:00</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Payment Method</span>
-                    <span class="detail-value">M-Pesa</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Transaction ID</span>
-                    <span class="detail-value" th:text="${payment.mpesaReceiptNumber}">RXG12345678</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Payment Type</span>
-                    <span class="detail-value" th:text="${paymentType}">Subscription Payment</span>
-                </div>
-            </div>
+            <p class="amount-label">Total Amount Paid</p>
+            <p class="amount" th:text="${payment.currency + ' ' + payment.amount}">KES 4,000.00</p>
 
-            <!-- Item Details (Conditional based on payment type) -->
-            <!--<div class="card item-details" th:if="${itemDetails != null}">
-                <h3>Item Details</h3>
-
-                &lt;!&ndash; Session Booking Details &ndash;&gt;
-                <div th:if="${payment.paymentType.name() == 'SESSION_BOOKING' && session != null}">
-                    <div class="detail-row">
-                        <span class="detail-label">Session Date</span>
-                        <span class="detail-value" th:text="${sessionDate ?: 'To be scheduled'}">Jan 20, 2025 15:00</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Duration</span>
-                        <span class="detail-value" th:text="${sessionDuration + ' minutes'}">60 minutes</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Status</span>
-                        <span class="detail-value" th:text="${session.status}">CONFIRMED</span>
-                    </div>
-                </div>
-
-                &lt;!&ndash; Subscription/Upgrade Details &ndash;&gt;
-                <div th:if="${(payment.paymentType.name() == 'SUBSCRIPTION' || payment.paymentType.name() == 'UPGRADE') && subscription != null}">
-                    <div class="detail-row">
-                        <span class="detail-label">Plan</span>
-                        <span class="detail-value" th:text="${subscription.plan?.name ?: 'N/A'}">Premium Plan</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Sessions/Month</span>
-                        <span class="detail-value" th:text="${subscription.plan?.unlimited ? 'Unlimited' : subscription.sessionsPerMonth}">10</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Valid Until</span>
-                        <span class="detail-value" th:text="${validUntil}">Feb 15, 2025</span>
-                    </div>
-                </div>
-
-                &lt;!&ndash; Generic Description for other payment types &ndash;&gt;
-                <div th:if="${payment.paymentType.name() != 'SESSION_BOOKING' && payment.paymentType.name() != 'SUBSCRIPTION' && payment.paymentType.name() != 'UPGRADE' && payment.description != null}">
-                    <div class="detail-row">
-                        <span class="detail-label">Description</span>
-                        <span class="detail-value" th:text="${payment.description}">Payment description</span>
-                    </div>
-                </div>
-            </div>-->
-
-            <!-- Amount Section -->
-            <div class="amount-section">
-                <div class="subtotal-row">
-                    <span style="color: #6b1f69; font-weight: 600;">Subtotal: </span>
-                    <span style="color: #6b1f69; font-weight: 600;" th:text="${payment.currency + ' ' + payment.amount}">KES 1,000.00</span>
-                </div>
-                <div class="total-row">
-                    <span>Total Paid: </span>
-                    <span th:text="${payment.currency + ' ' + payment.amount}">KES 1,000.00</span>
-                </div>
-            </div>
-
-            <!-- Support Information -->
-            <div class="support-info">
-                <strong>Need Help?</strong>
-                <p>If you have any questions about this payment, please contact our support team at
-                    <a href="mailto:support@prospermentor.com">support@prospermentor.com</a>
+            <div class="receipt-card">
+                <p class="label">RECEIPT NUMBER</p>
+                <p class="receipt-number" th:text="${transactionReference}">#EM-2023-98442-TL</p>
+                <p class="customer-line">
+                    Receipt for <span th:text="${customerName}">Customer Name</span>
+                    <span th:if="${profile.email != null}">
+                        | <span th:text="${profile.email}">customer@example.com</span>
+                    </span>
+                    <span th:if="${payment.phoneNumber != null and !payment.phoneNumber.isBlank()}">
+                        | <span th:text="${payment.phoneNumber}">+254712345678</span>
+                    </span>
                 </p>
+
+                <div class="service-card">
+                    <table class="service-table" role="presentation">
+                        <tr>
+                            <td>
+                                <p class="service-label">SERVICE PURCHASED</p>
+                                <p class="service-title" th:text="${paymentType}">1-on-1 Mentorship Session</p>
+                            </td>
+                            <td class="avatar-cell">
+                                <span class="avatar">
+                                    <img th:if="${profile.avatarUrl != null and !profile.avatarUrl.isBlank()}"
+                                         th:src="${profile.avatarUrl}"
+                                         alt="">
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" class="date-row">
+                                <span class="calendar-icon"></span>
+                                <span th:text="${sessionDate ?: paymentDate}">October 24, 2023 at 3:00 PM</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="rate-label" th:text="${payment.paymentType.name() == 'SESSION_BOOKING' ? 'Session Rate' : 'Amount'}">Session Rate</td>
+                            <td class="rate-amount" th:text="${payment.currency + ' ' + payment.amount}">KES 4000.00</td>
+                        </tr>
+                        <tr th:if="${subscription != null}">
+                            <td class="rate-label" style="padding-top: 12px;">Plan</td>
+                            <td class="rate-amount" style="padding-top: 12px;" th:text="${subscription.plan?.name ?: 'N/A'}">Premium Plan</td>
+                        </tr>
+                        <tr th:if="${validUntil != null}">
+                            <td class="rate-label" style="padding-top: 12px;">Valid Until</td>
+                            <td class="rate-amount" style="padding-top: 12px;" th:text="${validUntil}">Feb 15, 2025</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <table class="payment-row" role="presentation">
+                    <tr>
+                        <td style="width: 48px;">
+                            <span class="method-badge" th:text="${payment.cardType ?: (payment.paymentMethod != null ? payment.paymentMethod.name() : 'PAY')}">VISA</span>
+                        </td>
+                        <td class="masked-method" th:text="${payment.cardLastFour != null and !payment.cardLastFour.isBlank() ? '**** ' + payment.cardLastFour : paymentMethodDisplay}">**** 4412</td>
+                        <td class="paid-via" th:text="${paymentMethodDisplay != null and paymentMethodDisplay.startsWith('Card') ? 'Paid via Card' : (paymentMethodDisplay != null ? 'Paid via ' + paymentMethodDisplay : 'Paid')}">Paid via Card</td>
+                    </tr>
+                </table>
             </div>
 
-            <p style="margin-top: 32px; color: #4A5568;">
-                Thank you for your payment!<br>
-                <strong>The <span th:text="${appName}">ProsperMentor</span> Team</strong>
-            </p>
-        </div>
+            <div class="cta-wrap">
+                <a class="cta" th:href="${baseUrl}" href="https://enterprise.prospermentor.com">
+                    View Full Receipt <span class="cta-icon"></span>
+                </a>
+            </div>
 
-        <div class="footer">
-            <p>&copy; 2025 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
-            <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">
-                This is an automated receipt. Please do not reply to this email.
-            </p>
-            <p><a th:href="${baseUrl}">Visit our platform</a> | <a href="mailto:support@prospermentor.com">Contact Support</a></p>
+            <div class="support">
+                Need help with this payment?<br>
+                <a href="mailto:support@prospermentor.com">Contact Support</a>
+            </div>
+
+            <div class="footer">
+                <div class="footer-links">
+                    <a href="mailto:support@prospermentor.com">Support</a>
+                    <a th:href="${baseUrl}" href="https://enterprise.prospermentor.com">Privacy Policy</a>
+                    <a th:href="${baseUrl}" href="https://enterprise.prospermentor.com">Unsubscribe</a>
+                </div>
+                <p class="copyright">&copy; 2026 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
+            </div>
         </div>
     </div>
 </body>

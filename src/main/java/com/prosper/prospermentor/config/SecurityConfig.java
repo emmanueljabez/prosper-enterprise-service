@@ -6,6 +6,7 @@ import com.prosper.prospermentor.security.SupabaseUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -77,18 +78,37 @@ public class SecurityConfig {
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs").permitAll()
                 
                 // Authentication endpoints (public)
-                .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/refresh").permitAll()
+                .requestMatchers(
+                        "/api/auth/login",
+                        "/api/auth/signup",
+                        "/api/auth/forgot-password",
+                        "/api/auth/reset-password",
+                        "/api/auth/refresh",
+                        "/api/auth/complete-invitation-signup",
+                        "/api/auth/complete-company-registration"
+                ).permitAll()
+
+                // Company invitation endpoints (public for employee signup)
+                .requestMatchers("/api/v1/companies/whitelist/verify-invitation").permitAll()
+                .requestMatchers("/api/v1/companies/register").permitAll()
                 
                 // Demo endpoints (public endpoint only)
                 .requestMatchers("/api/demo/public").permitAll()
                 // Test endpoints (public for debugging)
                 .requestMatchers("/api/test/**").permitAll()
+                .requestMatchers("/api/v1/reviews/flow/**").permitAll()
                 // Session booking endpoints (for testing)
                 .requestMatchers("/api/v1/sessions/**").permitAll()
-                // Calendar endpoints (for testing)
-                .requestMatchers("/api/calendar/**").permitAll()
-                 .requestMatchers("/api/v1/payments/confirmc2b").permitAll()
-                 .requestMatchers("/api/v1/payments/status/**").permitAll()
+                // Calendar endpoints (public - accessed from emails)
+                .requestMatchers("/api/v1/calendar/**").permitAll()
+                .requestMatchers("/api/v1/payments/confirmc2b").permitAll()
+                .requestMatchers("/api/v1/payments/status/**").permitAll()
+                .requestMatchers("/api/v1/payments/cybersource/callback").permitAll()
+                .requestMatchers("/api/v1/invoices/public/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/public/auth/confirm-email").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/public/company-signup-intents").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/public/company-signup-intents/*").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/public/company-signup-intents/*/complete").permitAll()
                 // Public mentor endpoints (to browse mentors)
                 .requestMatchers( "/api/v1/profiles/mentors/**").permitAll()
 

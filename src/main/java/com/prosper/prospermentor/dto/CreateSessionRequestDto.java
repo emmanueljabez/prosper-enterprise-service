@@ -31,4 +31,16 @@ public class CreateSessionRequestDto {
     private Session.MeetingPlatform meetingPlatform;
 
     private String menteeMessage;
+
+    private String companyProgramId;
+
+    private String companyProgramParticipantId;
+
+    private String journeyInstanceStepId;
+
+    /**
+     * Preferred currency for payment (e.g., "KES", "UGX", "USD")
+     * If not provided, defaults to KES
+     */
+    private String currency;
 }

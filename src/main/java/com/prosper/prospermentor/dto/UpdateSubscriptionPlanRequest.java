@@ -24,14 +24,28 @@ public class UpdateSubscriptionPlanRequest {
 
     private String currency;
 
+    private CreateSubscriptionPlanRequest.SubscriptionPlanAudience planAudience;
+
     private Integer sessionsPerPeriod;
 
     @Min(value = 1, message = "Duration must be at least 1 month")
     private Integer durationMonths;
+
+    @Min(value = 0, message = "Yearly cost must be non-negative")
+    private BigDecimal yearlyCost;
 
     private Boolean isActive;
 
     private Integer displayOrder;
 
     private String features;
+
+    @Min(value = 1, message = "minSeats must be at least 1")
+    private Integer minSeats;
+
+    @Min(value = 1, message = "defaultSeats must be at least 1")
+    private Integer defaultSeats;
+
+    @Min(value = 1, message = "maxSeats must be at least 1")
+    private Integer maxSeats;
 }

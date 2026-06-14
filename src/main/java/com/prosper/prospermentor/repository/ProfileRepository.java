@@ -4,6 +4,7 @@ import com.prosper.prospermentor.entity.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +20,7 @@ import java.util.UUID;
  * Repository interface for Profile entity
  */
 @Repository
-public interface ProfileRepository extends JpaRepository<Profile, UUID> {
+public interface ProfileRepository extends JpaRepository<Profile, UUID>, JpaSpecificationExecutor<Profile> {
 
     /**
      * Find all profiles by role using native query with type cast
@@ -33,10 +34,22 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
     Optional<Profile> findByEmail(String email);
 
     /**
+     * Find profile by ID with company eagerly fetched
+     */
+    @Query("SELECT p FROM Profile p LEFT JOIN FETCH p.company WHERE p.id = :id")
+    Optional<Profile> findByIdWithCompany(@Param("id") UUID id);
+
+    /**
      * Find profiles by role using native query with type cast
      */
     @Query(value = "SELECT * FROM profiles WHERE role = CAST(:role AS user_role)", nativeQuery = true)
     List<Profile> findByRole(@Param("role") String role);
+
+    /**
+     * Find all profiles linked to a company with the company relationship loaded.
+     */
+    @Query("SELECT p FROM Profile p LEFT JOIN FETCH p.company WHERE p.company.id = :companyId")
+    List<Profile> findByCompanyId(@Param("companyId") UUID companyId);
 
     /**
      * Find profiles by role with pagination using native query with type cast
@@ -189,4 +202,30 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
      * Check if profile exists by email
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Check if profile exists by username
+     */
+    boolean existsByUsername(String username);
+
+    /**
+     * Update profile's company_id
+     * Uses native query to avoid role casting issues
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE profiles SET company_id = :companyId, updated_at = :updatedAt WHERE id = :profileId", nativeQuery = true)
+    int updateCompanyId(@Param("profileId") UUID profileId,
+                        @Param("companyId") UUID companyId,
+                        @Param("updatedAt") ZonedDateTime updatedAt);
+
+    /**
+     * Remove company association from profile
+     * Uses native query to avoid role casting issues
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE profiles SET company_id = NULL, updated_at = :updatedAt WHERE id = :profileId", nativeQuery = true)
+    int removeCompanyId(@Param("profileId") UUID profileId,
+                        @Param("updatedAt") ZonedDateTime updatedAt);
 }

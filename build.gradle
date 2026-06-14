@@ -1,3 +1,9 @@
+buildscript {
+    dependencies {
+        classpath 'org.postgresql:postgresql:42.7.2'
+    }
+}
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.4'
@@ -18,6 +24,7 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+    flywayMigration
 }
 
 repositories {
@@ -46,14 +53,18 @@ dependencies {
     runtimeOnly 'io.netty:netty-resolver-dns-native-macos:4.1.108.Final:osx-aarch_64'
     
     // Database and Supabase related
-    runtimeOnly 'org.postgresql:postgresql'
+    implementation 'org.postgresql:postgresql' // Changed from runtimeOnly for Flyway
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
     
     // Email and Notifications
     implementation 'org.springframework.boot:spring-boot-starter-mail'
-    
+
+    // Excel processing (Apache POI)
+    implementation 'org.apache.poi:poi:5.2.5'
+    implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
     // API Documentation
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
     
@@ -82,6 +93,10 @@ dependencies {
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Flyway migration dependencies
+    flywayMigration 'org.postgresql:postgresql:42.7.2'
+    flywayMigration 'org.flywaydb:flyway-database-postgresql'
 }
 
 tasks.named('test') {
@@ -90,12 +105,16 @@ tasks.named('test') {
 
 // Flyway configuration - SAFE MODE: Only additive migrations
 flyway {
-    url = 'jdbc:postgresql://aws-0-eu-west-2.pooler.supabase.com:5432/postgres?sslmode=require'
-    user = 'postgres.moadpjwbdicdficwevjj'
-    password = 'sjZM37Hx7r9Gple8'
+    url = System.getenv('FLYWAY_URL') ?: System.getenv('SPRING_DATASOURCE_URL') ?: ''
+    user = System.getenv('FLYWAY_USER') ?: System.getenv('SPRING_DATASOURCE_USERNAME') ?: ''
+    password = System.getenv('FLYWAY_PASSWORD') ?: System.getenv('SPRING_DATASOURCE_PASSWORD') ?: ''
+    driver = 'org.postgresql.Driver'
     locations = ['classpath:db/migration']
     baselineOnMigrate = true
     validateOnMigrate = true
     outOfOrder = false
     cleanDisabled = true
+
+    // Add PostgreSQL driver to Flyway classpath
+    configurations = ['flywayMigration']
 }

@@ -161,6 +161,20 @@ public class SubscriptionAddon {
     }
 
     /**
+     * Return one consumed unit to the add-on after a booking is declined by the mentor.
+     */
+    public void restoreUnit() {
+        if (this.used == null || this.used <= 0) {
+            return;
+        }
+
+        this.used--;
+        if (this.status == AddonStatus.EXHAUSTED && this.used < this.quantity) {
+            this.status = AddonStatus.ACTIVE;
+        }
+    }
+
+    /**
      * Check if addon is expired
      */
     public boolean isExpired() {

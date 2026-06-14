@@ -5,321 +5,517 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Session Confirmed - [[${appName}]]</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            line-height: 1.6; 
-            color: #2D3748; 
-            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-            padding: 20px;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        .email-container { 
-            max-width: 600px; 
-            margin: 0 auto; 
-            background: white; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+        body {
+            width: 100%;
+            margin: 0;
+            background: #f4fbf8;
+            color: #17201f;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.5;
         }
-        .logo-section {
-            background: white;
-            padding: 20px;
+
+        a {
+            color: inherit;
+        }
+
+        .preheader {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            color: transparent;
+        }
+
+        .page {
+            width: 100%;
+            background:
+                radial-gradient(circle at 9% 24%, rgba(111, 221, 203, 0.20), transparent 20%),
+                #f4fbf8;
+            padding: 70px 0 0;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            padding: 0 18px;
+        }
+
+        .logo-wrap {
+            padding-bottom: 52px;
             text-align: center;
-            border-bottom: 1px solid #e2e8f0;
         }
+
         .logo {
-            max-width: 120px;
+            display: inline-block;
+            width: 80px;
+            max-width: 80px;
             height: auto;
+            border: 0;
         }
-        .header { 
-            background: #9a3198; 
-            color: white; 
-            padding: 40px 30px; 
-            text-align: center; 
+
+        .confirmed-chip {
+            display: block;
+            width: fit-content;
+            margin: 0 auto 16px;
+            padding: 7px 18px;
+            border-radius: 18px;
+            background: #008f7c;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+        }
+
+        .check-dot {
+            display: inline-block;
+            width: 13px;
+            height: 13px;
+            margin-right: 6px;
+            border-radius: 50%;
+            background: #ffffff;
+            vertical-align: -2px;
             position: relative;
         }
-        .header::after {
-            content: '';
+
+        .check-dot:after {
+            content: "";
             position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-top: 20px solid #9a3198;
+            left: 4px;
+            top: 3px;
+            width: 4px;
+            height: 7px;
+            border-right: 2px solid #008f7c;
+            border-bottom: 2px solid #008f7c;
+            transform: rotate(45deg);
         }
-        .header h1 { 
-            font-size: 28px; 
-            font-weight: 700; 
-            margin-bottom: 8px; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+        .headline {
+            color: #007b6b;
+            font-size: 36px;
+            font-weight: 800;
+            line-height: 1.05;
+            margin: 0 0 16px;
+            text-align: center;
         }
-        .header p { 
-            font-size: 16px; 
-            opacity: 0.9; 
-            font-weight: 300;
-        }
-        .content { 
-            padding: 40px 30px; 
-            background: white;
-        }
-        .greeting { 
-            font-size: 18px; 
-            margin-bottom: 24px; 
-            color: #2D3748;
-        }
-        .intro-text { 
-            font-size: 16px; 
-            margin-bottom: 32px; 
-            color: #4A5568;
-        }
-        .card {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 24px;
-            margin: 24px 0;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #9a3198;
-        }
-        .meeting-info {
-            background: #f0f9ff;
-            border-left: 4px solid #0ea5e9;
-        }
-        .card h3 { 
-            color: #9a3198; 
-            font-size: 18px; 
-            font-weight: 600; 
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-        }
-        .card h3::before {
-            content: '●';
-            color: #9a3198;
-            font-size: 12px;
-            margin-right: 8px;
-        }
-        .meeting-info h3 {
-            color: #0369a1;
-        }
-        .meeting-info h3::before {
-            color: #0ea5e9;
-        }
-        .detail-row { 
-            display: flex; 
-            margin-bottom: 12px; 
-            align-items: center;
-        }
-        .detail-row:last-child { margin-bottom: 0; }
-        .detail-label { 
-            font-weight: 600; 
-            color: #2D3748; 
-            min-width: 120px; 
-            font-size: 14px;
-        }
-        .detail-value { 
-            color: #4A5568; 
-            font-size: 14px;
-        }
-        .button { 
-            display: inline-block; 
-            padding: 16px 32px; 
-            text-decoration: none; 
-            border-radius: 50px; 
-            margin: 8px 12px; 
-            font-weight: 600;
+
+        .subcopy {
+            color: #53625f;
             font-size: 15px;
-            color: #ffffff;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            line-height: 1.55;
+            margin: 0 auto 28px;
+            max-width: 340px;
+            text-align: center;
         }
-        .primary-btn { 
-            background: #9a3198; 
-            color: #ffffff;
-        }
-        .calendar-btn { 
-            background: #0ea5e9; 
-            color: #ffffff;
-        }
-        .info-section {
-            background: #f8fafc;
+
+        .info-card {
+            background: #ffffff;
             border-radius: 12px;
-            padding: 24px;
-            margin: 24px 0;
-            border-left: 4px solid #9a3198;
+            box-shadow: 0 14px 30px rgba(0, 73, 64, 0.07);
+            margin-bottom: 22px;
+            padding: 28px 28px 30px;
         }
-        .footer { 
-            background: #f8fafc; 
-            padding: 30px; 
-            text-align: center; 
-            color: #6b7280;
-            border-top: 1px solid #e2e8f0;
+
+        .info-row {
+            width: 100%;
+            border-collapse: collapse;
         }
-        .footer p { 
-            margin: 8px 0; 
+
+        .info-row td {
+            padding-bottom: 20px;
+            vertical-align: top;
+        }
+
+        .info-row tr:last-child td {
+            padding-bottom: 0;
+        }
+
+        .icon-cell {
+            width: 48px;
+        }
+
+        .icon-box {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #edf7f3;
+            position: relative;
+        }
+
+        .calendar-icon:before {
+            content: "";
+            position: absolute;
+            left: 11px;
+            top: 10px;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #008f7c;
+            border-radius: 2px;
+        }
+
+        .calendar-icon:after {
+            content: "";
+            position: absolute;
+            left: 14px;
+            top: 8px;
+            width: 8px;
+            height: 4px;
+            border-left: 2px solid #008f7c;
+            border-right: 2px solid #008f7c;
+        }
+
+        .status-icon:before {
+            content: "";
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #008f7c;
+            border-radius: 50%;
+        }
+
+        .status-icon:after {
+            content: "";
+            position: absolute;
+            left: 15px;
+            top: 13px;
+            width: 5px;
+            height: 9px;
+            border-right: 2px solid #008f7c;
+            border-bottom: 2px solid #008f7c;
+            transform: rotate(45deg);
+        }
+
+        .label {
+            color: #52615e;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .value {
+            color: #17201f;
+            font-size: 17px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-top: 2px;
+        }
+
+        .join-section {
+            border-top: 1px solid #edf1ef;
+            margin-top: 4px;
+            padding-top: 26px;
+            text-align: center;
+        }
+
+        .join-copy {
+            color: #65706e;
             font-size: 13px;
+            margin-bottom: 12px;
         }
-        .footer a { 
-            color: #9a3198; 
-            text-decoration: none; 
-            font-weight: 500;
+
+        .join-button {
+            display: block;
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 29px;
+            background: #008f7c;
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 800;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 12px 20px rgba(0, 123, 107, 0.20);
         }
-        .footer a:hover {
-            color: #7c2d92;
+
+        .join-icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-left: 8px;
+            border: 2px solid #ffffff;
+            border-radius: 2px;
+            vertical-align: -2px;
+            position: relative;
         }
-        @media (max-width: 600px) {
-            .email-container { margin: 10px; border-radius: 12px; }
-            .header, .content { padding: 24px 20px; }
-            .button { padding: 14px 24px; margin: 6px 8px; font-size: 14px; }
-            .detail-row { flex-direction: column; align-items: flex-start; }
-            .detail-label { min-width: auto; margin-bottom: 4px; }
+
+        .join-icon:after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 5px;
+            height: 5px;
+            border-top: 2px solid #ffffff;
+            border-right: 2px solid #ffffff;
+        }
+
+        .mentor-card {
+            background: #edf4f1;
+            border-radius: 12px;
+            margin-bottom: 26px;
+            padding: 28px 28px 30px;
+        }
+
+        .section-title {
+            color: #007b6b;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 1.1px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .mentor-inner {
+            background: #ffffff;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            padding: 20px;
+        }
+
+        .mentor-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .mentor-avatar-cell {
+            width: 74px;
+            vertical-align: top;
+        }
+
+        .mentor-avatar {
+            display: inline-block;
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #dfe9e5;
+        }
+
+        .mentor-avatar img {
+            display: block;
+            width: 62px;
+            height: 62px;
+            border: 0;
+            object-fit: cover;
+        }
+
+        .mentor-name {
+            color: #9b3699;
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.12;
+            margin: 2px 0 2px;
+        }
+
+        .mentor-role {
+            color: #53625f;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 5px;
+        }
+
+        .stars {
+            color: #d681bf;
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+
+        .mentor-note {
+            color: #2f3a38;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .tips {
+            margin: 0 8px 78px;
+        }
+
+        .tips-title {
+            color: #17201f;
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .tip-row {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+
+        .tip-dot-cell {
+            width: 28px;
+            vertical-align: top;
+        }
+
+        .tip-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            margin-top: 8px;
+            border-radius: 50%;
+            background: #9b3699;
+        }
+
+        .tip-text {
+            color: #53625f;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .footer {
+            background: #edf4f1;
+            border-radius: 14px 14px 0 0;
+            color: #65706e;
+            padding: 36px 22px 28px;
+            text-align: center;
+        }
+
+        .footer-links {
+            margin-bottom: 26px;
+        }
+
+        .footer-links a {
+            color: #65706e;
+            display: inline-block;
+            font-size: 12px;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        .copyright {
+            color: #65706e;
+            font-size: 11px;
+        }
+
+        @media (max-width: 480px) {
+            .page {
+                padding-top: 70px;
+            }
+
+            .headline {
+                font-size: 35px;
+            }
+
+            .info-card,
+            .mentor-card {
+                padding-left: 28px;
+                padding-right: 28px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="logo-section">
-            <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
-        </div>
-        
-        <div class="header">
-            <h1>Session Confirmed!</h1>
-            <p>Your mentorship session has been confirmed</p>
-        </div>
-        
-        <div class="content">
-            <p class="greeting">Hi <span th:text="${mentee.firstName ?: 'Mentee'}">Mentee</span>,</p>
-            
-            <p class="intro-text">Great news! Your mentor <strong th:text="${mentor.firstName + ' ' + mentor.lastName}">Mentor Name</strong> has confirmed your session request.</p>
-            
-            <div class="card">
-                <h3>Session Details</h3>
-                <div class="detail-row">
-                    <span class="detail-label">Topic:</span>
-                    <span class="detail-value" th:text="${session.title}">Skill Name</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Date:</span>
-                    <span class="detail-value" th:text="${sessionDate}">Session Date</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Time:</span>
-                    <span class="detail-value" th:text="${sessionTime}">Session Time</span>
+    <div class="preheader">
+        Your mentorship session has been confirmed.
+    </div>
+
+    <div class="page">
+        <div class="shell">
+            <div class="logo-wrap">
+                <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
+            </div>
+
+            <div class="confirmed-chip"><span class="check-dot"></span>CONFIRMED</div>
+            <h1 class="headline">You&#39;re all set for<br>growth.</h1>
+            <p class="subcopy">
+                Your session with <span th:text="${mentor.firstName ?: 'your mentor'}">Elena</span> has been successfully scheduled.
+                Get ready for an insightful conversation.
+            </p>
+
+            <div class="info-card">
+                <table class="info-row" role="presentation">
+                    <tr>
+                        <td class="icon-cell"><span class="icon-box calendar-icon"></span></td>
+                        <td>
+                            <p class="label">DATE AND TIME</p>
+                            <p class="value" th:text="${sessionDate + ', ' + sessionTime}">Oct 24, 10:30 AM EST</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="icon-cell"><span class="icon-box status-icon"></span></td>
+                        <td>
+                            <p class="label">BOOKING STATUS</p>
+                            <p class="value">Confirmed</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="join-section">
+                    <p class="join-copy">Click below to join the virtual room</p>
+                    <a class="join-button"
+                       th:href="${meetingDetails != null and meetingDetails.meetingUrl != null ? meetingDetails.meetingUrl : baseUrl}"
+                       href="https://meet.google.com">
+                        Join Session <span class="join-icon"></span>
+                    </a>
                 </div>
             </div>
-            
-            <div class="card meeting-info" th:if="${meetingDetails != null}">
-                <h3>Meeting Information</h3>
-                <div class="detail-row">
-                    <span class="detail-label">Meeting URL:</span>
-                    <span class="detail-value"><a th:href="${meetingDetails.meetingUrl}" th:text="${meetingDetails.meetingUrl}" style="color: #0ea5e9;">Meeting Link</a></span>
+
+            <div class="mentor-card">
+                <p class="section-title">MEET YOUR MENTOR</p>
+                <div class="mentor-inner">
+                    <table class="mentor-table" role="presentation">
+                        <tr>
+                            <td class="mentor-avatar-cell">
+                                <span class="mentor-avatar">
+                                    <img th:if="${mentor.avatarUrl != null and !mentor.avatarUrl.isBlank()}"
+                                         th:src="${mentor.avatarUrl}"
+                                         alt="">
+                                </span>
+                            </td>
+                            <td>
+                                <p class="mentor-name">
+                                    <span th:text="${mentor.firstName ?: 'Elena'}">Elena</span><br>
+                                    <span th:text="${mentor.lastName ?: 'Rodriguez'}">Rodriguez</span>
+                                </p>
+                                <p class="mentor-role" th:text="${mentor.industry ?: 'Strategic Product Lead'}">Strategic Product Lead</p>
+                                <p class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <div class="detail-row" th:if="${meetingDetails.meetingId}">
-                    <span class="detail-label">Meeting ID:</span>
-                    <span class="detail-value" th:text="${meetingDetails.meetingId}">Meeting ID</span>
-                </div>
-                <div class="detail-row" th:if="${meetingDetails.password}">
-                    <span class="detail-label">Password:</span>
-                    <span class="detail-value" th:text="${meetingDetails.password}">Password</span>
-                </div>
-                <p style="margin-top: 16px; font-style: italic; color: #4a5568;"><em>Simply click the meeting link above to join via your browser or mobile app.</em></p>
-            </div>
-            
-            <div class="card" th:if="${session.mentorResponse}">
-                <h3>Message from your Mentor</h3>
-                <p th:text="${session.mentorResponse}">Mentor response</p>
-            </div>
-            
-            <div class="info-section">
-                <p>We'll send you a reminder 24 hours before your session. Make sure to join the meeting on time!</p>
-            </div>
-            
-            <div style="text-align: center;">
-                <a style="color: #fff;" href="#" class="button primary-btn">View Session Details</a>
-            </div>
-            
-            <!-- Universal Calendar Options -->
-            <div style="text-align: center; margin: 24px 0;">
-                <p style="margin-bottom: 16px; color: #4a5568; font-weight: 600; font-size: 16px;">📅 Add to your calendar:</p>
-                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; max-width: 100%;">
-                    <!-- Universal ICS Download (Works with ALL calendars) -->
-                    <a th:href="${baseUrl + '/api/v1/calendar/download/' + session.id}" 
-                       style="
-                        background: #22c55e;
-                        color: #ffffff;
-                        padding: 12px 20px;
-                        text-decoration: none;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        font-size: 13px;
-                        display: inline-block;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                        transition: all 0.3s ease;
-                       ">📱 Download .ics</a>
-                    
-                    <!-- Google Calendar -->
-                    <a th:href="${baseUrl + '/api/v1/calendar/google/' + session.id}" 
-                       target="_blank"
-                       style="
-                        background: #4285f4;
-                        color: #ffffff;
-                        padding: 12px 20px;
-                        text-decoration: none;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        font-size: 13px;
-                        display: inline-block;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                       ">📅 Google</a>
-                    
-                    <!-- Outlook Calendar -->
-                    <a th:href="${baseUrl + '/api/v1/calendar/outlook/' + session.id}" 
-                       target="_blank"
-                       style="
-                        background: #0078d4;
-                        color: #ffffff;
-                        padding: 12px 20px;
-                        text-decoration: none;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        font-size: 13px;
-                        display: inline-block;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                       ">📧 Outlook</a>
-                    
-                    <!-- Yahoo Calendar -->
-                    <a th:href="${baseUrl + '/api/v1/calendar/yahoo/' + session.id}" 
-                       target="_blank"
-                       style="
-                        background: #7b46c1;
-                        color: #ffffff;
-                        padding: 12px 20px;
-                        text-decoration: none;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        font-size: 13px;
-                        display: inline-block;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                       ">🟡 Yahoo</a>
-                </div>
-                <p style="margin-top: 12px; color: #6b7280; font-size: 12px; font-style: italic;">
-                    💡 Tip: The .ics file works with Apple Calendar, Thunderbird, and most calendar apps
+                <p class="mentor-note"
+                   th:text="${session.mentorResponse ?: 'I am excited to help you refine your strategy and tackle your current roadblocks. See you soon!'}">
+                    I am excited to help you refine your strategy and tackle your current roadblocks. See you soon!
                 </p>
             </div>
-            
-            <p style="margin: 20px 0;">If you need to reschedule or cancel this session, please do so at least 24 hours in advance.</p>
-            
-            <p>Best regards,<br><strong>The <span th:text="${appName}">ProsperMentor</span> Team</strong></p>
-        </div>
-        
-        <div class="footer">
-            <p>&copy; 2025 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
-            <p><a th:href="${baseUrl}">Visit our platform</a> | <a href="#">Contact Support</a></p>
+
+            <div class="tips">
+                <p class="tips-title">Preparation Tips</p>
+                <table class="tip-row" role="presentation">
+                    <tr>
+                        <td class="tip-dot-cell"><span class="tip-dot"></span></td>
+                        <td class="tip-text">Prepare 2-3 specific questions you&#39;d like <span th:text="${mentor.firstName ?: 'your mentor'}">Elena</span> to address during your 45-minute window.</td>
+                    </tr>
+                </table>
+                <table class="tip-row" role="presentation">
+                    <tr>
+                        <td class="tip-dot-cell"><span class="tip-dot"></span></td>
+                        <td class="tip-text">Ensure your microphone and camera are tested at least 5 minutes before the session starts.</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="footer">
+                <div class="footer-links">
+                    <a href="mailto:support@prospermentor.com">Support</a>
+                    <a th:href="${baseUrl}" href="https://prospermentor.com">Privacy Policy</a>
+                    <a th:href="${baseUrl}" href="https://prospermentor.com">Unsubscribe</a>
+                </div>
+                <p class="copyright">&copy; 2026 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
+            </div>
         </div>
     </div>
 </body>

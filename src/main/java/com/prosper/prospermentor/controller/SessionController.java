@@ -4,6 +4,11 @@ import com.prosper.prospermentor.controller.dto.ApiResponse;
 import com.prosper.prospermentor.controller.dto.SessionDtos.*;
 import com.prosper.prospermentor.dto.CreateSessionRequestDto;
 import com.prosper.prospermentor.entity.Session;
+import com.prosper.prospermentor.entity.SessionOutcome;
+import com.prosper.prospermentor.entity.SessionOutcomeActionItem;
+import com.prosper.prospermentor.exception.SessionBookingException;
+import com.prosper.prospermentor.repository.SessionOutcomeRepository;
+import com.prosper.prospermentor.service.NautixWhatsAppService;
 import com.prosper.prospermentor.service.SessionBookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -19,6 +24,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -32,9 +41,15 @@ import java.util.UUID;
 public class SessionController {
 
     private final SessionBookingService sessionBookingService;
+    private final NautixWhatsAppService nautixWhatsAppService;
+    private final SessionOutcomeRepository sessionOutcomeRepository;
 
-    public SessionController(SessionBookingService sessionBookingService) {
+    public SessionController(SessionBookingService sessionBookingService,
+                             NautixWhatsAppService nautixWhatsAppService,
+                             SessionOutcomeRepository sessionOutcomeRepository) {
         this.sessionBookingService = sessionBookingService;
+        this.nautixWhatsAppService = nautixWhatsAppService;
+        this.sessionOutcomeRepository = sessionOutcomeRepository;
     }
 
     /**
@@ -73,19 +88,11 @@ public class SessionController {
             log.error("Invalid booking request: {}", e.getMessage());
             ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error(e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
-        } catch (IllegalStateException e) {
-            log.error("Subscription limit reached: {}", e.getMessage());
+        } catch (SessionBookingException e) {
+            log.error("Session booking failed: {} - Reason: {}", e.getMessage(), e.getEligibility().getReason());
 
-            // Get the mentee ID to check remaining sessions
-            UUID menteeId = UUID.fromString(request.getMenteeId());
-            int remainingSessions = sessionBookingService.getRemainingSessionsCount(menteeId);
-
-            // Create error details with payment requirement information
-            SessionBookingErrorDto errorData = SessionBookingErrorDto.builder()
-                    .message(e.getMessage())
-                    .paymentRequired(true)
-                    .remainingSessions(remainingSessions)
-                    .build();
+            // Create error details with full eligibility information including recommended plans
+            SessionBookingErrorDto errorData = SessionBookingErrorDto.fromEligibility(e.getEligibility());
 
             ApiResponse<SessionBookingErrorDto> errorResponse = ApiResponse.<SessionBookingErrorDto>builder()
                     .status("error")
@@ -120,7 +127,11 @@ public class SessionController {
         log.info("Confirming session: {}", sessionId);
         
         try {
-            Session session = sessionBookingService.confirmSession(sessionId, request.getMentorResponse());
+            Session session = sessionBookingService.confirmSession(
+                    sessionId,
+                    request.getMentorResponse(),
+                    request.getScheduledStart()
+            );
             SessionResponseDto responseData = convertToResponseDto(session);
             
             log.info("Session confirmed successfully: {}", sessionId);
@@ -132,7 +143,7 @@ public class SessionController {
             
             return ResponseEntity.ok(response);
             
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             log.error("Cannot confirm session {}: {}", sessionId, e.getMessage());
             ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error(e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
@@ -144,10 +155,55 @@ public class SessionController {
     }
 
     /**
+     * Decline a session request (mentor action)
+     */
+    @PostMapping("/{sessionId}/decline")
+    @Operation(summary = "Decline a session request",
+               description = "Mentor declines a pending session request.")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Session declined successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Session not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Session cannot be declined")
+    })
+    public ResponseEntity<ApiResponse<SessionResponseDto>> declineSession(
+            @Parameter(description = "Session ID") @PathVariable UUID sessionId,
+            @Valid @RequestBody DeclineSessionRequestDto request) {
+
+        log.info("Declining session: {}", sessionId);
+
+        try {
+            Session session = sessionBookingService.cancelSession(
+                sessionId,
+                Session.CancelledBy.MENTOR,
+                request.getReason() != null ? request.getReason() : "Mentor declined the session request"
+            );
+            SessionResponseDto responseData = convertToResponseDto(session);
+
+            log.info("Session declined successfully: {}", sessionId);
+
+            ApiResponse<SessionResponseDto> response = ApiResponse.success(
+                responseData,
+                "Session declined successfully"
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Cannot decline session {}: {}", sessionId, e.getMessage());
+            ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error(e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            log.error("Error declining session {}: {}", sessionId, e.getMessage(), e);
+            ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error("Failed to decline session");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
      * Cancel a session
      */
     @PostMapping("/{sessionId}/cancel")
-    @Operation(summary = "Cancel a session", 
+    @Operation(summary = "Cancel a session",
                description = "Cancel a session booking. Can be done by mentor, mentee, or admin.")
     @ApiResponses(value = {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Session cancelled successfully"),
@@ -157,22 +213,22 @@ public class SessionController {
     public ResponseEntity<ApiResponse<SessionResponseDto>> cancelSession(
             @Parameter(description = "Session ID") @PathVariable UUID sessionId,
             @Valid @RequestBody CancelSessionRequestDto request) {
-        
+
         log.info("Cancelling session: {} by {}", sessionId, request.getCancelledBy());
-        
+
         try {
             Session session = sessionBookingService.cancelSession(sessionId, request.getCancelledBy(), request.getReason());
             SessionResponseDto responseData = convertToResponseDto(session);
-            
+
             log.info("Session cancelled successfully: {}", sessionId);
-            
+
             ApiResponse<SessionResponseDto> response = ApiResponse.success(
-                responseData, 
+                responseData,
                 "Session cancelled successfully"
             );
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (IllegalArgumentException e) {
             log.error("Cannot cancel session {}: {}", sessionId, e.getMessage());
             ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error(e.getMessage());
@@ -180,6 +236,45 @@ public class SessionController {
         } catch (Exception e) {
             log.error("Error cancelling session {}: {}", sessionId, e.getMessage(), e);
             ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error("Failed to cancel session");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Mark a session as completed and trigger mentee feedback collection.
+     */
+    @PostMapping("/{sessionId}/complete")
+    @Operation(summary = "Mark a session as completed",
+               description = "Marks a completed mentorship session as done and sends the mentee a feedback form prompt.")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Session marked as completed successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Session not found"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Session cannot be completed")
+    })
+    public ResponseEntity<ApiResponse<SessionResponseDto>> completeSession(
+            @Parameter(description = "Session ID") @PathVariable UUID sessionId,
+            @RequestBody(required = false) CompleteSessionRequestDto request) {
+
+        log.info("Marking session as completed: {}", sessionId);
+
+        try {
+            Session session = sessionBookingService.markSessionComplete(sessionId, request);
+            SessionResponseDto responseData = convertToResponseDto(session);
+
+            ApiResponse<SessionResponseDto> response = ApiResponse.success(
+                responseData,
+                "Session marked as completed successfully"
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            log.error("Cannot complete session {}: {}", sessionId, e.getMessage());
+            ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error(e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            log.error("Error completing session {}: {}", sessionId, e.getMessage(), e);
+            ApiResponse<SessionResponseDto> errorResponse = ApiResponse.error("Failed to mark session as completed");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -202,6 +297,9 @@ public class SessionController {
         try {
             Session session = sessionBookingService.getSessionById(sessionId);
             SessionResponseDto response = convertToResponseDto(session);
+            response.setMentorName(sessionBookingService.getProfileDisplayName(session.getMentorId()));
+            response.setMenteeName(sessionBookingService.getProfileDisplayName(session.getMenteeId()));
+            response.setSkillName(session.getSkill() != null ? session.getSkill().getName() : null);
             
             return ResponseEntity.ok(response);
             
@@ -347,18 +445,85 @@ public class SessionController {
     }
 
     /**
+     * Test WhatsApp notification endpoint
+     */
+    @PostMapping("/test/whatsapp")
+    @Operation(summary = "Test WhatsApp notification",
+               description = "Test endpoint to send WhatsApp notifications via nautix-service. For testing purposes only.")
+    @ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "WhatsApp message sent successfully"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid request"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Failed to send WhatsApp message")
+    })
+    public ResponseEntity<ApiResponse<Map<String, String>>> testWhatsApp(@Valid @RequestBody TestWhatsAppRequestDto request) {
+        log.info("Testing WhatsApp notification to: {}", request.getPhoneNumber());
+
+        try {
+            List<String> bodyParameters = resolveBodyParameters(request);
+
+            // Send WhatsApp message
+            nautixWhatsAppService.sendTemplateMessage(
+                request.getTemplateName() != null ? request.getTemplateName() : "prosper_mentor_session_request",
+                request.getPhoneNumber(),
+                bodyParameters
+            );
+
+            Map<String, String> responseData = new HashMap<>();
+            responseData.put("status", "sent");
+            responseData.put("phoneNumber", request.getPhoneNumber());
+            responseData.put("templateName", request.getTemplateName() != null ? request.getTemplateName() : "prosper_mentor_session_request");
+
+            log.info("WhatsApp test message sent successfully to: {}", request.getPhoneNumber());
+
+            ApiResponse<Map<String, String>> response = ApiResponse.success(
+                responseData,
+                "WhatsApp message sent successfully"
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid WhatsApp test request for {}: {}", request.getPhoneNumber(), e.getMessage());
+            ApiResponse<Map<String, String>> errorResponse = ApiResponse.error(e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            log.error("Failed to send WhatsApp test message to {}: {}", request.getPhoneNumber(), e.getMessage(), e);
+            ApiResponse<Map<String, String>> errorResponse = ApiResponse.error("Failed to send WhatsApp message: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    private List<String> resolveBodyParameters(TestWhatsAppRequestDto request) {
+        if (request.getBodyParameters() != null && !request.getBodyParameters().isEmpty()) {
+            return request.getBodyParameters();
+        }
+        if (request.getTemplateParams() != null && !request.getTemplateParams().isEmpty()) {
+            return request.getTemplateParams().entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .map(Map.Entry::getValue)
+                    .toList();
+        }
+        return List.of("Test User");
+    }
+
+    /**
      * Convert Session entity to response DTO
      */
     private SessionResponseDto convertToResponseDto(Session session) {
         // Determine if payment is required for this session
         // Payment is required if the user cannot book sessions (subscription limit reached)
         boolean paymentRequired = !sessionBookingService.canUserBookSession(session.getMenteeId());
+        SessionOutcomeDto outcome = sessionOutcomeRepository.findDetailedBySessionId(session.getId())
+                .map(this::toOutcomeDto)
+                .orElse(null);
 
         return SessionResponseDto.builder()
                 .id(session.getId())
                 .mentorId(session.getMentorId())
                 .menteeId(session.getMenteeId())
                 .skillId(session.getSkillId())
+                .companyProgramId(session.getCompanyProgramId())
+                .companyProgramParticipantId(session.getCompanyProgramParticipantId())
                 .title(session.getTitle())
                 .description(session.getDescription())
                 .scheduledStart(session.getScheduledStart())
@@ -380,6 +545,44 @@ public class SessionController {
                 .cancelledBy(session.getCancelledBy())
                 .createdAt(session.getCreatedAt())
                 .updatedAt(session.getUpdatedAt())
+                .companyProgramName(session.getCompanyProgram() != null ? session.getCompanyProgram().getName() : null)
+                .outcome(outcome)
+                .durationMinutes(session.getScheduledStart() != null && session.getScheduledEnd() != null ? session.getDurationMinutes() : 0)
+                .canBeModified(session.canBeModified())
+                .isFutureBooking(session.getScheduledStart() != null && session.isFutureSession())
+                .build();
+    }
+
+    private SessionOutcomeDto toOutcomeDto(SessionOutcome outcome) {
+        List<SessionActionItemDto> actionItems = outcome.getActionItems() == null
+                ? List.of()
+                : outcome.getActionItems().stream()
+                .sorted(Comparator.comparing(SessionOutcomeActionItem::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(this::toActionItemDto)
+                .toList();
+
+        int openActionItemCount = (int) actionItems.stream()
+                .filter(actionItem -> !actionItem.isCompleted())
+                .count();
+
+        return SessionOutcomeDto.builder()
+                .id(outcome.getId())
+                .summary(outcome.getSummary())
+                .reflectionPrompt(outcome.getReflectionPrompt())
+                .recordedAt(outcome.getRecordedAt())
+                .openActionItemCount(openActionItemCount)
+                .actionItems(actionItems)
+                .build();
+    }
+
+    private SessionActionItemDto toActionItemDto(SessionOutcomeActionItem actionItem) {
+        return SessionActionItemDto.builder()
+                .id(actionItem.getId())
+                .description(actionItem.getDescription())
+                .ownerType(actionItem.getOwnerType())
+                .dueAt(actionItem.getDueAt())
+                .completedAt(actionItem.getCompletedAt())
+                .completed(actionItem.isCompleted())
                 .build();
     }
 }

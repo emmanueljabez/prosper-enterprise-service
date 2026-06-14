@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,6 +28,21 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
      * Find sessions by mentee ID
      */
     List<Session> findByMenteeId(UUID menteeId);
+
+    List<Session> findByCompanyProgramParticipantId(UUID companyProgramParticipantId);
+
+    @Query("SELECT s FROM Session s WHERE s.companyProgramParticipantId IN :participantIds ORDER BY s.scheduledStart DESC")
+    List<Session> findByCompanyProgramParticipantIdInOrderByScheduledStartDesc(@Param("participantIds") Collection<UUID> participantIds);
+
+    long countByCompanyProgramParticipantIdAndMentorIdAndStatus(UUID companyProgramParticipantId,
+                                                                UUID mentorId,
+                                                                Session.SessionStatus status);
+
+    /**
+     * Find sessions for a group of mentees.
+     */
+    @Query("SELECT s FROM Session s WHERE s.menteeId IN :menteeIds ORDER BY s.scheduledStart DESC")
+    List<Session> findByMenteeIdIn(@Param("menteeIds") Collection<UUID> menteeIds);
 
     /**
      * Find sessions by status
@@ -65,14 +81,17 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
     List<Session> findByScheduledStartBetween(@Param("startDate") ZonedDateTime startDate, @Param("endDate") ZonedDateTime endDate);
 
     /**
-     * Find conflicting sessions for a mentor in a time range
+     * Find blocking sessions for a mentor in a time range, excluding the session being confirmed.
      */
     @Query("SELECT s FROM Session s WHERE s.mentorId = :mentorId " +
-           "AND s.status IN ('PENDING', 'CONFIRMED') " +
-           "AND ((s.scheduledStart <= :endTime AND s.scheduledEnd >= :startTime))")
-    List<Session> findConflictingSessions(@Param("mentorId") UUID mentorId,
-                                         @Param("startTime") ZonedDateTime startTime,
-                                         @Param("endTime") ZonedDateTime endTime);
+           "AND s.id <> :excludedSessionId " +
+           "AND s.status IN ('CONFIRMED', 'SCHEDULED', 'IN_PROGRESS') " +
+           "AND s.scheduledStart < :endTime " +
+           "AND s.scheduledEnd > :startTime")
+    List<Session> findBlockingSessions(@Param("mentorId") UUID mentorId,
+                                       @Param("startTime") ZonedDateTime startTime,
+                                       @Param("endTime") ZonedDateTime endTime,
+                                       @Param("excludedSessionId") UUID excludedSessionId);
 
     /**
      * Find upcoming sessions for mentor
@@ -97,6 +116,24 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
      */
     @Query("SELECT s FROM Session s WHERE s.menteeId = :menteeId AND s.scheduledEnd < :now ORDER BY s.scheduledEnd DESC")
     List<Session> findPastSessionsForMentee(@Param("menteeId") UUID menteeId, @Param("now") ZonedDateTime now);
+
+    /**
+     * Find upcoming sessions for mentee with pagination
+     */
+    @Query("SELECT s FROM Session s WHERE s.menteeId = :menteeId AND s.scheduledStart > :now AND s.status IN ('CONFIRMED', 'SCHEDULED') ORDER BY s.scheduledStart ASC")
+    Page<Session> findUpcomingSessionsForMentee(@Param("menteeId") UUID menteeId, @Param("now") ZonedDateTime now, Pageable pageable);
+
+    /**
+     * Find past sessions for mentee with pagination
+     */
+    @Query("SELECT s FROM Session s WHERE s.menteeId = :menteeId AND s.scheduledEnd < :now ORDER BY s.scheduledEnd DESC")
+    Page<Session> findPastSessionsForMentee(@Param("menteeId") UUID menteeId, @Param("now") ZonedDateTime now, Pageable pageable);
+
+    /**
+     * Find today's sessions for mentee with pagination
+     */
+    @Query("SELECT s FROM Session s WHERE s.menteeId = :menteeId AND s.scheduledStart >= :startOfDay AND s.scheduledStart < :endOfDay ORDER BY s.scheduledStart ASC")
+    Page<Session> findTodaySessionsForMentee(@Param("menteeId") UUID menteeId, @Param("startOfDay") ZonedDateTime startOfDay, @Param("endOfDay") ZonedDateTime endOfDay, Pageable pageable);
 
     /**
      * Find sessions needing reminders
@@ -145,5 +182,3 @@ public interface SessionRepository extends JpaRepository<Session, UUID> {
     @Query("SELECT AVG(s.rating) FROM Session s WHERE s.mentorId = :mentorId AND s.rating IS NOT NULL")
     Double calculateAverageRatingForMentor(@Param("mentorId") UUID mentorId);
 }
-
-

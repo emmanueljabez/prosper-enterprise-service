@@ -1,0 +1,5 @@
+ALTER TABLE subscriptions
+    ADD COLUMN IF NOT EXISTS billing_interval VARCHAR(20) NOT NULL DEFAULT 'MONTHLY';
+
+ALTER TABLE company_subscriptions
+    ADD COLUMN IF NOT EXISTS billing_interval VARCHAR(20) NOT NULL DEFAULT 'MONTHLY';

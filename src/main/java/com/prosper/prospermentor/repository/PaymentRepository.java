@@ -4,6 +4,7 @@ import com.prosper.prospermentor.entity.Payment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -18,7 +19,7 @@ import java.util.UUID;
  * Repository interface for Payment entity
  */
 @Repository
-public interface PaymentRepository extends JpaRepository<Payment, UUID> {
+public interface PaymentRepository extends JpaRepository<Payment, UUID>, JpaSpecificationExecutor<Payment> {
 
     /**
      * Find payment by checkout request ID
@@ -36,14 +37,43 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Page<Payment> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
     /**
+     * Find payments for a company ordered by newest first.
+     */
+    Page<Payment> findByCompanyIdOrderByCreatedAtDesc(UUID companyId, Pageable pageable);
+
+    /**
      * Find payments by session ID
      */
     List<Payment> findBySessionId(UUID sessionId);
+
+    Optional<Payment> findTopBySessionIdAndPaymentTypeAndStatusOrderByCompletedAtDesc(
+            UUID sessionId,
+            Payment.PaymentType paymentType,
+            Payment.PaymentStatus status
+    );
 
     /**
      * Find payments by subscription ID
      */
     List<Payment> findBySubscriptionId(UUID subscriptionId);
+
+    /**
+     * Find latest payment by subscription and payment type.
+     */
+    Optional<Payment> findTopBySubscriptionIdAndPaymentTypeOrderByCreatedAtDesc(
+            UUID subscriptionId,
+            Payment.PaymentType paymentType
+    );
+
+    /**
+     * Find payments by invoice ID
+     */
+    List<Payment> findByInvoiceIdOrderByCreatedAtDesc(UUID invoiceId);
+
+    /**
+     * Find latest payment by invoice ID
+     */
+    Optional<Payment> findTopByInvoiceIdOrderByCreatedAtDesc(UUID invoiceId);
 
     /**
      * Find payments by status

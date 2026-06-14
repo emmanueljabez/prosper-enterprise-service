@@ -36,12 +36,15 @@ public class SessionNotificationService {
     
     @Value("${app.mail.from:noreply@prospermentor.com}")
     private String fromEmail;
-    
+
     @Value("${app.name:ProsperMentor}")
     private String appName;
-    
+
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
+
+    @Value("${app.frontend-url:http://localhost:3000}")
+    private String frontendUrl;
 
     /**
      * Send session confirmation to mentee
@@ -60,13 +63,13 @@ public class SessionNotificationService {
             context.setVariable("appName", appName);
             context.setVariable("baseUrl", baseUrl);
             context.setVariable("sessionDate", session.getScheduledStart()
-                    .format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.ENGLISH)));
+                    .format(DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)));
             context.setVariable("sessionTime", session.getScheduledStart()
                     .format(DateTimeFormatter.ofPattern("h:mm a z", Locale.ENGLISH)));
             
             String htmlContent = templateEngine.process("email/booking-confirmation-mentee", context);
 
-            emailInterface.sendEmail("jayb2oteno@gmail.com", "Session Confirmed - " + session.getSkill().getName(),
+            emailInterface.sendEmail(mentee.getEmail(), "Session Confirmed - " + session.getSkill().getName(),
                     htmlContent, List.of());
             
             log.info("Successfully sent session confirmation to mentee: {}", mentee.getId());
@@ -94,14 +97,15 @@ public class SessionNotificationService {
             context.setVariable("meetingDetails", meetingDetails);
             context.setVariable("appName", appName);
             context.setVariable("baseUrl", baseUrl);
+            context.setVariable("frontendUrl", frontendUrl);
             context.setVariable("sessionDate", session.getScheduledStart()
-                    .format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy", Locale.ENGLISH)));
+                    .format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));
             context.setVariable("sessionTime", session.getScheduledStart()
-                    .format(DateTimeFormatter.ofPattern("h:mm a z", Locale.ENGLISH)));
-            
+                    .format(DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)));
+
             String htmlContent = templateEngine.process("email/booking-notification-mentor", context);
 
-            emailInterface.sendEmail(/*mentor.getEmail()*/ "jayb2oteno@gmail.com", "New Session Request - " + skill.getName(),
+            emailInterface.sendEmail(mentor.getEmail(), "New Session Request - " + skill.getName(),
                     htmlContent, List.of());
             
             log.info("Successfully sent session notification to mentor: {}", mentor.getId());
@@ -173,6 +177,7 @@ public class SessionNotificationService {
             // Determine who cancelled and send appropriate notifications
             if (session.getCancelledBy() == Session.CancelledBy.MENTOR) {
                 sendCancellationToMentee(session, mentee, mentor, reason);
+                sendCancellationToMentor(session, mentor, mentee, reason);
             } else if (session.getCancelledBy() == Session.CancelledBy.MENTEE) {
                 sendCancellationToMentor(session, mentor, mentee, reason);
             } else {
@@ -240,6 +245,7 @@ public class SessionNotificationService {
             context.setVariable("reason", reason);
             context.setVariable("appName", appName);
             context.setVariable("baseUrl", baseUrl);
+            context.setVariable("frontendUrl", frontendUrl);
             
             String htmlContent = templateEngine.process("email/session-cancelled-mentee", context);
 
@@ -248,6 +254,7 @@ public class SessionNotificationService {
             
         } catch (Exception e) {
             log.error("Failed to send cancellation to mentee {}: {}", mentee.getId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to send cancellation to mentee", e);
         }
     }
     
@@ -261,6 +268,7 @@ public class SessionNotificationService {
             context.setVariable("reason", reason);
             context.setVariable("appName", appName);
             context.setVariable("baseUrl", baseUrl);
+            context.setVariable("frontendUrl", frontendUrl);
             
             String htmlContent = templateEngine.process("email/session-cancelled-mentor", context);
 
@@ -269,6 +277,7 @@ public class SessionNotificationService {
             
         } catch (Exception e) {
             log.error("Failed to send cancellation to mentor {}: {}", mentor.getId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to send cancellation to mentor", e);
         }
     }
 }

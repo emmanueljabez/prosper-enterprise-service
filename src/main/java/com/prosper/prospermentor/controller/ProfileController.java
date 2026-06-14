@@ -306,6 +306,34 @@ public class ProfileController {
     }
 
     /**
+     * Get a single mentor profile by ID.
+     */
+    @GetMapping("/mentors/{mentorId:[0-9a-fA-F\\-]{36}}")
+    public ResponseEntity<Object> getMentorById(@PathVariable UUID mentorId) {
+        try {
+            log.info("Fetching mentor profile by ID: {}", mentorId);
+
+            var mentorProfile = profileService.getCompleteProfile(mentorId);
+            if (mentorProfile.isEmpty()) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("error", "Mentor profile not found"));
+            }
+
+            Object role = mentorProfile.get().get("role");
+            if (role == null || !"MENTOR".equalsIgnoreCase(role.toString())) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("error", "Mentor profile not found"));
+            }
+
+            return ResponseEntity.ok(mentorProfile.get());
+        } catch (Exception e) {
+            log.error("Error fetching mentor profile {}: {}", mentorId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to fetch mentor profile"));
+        }
+    }
+
+    /**
      * Get all basic mentor profiles (public endpoint)
      */
     @GetMapping("/mentors/basic")

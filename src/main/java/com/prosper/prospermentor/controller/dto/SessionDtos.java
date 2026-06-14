@@ -1,6 +1,10 @@
 package com.prosper.prospermentor.controller.dto;
 
+import com.prosper.prospermentor.dto.AddOnSessionDto;
+import com.prosper.prospermentor.dto.RecommendedPlanDto;
+import com.prosper.prospermentor.dto.SessionBookingEligibility;
 import com.prosper.prospermentor.entity.Session;
+import com.prosper.prospermentor.entity.SessionOutcomeActionItem;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +14,8 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -61,6 +67,7 @@ public class SessionDtos {
     @AllArgsConstructor
     public static class ConfirmSessionRequestDto {
         private String mentorResponse;
+        private ZonedDateTime scheduledStart;
     }
     
     /**
@@ -71,11 +78,72 @@ public class SessionDtos {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CancelSessionRequestDto {
-        
+
         @NotNull(message = "Cancelled by is required")
         private Session.CancelledBy cancelledBy;
-        
+
         private String reason;
+    }
+
+    /**
+     * Request DTO for declining a session (mentor action)
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DeclineSessionRequestDto {
+        private String reason;
+    }
+
+    /**
+     * Request DTO for completing a session with structured outcomes.
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CompleteSessionRequestDto {
+        private String outcomeSummary;
+        private String reflectionPrompt;
+        private String mentorPrivateNotes;
+        private List<OutcomeActionItemRequestDto> actionItems;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class OutcomeActionItemRequestDto {
+        private String description;
+        private SessionOutcomeActionItem.ActionItemOwnerType ownerType;
+        private ZonedDateTime dueAt;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SessionActionItemDto {
+        private UUID id;
+        private String description;
+        private SessionOutcomeActionItem.ActionItemOwnerType ownerType;
+        private ZonedDateTime dueAt;
+        private LocalDateTime completedAt;
+        private boolean completed;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SessionOutcomeDto {
+        private UUID id;
+        private String summary;
+        private String reflectionPrompt;
+        private LocalDateTime recordedAt;
+        private Integer openActionItemCount;
+        private List<SessionActionItemDto> actionItems;
     }
     
     /**
@@ -90,6 +158,8 @@ public class SessionDtos {
         private UUID mentorId;
         private UUID menteeId;
         private UUID skillId;
+        private UUID companyProgramId;
+        private UUID companyProgramParticipantId;
         private String title;
         private String description;
         private ZonedDateTime scheduledStart;
@@ -117,6 +187,8 @@ public class SessionDtos {
         private String skillName;
         private String mentorName;
         private String menteeName;
+        private String companyProgramName;
+        private SessionOutcomeDto outcome;
         private long durationMinutes;
         private boolean canBeModified;
         private boolean isFutureBooking;
@@ -185,7 +257,7 @@ public class SessionDtos {
     }
 
     /**
-     * DTO for session booking error with payment requirement
+     * DTO for session booking error with payment requirement and recommended plans
      */
     @Data
     @Builder
@@ -195,5 +267,42 @@ public class SessionDtos {
         private String message;
         private Boolean paymentRequired;
         private Integer remainingSessions;
+        private Integer addonSessionsRemaining;
+        private SessionBookingEligibility.EligibilityReason reason;
+        private List<RecommendedPlanDto> recommendedPlans;
+        private AddOnSessionDto addOnOption;
+
+        /**
+         * Create error DTO from SessionBookingEligibility
+         */
+        public static SessionBookingErrorDto fromEligibility(SessionBookingEligibility eligibility) {
+            return SessionBookingErrorDto.builder()
+                    .message(eligibility.getMessage())
+                    .paymentRequired(!eligibility.isCanBook())
+                    .remainingSessions(eligibility.getSessionsRemaining())
+                    .addonSessionsRemaining(eligibility.getAddonSessionsRemaining())
+                    .reason(eligibility.getReason())
+                    .recommendedPlans(eligibility.getRecommendedPlans())
+                    .addOnOption(eligibility.getAddOnOption())
+                    .build();
+        }
+    }
+
+    /**
+     * DTO for testing WhatsApp notifications
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TestWhatsAppRequestDto {
+        @NotNull(message = "Phone number is required")
+        private String phoneNumber;
+
+        private String templateName;
+
+        private Map<String, String> templateParams;
+
+        private List<String> bodyParameters;
     }
 }

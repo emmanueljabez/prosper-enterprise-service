@@ -7,9 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -46,54 +44,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             final String jwt = authHeader.substring(BEARER_PREFIX.length());
-            
-            // Use HS256 validation only for now (ES256 disabled temporarily)
-            boolean isValidToken = false;
-            String userId = null;
-            String email = null;
-            String role = null;
-            
-            // TEMPORARY: Skip JWT validation for testing (REMOVE IN PRODUCTION!)
-            // Parse JWT manually to extract claims without signature verification
-            try {
-                String[] parts = jwt.split("\\.");
-                if (parts.length == 3) {
-                    String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
-                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                    com.fasterxml.jackson.databind.JsonNode claims = mapper.readTree(payload);
-                    
-                    userId = claims.get("sub").asText();
-                    email = claims.has("email") ? claims.get("email").asText() : null;
-                    
-                    // Extract role from user_metadata
-                    if (claims.has("user_metadata") && claims.get("user_metadata").has("role")) {
-                        role = claims.get("user_metadata").get("role").asText();
-                    } else {
-                        role = "MENTEE"; // default
-                    }
-                    
-                    isValidToken = true;
-                    log.warn("⚠️ BYPASSING JWT SIGNATURE VALIDATION - FOR TESTING ONLY!");
-                    log.debug("Extracted userId: {}, email: {}, role: {}", userId, email, role);
-                }
-            } catch (Exception e) {
-                log.error("Failed to parse JWT manually: {}", e.getMessage());
-            }
 
-            if (isValidToken && userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            TokenClaims tokenClaims = extractValidatedClaims(jwt);
+
+            if (tokenClaims != null
+                    && tokenClaims.userId() != null
+                    && SecurityContextHolder.getContext().getAuthentication() == null) {
                 // Try to load user details from database, fallback to JWT-only
                 UserDetails userDetails;
                 try {
-                    if (userDetailsService.userExistsById(userId)) {
-                        userDetails = userDetailsService.loadUserByUserId(userId);
-                        log.debug("Loaded user from database: {}", email);
+                    if (userDetailsService.userExistsById(tokenClaims.userId())) {
+                        userDetails = userDetailsService.loadUserByUserId(tokenClaims.userId());
+                        log.debug("Loaded user from database: {}", tokenClaims.email());
                     } else {
-                        userDetails = userDetailsService.createUserDetailsFromJwt(userId, email, role);
-                        log.debug("Created user details from JWT: {}", email);
+                        userDetails = userDetailsService.createUserDetailsFromJwt(
+                                tokenClaims.userId(),
+                                tokenClaims.email(),
+                                tokenClaims.role()
+                        );
+                        log.debug("Created user details from validated JWT: {}", tokenClaims.email());
                     }
                 } catch (Exception e) {
                     log.warn("Failed to load user from database, using JWT-only details: {}", e.getMessage());
-                    userDetails = userDetailsService.createUserDetailsFromJwt(userId, email, role);
+                    userDetails = userDetailsService.createUserDetailsFromJwt(
+                            tokenClaims.userId(),
+                            tokenClaims.email(),
+                            tokenClaims.role()
+                    );
                 }
 
                 // Create authentication token with UserDetails
@@ -106,7 +83,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                log.debug("Successfully authenticated user: {} with role: {}", email, role);
+                log.debug("Successfully authenticated user: {} with role: {}", tokenClaims.email(), tokenClaims.role());
             }
         } catch (Exception e) {
             log.error("JWT authentication failed: {}", e.getMessage());
@@ -116,7 +93,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-}
 
+    private TokenClaims extractValidatedClaims(String jwt) {
+        if (es256JwtUtil.validateToken(jwt)) {
+            return new TokenClaims(
+                    es256JwtUtil.extractUserId(jwt),
+                    es256JwtUtil.extractEmail(jwt),
+                    es256JwtUtil.extractRole(jwt)
+            );
+        }
+
+        if (jwtUtil.validateToken(jwt)) {
+            return new TokenClaims(
+                    jwtUtil.extractUserId(jwt),
+                    jwtUtil.extractEmail(jwt),
+                    jwtUtil.extractRole(jwt)
+            );
+        }
+
+        log.warn("Rejected JWT because signature validation failed");
+        return null;
+    }
+
+    private record TokenClaims(String userId, String email, String role) {
+    }
+}
 
 

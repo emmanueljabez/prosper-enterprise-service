@@ -1,14 +1,17 @@
 package com.prosper.prospermentor.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwsHeader;
-import io.jsonwebtoken.Jwts;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.text.ParseException;
 import java.security.interfaces.ECPublicKey;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,44 +29,42 @@ public class ES256JwtUtil {
      * Extract user ID from ES256 JWT token
      */
     public String extractUserId(String token) {
-        Claims claims = extractClaims(token);
-        return claims.getSubject();
+        return extractClaims(token).getSubject();
     }
 
     /**
      * Extract user email from ES256 JWT token
      */
     public String extractEmail(String token) {
-        Claims claims = extractClaims(token);
-        return (String) claims.get("email");
+        return stringClaim(token, "email");
     }
 
     /**
      * Extract user role from ES256 JWT token
      */
     public String extractRole(String token) {
-        Claims claims = extractClaims(token);
-        
+        JWTClaimsSet claims = extractClaims(token);
+
         // Try user_metadata first (Supabase standard)
         @SuppressWarnings("unchecked")
-        Map<String, Object> userMetadata = (Map<String, Object>) claims.get("user_metadata");
+        Map<String, Object> userMetadata = (Map<String, Object>) claims.getClaim("user_metadata");
         if (userMetadata != null && userMetadata.containsKey("role")) {
             return (String) userMetadata.get("role");
         }
-        
+
         // Try app_metadata as fallback
         @SuppressWarnings("unchecked")
-        Map<String, Object> appMetadata = (Map<String, Object>) claims.get("app_metadata");
+        Map<String, Object> appMetadata = (Map<String, Object>) claims.getClaim("app_metadata");
         if (appMetadata != null && appMetadata.containsKey("role")) {
             return (String) appMetadata.get("role");
         }
-        
+
         // Try direct role claim
-        String directRole = (String) claims.get("role");
+        String directRole = stringClaim(claims, "role");
         if (directRole != null) {
             return directRole;
         }
-        
+
         return "MENTEE"; // Default role
     }
 
@@ -72,8 +73,7 @@ public class ES256JwtUtil {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> extractUserMetadata(String token) {
-        Claims claims = extractClaims(token);
-        return (Map<String, Object>) claims.get("user_metadata");
+        return (Map<String, Object>) extractClaims(token).getClaim("user_metadata");
     }
 
     /**
@@ -81,8 +81,7 @@ public class ES256JwtUtil {
      */
     @SuppressWarnings("unchecked")
     public Map<String, Object> extractAppMetadata(String token) {
-        Claims claims = extractClaims(token);
-        return (Map<String, Object>) claims.get("app_metadata");
+        return (Map<String, Object>) extractClaims(token).getClaim("app_metadata");
     }
 
     /**
@@ -90,8 +89,8 @@ public class ES256JwtUtil {
      */
     public boolean isTokenExpired(String token) {
         try {
-            Claims claims = extractClaims(token);
-            return claims.getExpiration().before(new Date());
+            Date expiration = extractClaims(token).getExpirationTime();
+            return expiration == null || expiration.before(new Date());
         } catch (Exception e) {
             log.error("Error checking token expiration: {}", e.getMessage());
             return true;
@@ -103,30 +102,29 @@ public class ES256JwtUtil {
      */
     public boolean validateToken(String token) {
         try {
-            ECPublicKey publicKey = jwkService.getPublicKey();
-            
-            // Parse and verify token in one step
-            Claims claims = Jwts.parser()
-                    .verifyWith(publicKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-            
-            // Check expiration
-            if (claims.getExpiration().before(new Date())) {
+            SignedJWT signedJwt = SignedJWT.parse(token);
+            String keyId = signedJwt.getHeader().getKeyID();
+            ECPublicKey publicKey = jwkService.getPublicKey(keyId);
+
+            if (!signedJwt.verify(new ECDSAVerifier(publicKey))) {
+                log.debug("ES256 JWT signature verification failed for kid {}", keyId);
+                return false;
+            }
+
+            JWTClaimsSet claims = signedJwt.getJWTClaimsSet();
+            if (claims.getExpirationTime() == null || claims.getExpirationTime().before(new Date())) {
                 log.debug("Token is expired");
                 return false;
             }
-            
-            // Additional validation checks
+
             if (claims.getSubject() == null || claims.getSubject().trim().isEmpty()) {
                 log.warn("Token has no subject (user ID)");
                 return false;
             }
-            
+
             log.debug("ES256 token validation successful for user: {}", claims.getSubject());
             return true;
-            
+
         } catch (Exception e) {
             log.debug("ES256 JWT token validation failed: {}", e.getMessage());
             return false;
@@ -137,52 +135,67 @@ public class ES256JwtUtil {
     /**
      * Extract and verify claims from ES256 JWT token
      */
-    private Claims extractClaims(String token) {
-        ECPublicKey publicKey = jwkService.getPublicKey();
-        
-        return Jwts.parser()
-                .verifyWith(publicKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+    private JWTClaimsSet extractClaims(String token) {
+        try {
+            SignedJWT signedJwt = SignedJWT.parse(token);
+            String keyId = signedJwt.getHeader().getKeyID();
+            ECPublicKey publicKey = jwkService.getPublicKey(keyId);
+
+            if (!signedJwt.verify(new ECDSAVerifier(publicKey))) {
+                throw new IllegalArgumentException("Invalid ES256 signature");
+            }
+
+            return signedJwt.getJWTClaimsSet();
+        } catch (ParseException | JOSEException e) {
+            throw new IllegalArgumentException("Failed to parse ES256 token", e);
+        }
     }
 
     /**
      * Get token expiration time
      */
     public Date getTokenExpiration(String token) {
-        Claims claims = extractClaims(token);
-        return claims.getExpiration();
+        return extractClaims(token).getExpirationTime();
     }
 
     /**
      * Get token issued at time
      */
     public Date getTokenIssuedAt(String token) {
-        Claims claims = extractClaims(token);
-        return claims.getIssuedAt();
+        return extractClaims(token).getIssueTime();
     }
 
     /**
      * Extract issuer from token
      */
     public String extractIssuer(String token) {
-        Claims claims = extractClaims(token);
-        return claims.getIssuer();
+        return extractClaims(token).getIssuer();
     }
 
     /**
      * Extract audience from token
      */
     public String extractAudience(String token) {
-        Claims claims = extractClaims(token);
-        return claims.getAudience().iterator().next(); // Get first audience
+        List<String> audience = extractClaims(token).getAudience();
+        return (audience == null || audience.isEmpty()) ? null : audience.get(0);
     }
 
     /**
      * Get all claims as a map
      */
     public Map<String, Object> extractAllClaims(String token) {
-        return extractClaims(token);
+        return extractClaims(token).getClaims();
+    }
+
+    private String stringClaim(String token, String claimName) {
+        return stringClaim(extractClaims(token), claimName);
+    }
+
+    private String stringClaim(JWTClaimsSet claims, String claimName) {
+        try {
+            return claims.getStringClaim(claimName);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Failed to read claim " + claimName, e);
+        }
     }
 }

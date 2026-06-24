@@ -68,6 +68,46 @@ public class ProfileService {
         }
     }
 
+    private void backfillMissingProfileDetails(UUID userId,
+                                               String firstName,
+                                               String lastName,
+                                               String phoneNumber,
+                                               String dateOfBirth) {
+        profileRepository.findById(userId).ifPresent(profile -> {
+            boolean changed = false;
+
+            if (isBlank(profile.getFirstName()) && !isBlank(firstName)) {
+                profile.setFirstName(firstName.trim());
+                changed = true;
+            }
+            if (isBlank(profile.getLastName()) && !isBlank(lastName)) {
+                profile.setLastName(lastName.trim());
+                changed = true;
+            }
+            if (isBlank(profile.getPhone()) && !isBlank(phoneNumber)) {
+                profile.setPhone(phoneNumber.trim());
+                changed = true;
+            }
+            if (profile.getDob() == null && !isBlank(dateOfBirth)) {
+                try {
+                    profile.setDob(java.time.LocalDate.parse(dateOfBirth.trim()));
+                    changed = true;
+                } catch (Exception e) {
+                    log.warn("Failed to parse date of birth while backfilling profile {}: {}", userId, dateOfBirth);
+                }
+            }
+
+            if (changed) {
+                profileRepository.save(profile);
+                log.info("Backfilled missing signup profile details for user ID: {}", userId);
+            }
+        });
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
     /**
      * Create a new profile for a user with additional details
      */
@@ -85,6 +125,7 @@ public class ProfileService {
             // Check if profile already exists
             if (profileRepository.existsById(userId)) {
                 log.warn("Profile already exists for user ID: {}", userId);
+                backfillMissingProfileDetails(userId, firstName, lastName, phoneNumber, dateOfBirth);
                 return getCompleteProfile(userId);
             }
 

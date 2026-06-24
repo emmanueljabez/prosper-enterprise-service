@@ -3,6 +3,8 @@ package com.prosper.prospermentor.service.notification;
 import com.prosper.prospermentor.EmailInterface;
 import com.prosper.prospermentor.entity.Session;
 import com.prosper.prospermentor.entity.Profile;
+import com.prosper.prospermentor.entity.SessionProposal;
+import com.prosper.prospermentor.entity.SessionProposalSlot;
 import com.prosper.prospermentor.entity.Skill;
 import com.prosper.prospermentor.repository.ProfileRepository;
 import com.prosper.prospermentor.service.meeting.MeetingDetails;
@@ -151,6 +153,89 @@ public class SessionNotificationService {
             throw new RuntimeException("Failed to send mentor confirmation notification", e);
         }
     }
+
+    public void sendAlternativeProposalToMentee(SessionProposal proposal,
+                                                Session session,
+                                                Profile mentor,
+                                                Profile mentee) {
+        log.info("Sending alternative proposal email to mentee: {} for session: {}",
+                mentee.getId(), session.getId());
+
+        try {
+            String htmlContent = """
+                    <p>Hi %s,</p>
+                    <p>%s has proposed an alternative time for your %s session.</p>
+                    <p><strong>Proposed time%s:</strong><br>%s</p>
+                    <p><strong>Message from mentor:</strong><br>%s</p>
+                    <p><a href="%s">Review the proposed time</a></p>
+                    <p>Prosper Mentor</p>
+                    """.formatted(
+                    escapeHtml(firstName(mentee)),
+                    escapeHtml(fullName(mentor)),
+                    escapeHtml(defaultString(session.getTitle(), "mentorship")),
+                    proposal.getSlots() != null && proposal.getSlots().size() > 1 ? "s" : "",
+                    formatProposalSlotsHtml(proposal),
+                    escapeHtml(defaultString(proposal.getMentorMessage(), "Please review the proposed alternative time.")),
+                    escapeHtml(buildSessionReviewLink(session.getId()))
+            );
+
+            emailInterface.sendEmail(
+                    mentee.getEmail(),
+                    "Alternative Time Proposed - " + defaultString(session.getTitle(), "Mentorship Session"),
+                    htmlContent,
+                    List.of()
+            );
+
+            log.info("Successfully sent alternative proposal email to mentee: {}", mentee.getId());
+        } catch (Exception e) {
+            log.error("Failed to send alternative proposal email to mentee {}: {}",
+                    mentee.getId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to send alternative proposal email", e);
+        }
+    }
+
+    public void sendProposalResponseToMentor(SessionProposal proposal,
+                                             Session session,
+                                             Profile mentor,
+                                             Profile mentee,
+                                             String responseStatus) {
+        log.info("Sending proposal response email to mentor: {} for session: {}",
+                mentor.getId(), session.getId());
+
+        try {
+            String normalizedStatus = defaultString(responseStatus, "responded");
+            String htmlContent = """
+                    <p>Hi %s,</p>
+                    <p>%s has %s your proposed alternative time for the %s session.</p>
+                    <p><strong>Proposed time%s:</strong><br>%s</p>
+                    <p><strong>Mentee response:</strong><br>%s</p>
+                    <p><a href="%s">View the session</a></p>
+                    <p>Prosper Mentor</p>
+                    """.formatted(
+                    escapeHtml(firstName(mentor)),
+                    escapeHtml(fullName(mentee)),
+                    escapeHtml(normalizedStatus),
+                    escapeHtml(defaultString(session.getTitle(), "mentorship")),
+                    proposal.getSlots() != null && proposal.getSlots().size() > 1 ? "s" : "",
+                    formatProposalSlotsHtml(proposal),
+                    escapeHtml(defaultString(proposal.getMenteeResponse(), "No note provided")),
+                    escapeHtml(buildSessionReviewLink(session.getId()))
+            );
+
+            emailInterface.sendEmail(
+                    mentor.getEmail(),
+                    "Mentee " + normalizedStatus + " Proposed Time - " + defaultString(session.getTitle(), "Mentorship Session"),
+                    htmlContent,
+                    List.of()
+            );
+
+            log.info("Successfully sent proposal response email to mentor: {}", mentor.getId());
+        } catch (Exception e) {
+            log.error("Failed to send proposal response email to mentor {}: {}",
+                    mentor.getId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to send proposal response email", e);
+        }
+    }
     
     /**
      * Send session reminder to both mentor and mentee
@@ -279,5 +364,61 @@ public class SessionNotificationService {
             log.error("Failed to send cancellation to mentor {}: {}", mentor.getId(), e.getMessage(), e);
             throw new RuntimeException("Failed to send cancellation to mentor", e);
         }
+    }
+
+    private String buildSessionReviewLink(java.util.UUID sessionId) {
+        String normalizedFrontendUrl = frontendUrl == null || frontendUrl.isBlank()
+                ? "http://localhost:3000"
+                : frontendUrl.trim();
+        while (normalizedFrontendUrl.endsWith("/")) {
+            normalizedFrontendUrl = normalizedFrontendUrl.substring(0, normalizedFrontendUrl.length() - 1);
+        }
+        return normalizedFrontendUrl + "/app/sessions/review/" + sessionId;
+    }
+
+    private String formatProposalSlotsHtml(SessionProposal proposal) {
+        if (proposal.getSlots() == null || proposal.getSlots().isEmpty()) {
+            return "No slots provided";
+        }
+
+        return proposal.getSlots().stream()
+                .map(this::formatProposalSlot)
+                .map(this::escapeHtml)
+                .reduce((left, right) -> left + "<br>" + right)
+                .orElse("No slots provided");
+    }
+
+    private String formatProposalSlot(SessionProposalSlot slot) {
+        return slot.getScheduledStart().format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a z", Locale.ENGLISH));
+    }
+
+    private String firstName(Profile profile) {
+        if (profile != null && profile.getFirstName() != null && !profile.getFirstName().isBlank()) {
+            return profile.getFirstName();
+        }
+        return fullName(profile);
+    }
+
+    private String fullName(Profile profile) {
+        if (profile == null) {
+            return "there";
+        }
+        String firstName = profile.getFirstName() == null ? "" : profile.getFirstName().trim();
+        String lastName = profile.getLastName() == null ? "" : profile.getLastName().trim();
+        String fullName = (firstName + " " + lastName).trim();
+        return fullName.isBlank() ? defaultString(profile.getEmail(), "there") : fullName;
+    }
+
+    private String defaultString(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private String escapeHtml(String value) {
+        return defaultString(value, "")
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }

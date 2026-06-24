@@ -307,8 +307,8 @@ public class InvoiceService {
 
     private Map<String, Object> buildInvoicePayload(Invoice invoice) {
         refreshExpiry(invoice);
-        String normalizedRedirectSuccessUrl = normalizeRedirectUrl(invoice.getRedirectSuccessUrl());
-        String normalizedRedirectCancelUrl = normalizeRedirectUrl(invoice.getRedirectCancelUrl());
+        String redirectSuccessUrl = trimToNull(invoice.getRedirectSuccessUrl());
+        String redirectCancelUrl = trimToNull(invoice.getRedirectCancelUrl());
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("id", invoice.getId());
@@ -320,8 +320,8 @@ public class InvoiceService {
         payload.put("status", invoice.getStatus());
         payload.put("description", invoice.getDescription());
         payload.put("metadata", tryParseJson(invoice.getMetadata()));
-        payload.put("redirectSuccessUrl", normalizedRedirectSuccessUrl);
-        payload.put("redirectCancelUrl", normalizedRedirectCancelUrl);
+        payload.put("redirectSuccessUrl", redirectSuccessUrl);
+        payload.put("redirectCancelUrl", redirectCancelUrl);
         payload.put("expiresAt", invoice.getExpiresAt());
         payload.put("paidAt", invoice.getPaidAt());
         payload.put("createdAt", invoice.getCreatedAt());

@@ -182,6 +182,18 @@ public class Session {
     @Column(name = "mentee_message", length = 1000)
     private String menteeMessage;
 
+    @Column(name = "booking_primary_goal", columnDefinition = "TEXT")
+    private String bookingPrimaryGoal;
+
+    @Column(name = "booking_already_tried", columnDefinition = "TEXT")
+    private String bookingAlreadyTried;
+
+    @Column(name = "booking_success_looks_like", columnDefinition = "TEXT")
+    private String bookingSuccessLooksLike;
+
+    @Column(name = "booking_context_document", columnDefinition = "TEXT")
+    private String bookingContextDocument;
+
     /**
      * Mentor's response to the session request
      */

@@ -11,6 +11,8 @@ import com.prosper.prospermentor.service.meeting.MeetingDetails;
 import com.prosper.prospermentor.service.meeting.MeetingService;
 import com.prosper.prospermentor.service.notification.SessionNotificationService;
 import com.prosper.prospermentor.util.PhoneNumberUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -18,12 +20,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -34,6 +39,13 @@ import java.util.UUID;
 @Slf4j
 @Transactional
 public class SessionBookingService {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final String MENTEE_ALTERNATIVE_PROPOSED_TEMPLATE = "prosper_mentee_session_alternative_proposed";
+    private static final String MENTOR_ALTERNATIVE_ACCEPTED_TEMPLATE = "prosper_mentor_alternative_accepted";
+    private static final String MENTOR_ALTERNATIVE_DECLINED_TEMPLATE = "prosper_mentor_alternative_declined";
+    private static final String MENTOR_SUPPORT_CONTACT_REQUESTED_TEMPLATE = "prosper_mentor_support_contact_requested";
+    private static final String MENTEE_SUPPORT_CONTACT_REQUESTED_TEMPLATE = "prosper_mentee_support_contact_requested";
     
     private final SessionRepository sessionRepository;
     private final ProfileRepository profileRepository;
@@ -55,9 +67,17 @@ public class SessionBookingService {
     private final JourneyInstanceService journeyInstanceService;
     private final EmployeeSessionAllocationService employeeSessionAllocationService;
     private final PersonalSessionCreditService personalSessionCreditService;
+    private final SessionProposalRepository sessionProposalRepository;
+    private final SessionSupportRequestRepository sessionSupportRequestRepository;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
+
+    @Value("${support.mentor-experience.whatsapp:}")
+    private String mentorExperienceWhatsApp;
+
+    @Value("${support.mentee-experience.whatsapp:}")
+    private String menteeExperienceWhatsApp;
 
     public SessionBookingService(SessionRepository sessionRepository,
                                 ProfileRepository profileRepository,
@@ -78,7 +98,9 @@ public class SessionBookingService {
                                 ParticipantConsentService participantConsentService,
                                 JourneyInstanceService journeyInstanceService,
                                 EmployeeSessionAllocationService employeeSessionAllocationService,
-                                PersonalSessionCreditService personalSessionCreditService) {
+                                PersonalSessionCreditService personalSessionCreditService,
+                                SessionProposalRepository sessionProposalRepository,
+                                SessionSupportRequestRepository sessionSupportRequestRepository) {
         this.sessionRepository = sessionRepository;
         this.profileRepository = profileRepository;
         this.mentorProfileRepository = mentorProfileRepository;
@@ -99,6 +121,8 @@ public class SessionBookingService {
         this.journeyInstanceService = journeyInstanceService;
         this.employeeSessionAllocationService = employeeSessionAllocationService;
         this.personalSessionCreditService = personalSessionCreditService;
+        this.sessionProposalRepository = sessionProposalRepository;
+        this.sessionSupportRequestRepository = sessionSupportRequestRepository;
     }
     
     /**
@@ -157,9 +181,10 @@ public class SessionBookingService {
         session.setTitle( skill.getName());
         session.setDescription("Session requested by mentee");
         session.setScheduledStart(request.getScheduledStart());
-        session.setScheduledEnd(request.getScheduledStart().plusHours(1));
+        session.setScheduledEnd(request.getScheduledStart().plusMinutes(resolveSessionDurationMinutes(eligibility)));
         session.setMeetingPlatform(request.getMeetingPlatform());
         session.setMenteeMessage(request.getMenteeMessage());
+        applyQuestionnaireResponses(session, request.getQuestionnaireResponses());
 
         // Get mentor profile for hourly rate (since it's not in base Profile entity)
         MentorProfile mentorProfile = mentorProfileRepository.findById(UUID.fromString(request.getMentorId()))
@@ -274,6 +299,39 @@ public class SessionBookingService {
         return session;
     }
 
+    private void applyQuestionnaireResponses(Session session, Map<String, Object> questionnaireResponses) {
+        if (questionnaireResponses == null || questionnaireResponses.isEmpty()) {
+            return;
+        }
+
+        session.setBookingPrimaryGoal(textFromMap(questionnaireResponses, "primaryGoal"));
+        session.setBookingAlreadyTried(textFromMap(questionnaireResponses, "alreadyTried"));
+        session.setBookingSuccessLooksLike(textFromMap(questionnaireResponses, "successLooksLike"));
+
+        Object contextDocument = questionnaireResponses.get("contextDocument");
+        if (contextDocument != null) {
+            session.setBookingContextDocument(serializeQuestionnaireValue(contextDocument));
+        }
+    }
+
+    private String textFromMap(Map<String, Object> values, String key) {
+        Object value = values.get(key);
+        return value instanceof String stringValue ? normalizeNullableText(stringValue) : null;
+    }
+
+    private String serializeQuestionnaireValue(Object value) {
+        if (value instanceof String stringValue) {
+            return normalizeNullableText(stringValue);
+        }
+
+        try {
+            return OBJECT_MAPPER.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            log.warn("Could not serialize booking questionnaire value: {}", e.getMessage());
+            return String.valueOf(value);
+        }
+    }
+
     private Session.EntitlementSource toSessionEntitlementSource(SubscriptionService.SessionConsumptionResult consumption) {
         if (consumption == null || consumption.source() == null) {
             return null;
@@ -367,6 +425,14 @@ public class SessionBookingService {
             throw new IllegalArgumentException("Invalid UUID value provided");
         }
     }
+
+    private int resolveSessionDurationMinutes(SessionBookingEligibility eligibility) {
+        Integer configuredDuration = eligibility != null ? eligibility.getSessionDurationMinutes() : null;
+        if (configuredDuration != null && configuredDuration > 0 && configuredDuration <= 24 * 60) {
+            return configuredDuration;
+        }
+        return SubscriptionService.DEFAULT_SESSION_DURATION_MINUTES;
+    }
     
     /**
      * Confirm a session request (mentor action)
@@ -379,6 +445,13 @@ public class SessionBookingService {
      * Confirm a session request (mentor action) with an optional mentor-finalized start time.
      */
     public Session confirmSession(UUID sessionId, String mentorResponse, ZonedDateTime scheduledStart) {
+        return confirmSession(sessionId, mentorResponse, scheduledStart, null);
+    }
+
+    private Session confirmSession(UUID sessionId,
+                                   String mentorResponse,
+                                   ZonedDateTime scheduledStart,
+                                   ZonedDateTime scheduledEnd) {
         log.info("Confirming session: {}", sessionId);
         
         Session session = sessionRepository.findById(sessionId)
@@ -395,7 +468,7 @@ public class SessionBookingService {
                 .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
 
         ZonedDateTime confirmedStart = resolveConfirmedStart(session, scheduledStart);
-        ZonedDateTime confirmedEnd = resolveConfirmedEnd(confirmedStart);
+        ZonedDateTime confirmedEnd = resolveConfirmedEnd(session, confirmedStart, scheduledEnd);
         validateConfirmedSchedule(confirmedStart, confirmedEnd);
         validateMentorAvailability(mentor, confirmedStart, confirmedEnd, session.getId());
 
@@ -467,6 +540,157 @@ public class SessionBookingService {
         activateCompanyProgramParticipantIfNeeded(session.getCompanyProgramParticipantId());
         
         return session;
+    }
+
+    public SessionProposal proposeAlternative(UUID sessionId,
+                                              String mentorMessage,
+                                              List<SessionProposalSlotRequest> requestedSlots) {
+        log.info("Proposing alternative slots for session: {}", sessionId);
+
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+
+        if (session.getStatus() != Session.SessionStatus.PENDING) {
+            throw new IllegalStateException("Can only propose alternatives for pending sessions");
+        }
+
+        List<SessionProposalSlotRequest> slots = requestedSlots == null ? List.of() : requestedSlots;
+        if (slots.isEmpty()) {
+            throw new IllegalArgumentException("At least one alternative slot is required");
+        }
+
+        Profile mentor = profileRepository.findById(session.getMentorId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Profile mentee = profileRepository.findById(session.getMenteeId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        sessionProposalRepository.findFirstBySessionIdAndStatusOrderByProposedAtDesc(
+                sessionId,
+                SessionProposal.ProposalStatus.PENDING_MENTEE_RESPONSE
+        ).ifPresent(existing -> {
+            existing.setStatus(SessionProposal.ProposalStatus.CANCELLED);
+            existing.setRespondedAt(LocalDateTime.now());
+            sessionProposalRepository.saveAndFlush(existing);
+        });
+
+        SessionProposal proposal = new SessionProposal();
+        proposal.setSessionId(sessionId);
+        proposal.setMentorMessage(normalizeNullableText(mentorMessage));
+        proposal.setStatus(SessionProposal.ProposalStatus.PENDING_MENTEE_RESPONSE);
+        proposal.setProposalType(slots.size() > 1
+                ? SessionProposal.ProposalType.MULTIPLE_SLOTS
+                : SessionProposal.ProposalType.SINGLE_SLOT);
+
+        int sortOrder = 0;
+        for (SessionProposalSlotRequest requestedSlot : slots) {
+            if (requestedSlot == null || requestedSlot.getScheduledStart() == null) {
+                throw new IllegalArgumentException("Each alternative slot must include scheduledStart");
+            }
+
+            ZonedDateTime slotStart = requestedSlot.getScheduledStart();
+            ZonedDateTime slotEnd = resolveProposalSlotEnd(session, slotStart, requestedSlot.getScheduledEnd());
+            validateConfirmedSchedule(slotStart, slotEnd);
+            validateMentorAvailability(mentor, slotStart, slotEnd, session.getId());
+
+            SessionProposalSlot slot = new SessionProposalSlot();
+            slot.setProposal(proposal);
+            slot.setScheduledStart(slotStart);
+            slot.setScheduledEnd(slotEnd);
+            slot.setSortOrder(sortOrder++);
+            proposal.getSlots().add(slot);
+        }
+
+        SessionProposal saved = sessionProposalRepository.save(proposal);
+        sendAlternativeProposedEmailNotification(saved, session, mentor, mentee);
+        sendAlternativeProposedWhatsAppNotification(saved, session, mentor, mentee);
+        return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<SessionProposal> getActiveProposal(UUID sessionId) {
+        return sessionProposalRepository.findFirstBySessionIdAndStatusOrderByProposedAtDesc(
+                sessionId,
+                SessionProposal.ProposalStatus.PENDING_MENTEE_RESPONSE
+        );
+    }
+
+    public Session acceptProposal(UUID sessionId, UUID proposalId, UUID slotId, String response) {
+        SessionProposal proposal = loadPendingProposal(sessionId, proposalId);
+        SessionProposalSlot acceptedSlot = resolveAcceptedSlot(proposal, slotId);
+
+        proposal.setStatus(SessionProposal.ProposalStatus.ACCEPTED);
+        proposal.setAcceptedSlotId(acceptedSlot.getId());
+        proposal.setMenteeResponse(normalizeNullableText(response));
+        proposal.setRespondedAt(LocalDateTime.now());
+        sessionProposalRepository.save(proposal);
+
+        String confirmationMessage = defaultString(
+                proposal.getMentorMessage(),
+                "Your selected alternative time has been confirmed."
+        );
+        Session confirmed = confirmSession(
+                sessionId,
+                confirmationMessage,
+                acceptedSlot.getScheduledStart(),
+                acceptedSlot.getScheduledEnd()
+        );
+
+        Profile mentor = profileRepository.findById(confirmed.getMentorId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Profile mentee = profileRepository.findById(confirmed.getMenteeId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        sendProposalResponseEmailNotification(proposal, confirmed, mentor, mentee, "accepted");
+        sendProposalResponseWhatsAppNotification(proposal, confirmed, mentor, mentee, "accepted");
+
+        return confirmed;
+    }
+
+    public SessionProposal declineProposal(UUID sessionId, UUID proposalId, String response) {
+        SessionProposal proposal = loadPendingProposal(sessionId, proposalId);
+        proposal.setStatus(SessionProposal.ProposalStatus.DECLINED);
+        proposal.setMenteeResponse(normalizeNullableText(response));
+        proposal.setRespondedAt(LocalDateTime.now());
+        SessionProposal saved = sessionProposalRepository.save(proposal);
+
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+        Profile mentor = profileRepository.findById(session.getMentorId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Profile mentee = profileRepository.findById(session.getMenteeId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+        sendProposalResponseEmailNotification(saved, session, mentor, mentee, "declined");
+        sendProposalResponseWhatsAppNotification(saved, session, mentor, mentee, "declined");
+
+        return saved;
+    }
+
+    public SessionSupportRequest contactSupport(UUID sessionId,
+                                                SessionSupportRequest.RequesterType requesterType,
+                                                String message) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found"));
+
+        if (requesterType == null) {
+            throw new IllegalArgumentException("requesterType is required");
+        }
+
+        Profile mentor = profileRepository.findById(session.getMentorId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+        Profile mentee = profileRepository.findById(session.getMenteeId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentee not found"));
+
+        Profile requester = requesterType == SessionSupportRequest.RequesterType.MENTOR ? mentor : mentee;
+
+        SessionSupportRequest request = new SessionSupportRequest();
+        request.setSessionId(sessionId);
+        request.setRequesterType(requesterType);
+        request.setRequesterId(requester.getId());
+        request.setMessage(normalizeNullableText(message));
+        request.setStatus(SessionSupportRequest.SupportStatus.OPEN);
+
+        SessionSupportRequest saved = sessionSupportRequestRepository.save(request);
+        sendSupportContactWhatsAppNotifications(saved, session, mentor, mentee, requester);
+        return saved;
     }
     
     /**
@@ -812,7 +1036,7 @@ public class SessionBookingService {
                         defaultString(session.getTitle(), "Mentorship Session"),
                         sessionDate,
                         defaultString(session.getMenteeMessage(), "No notes provided"),
-                        buildMentorReviewLink(session.getId())
+                        buildMentorReviewButtonValue(session.getId())
                 );
 
                 nautixWhatsAppService.sendTemplateMessage(
@@ -866,7 +1090,7 @@ public class SessionBookingService {
                         sessionDate,
                         sessionTime,
                         defaultString(session.getMenteeMessage(), "No message provided"),
-                        buildSessionDetailsLink(session.getId())
+                        buildSessionButtonValue(session.getId())
                 );
 
                 nautixWhatsAppService.sendTemplateMessage(
@@ -905,6 +1129,163 @@ public class SessionBookingService {
         } else {
             log.warn("Mentee {} has no valid phone for confirmation WhatsApp", mentee.getId());
         }
+    }
+
+    private void sendAlternativeProposedWhatsAppNotification(SessionProposal proposal,
+                                                             Session session,
+                                                             Profile mentor,
+                                                             Profile mentee) {
+        String menteePhone = formatPhoneNumberToE164(mentee.getPhone());
+        if (menteePhone == null || menteePhone.isBlank()) {
+            log.warn("Mentee {} has no valid phone for alternative proposal WhatsApp", mentee.getId());
+            return;
+        }
+
+        try {
+            List<String> bodyParams = List.of(
+                    firstName(mentee),
+                    fullName(mentor),
+                    defaultString(session.getTitle(), "Mentorship Session"),
+                    formatProposalSlots(proposal),
+                    defaultString(proposal.getMentorMessage(), "Please review the proposed alternative time."),
+                    buildSessionButtonValue(session.getId())
+            );
+
+            nautixWhatsAppService.sendTemplateMessage(
+                    MENTEE_ALTERNATIVE_PROPOSED_TEMPLATE,
+                    menteePhone,
+                    bodyParams
+            );
+        } catch (Exception e) {
+            log.error("Failed to send alternative proposal WhatsApp for session {}: {}",
+                    session.getId(), e.getMessage(), e);
+        }
+    }
+
+    private void sendAlternativeProposedEmailNotification(SessionProposal proposal,
+                                                          Session session,
+                                                          Profile mentor,
+                                                          Profile mentee) {
+        try {
+            notificationService.sendAlternativeProposalToMentee(proposal, session, mentor, mentee);
+        } catch (Exception e) {
+            log.error("Failed to send alternative proposal email for session {}: {}",
+                    session.getId(), e.getMessage(), e);
+        }
+    }
+
+    private void sendProposalResponseEmailNotification(SessionProposal proposal,
+                                                       Session session,
+                                                       Profile mentor,
+                                                       Profile mentee,
+                                                       String responseStatus) {
+        try {
+            notificationService.sendProposalResponseToMentor(proposal, session, mentor, mentee, responseStatus);
+        } catch (Exception e) {
+            log.error("Failed to send proposal response email for session {}: {}",
+                    session.getId(), e.getMessage(), e);
+        }
+    }
+
+    private void sendProposalResponseWhatsAppNotification(SessionProposal proposal,
+                                                          Session session,
+                                                          Profile mentor,
+                                                          Profile mentee,
+                                                          String responseStatus) {
+        String mentorPhone = formatPhoneNumberToE164(mentor.getPhone());
+        if (mentorPhone == null || mentorPhone.isBlank()) {
+            log.warn("Mentor {} has no valid phone for proposal response WhatsApp", mentor.getId());
+            return;
+        }
+
+        try {
+            boolean accepted = "accepted".equalsIgnoreCase(responseStatus);
+            String templateName = accepted
+                    ? MENTOR_ALTERNATIVE_ACCEPTED_TEMPLATE
+                    : MENTOR_ALTERNATIVE_DECLINED_TEMPLATE;
+            String responseText = accepted
+                    ? formatAcceptedProposalSlot(proposal)
+                    : defaultString(proposal.getMenteeResponse(), "The proposed time was declined.");
+
+            List<String> bodyParams = List.of(
+                    firstName(mentor),
+                    fullName(mentee),
+                    defaultString(session.getTitle(), "Mentorship Session"),
+                    responseText,
+                    buildSessionButtonValue(session.getId())
+            );
+
+            nautixWhatsAppService.sendTemplateMessage(
+                    templateName,
+                    mentorPhone,
+                    bodyParams
+            );
+        } catch (Exception e) {
+            log.error("Failed to send proposal response WhatsApp for session {}: {}",
+                    session.getId(), e.getMessage(), e);
+        }
+    }
+
+    private void sendSupportContactWhatsAppNotifications(SessionSupportRequest supportRequest,
+                                                         Session session,
+                                                         Profile mentor,
+                                                         Profile mentee,
+                                                         Profile requester) {
+        String requesterPhone = formatPhoneNumberToE164(requester.getPhone());
+        if (requesterPhone == null || requesterPhone.isBlank()) {
+            log.warn("Requester {} has no valid phone for support acknowledgement WhatsApp", requester.getId());
+            return;
+        }
+
+        try {
+            Profile counterpart = supportRequest.getRequesterType() == SessionSupportRequest.RequesterType.MENTOR
+                    ? mentee
+                    : mentor;
+            String templateName = supportRequest.getRequesterType() == SessionSupportRequest.RequesterType.MENTOR
+                    ? MENTOR_SUPPORT_CONTACT_REQUESTED_TEMPLATE
+                    : MENTEE_SUPPORT_CONTACT_REQUESTED_TEMPLATE;
+            List<String> acknowledgementParams = List.of(
+                    firstName(requester),
+                    defaultString(session.getTitle(), "Mentorship Session"),
+                    fullName(counterpart),
+                    buildSessionButtonValue(session.getId())
+            );
+
+            nautixWhatsAppService.sendTemplateMessage(
+                    templateName,
+                    requesterPhone,
+                    acknowledgementParams
+            );
+        } catch (Exception e) {
+            log.error("Failed to send support acknowledgement WhatsApp for session {}: {}",
+                    session.getId(), e.getMessage(), e);
+        }
+    }
+
+    private String formatProposalSlots(SessionProposal proposal) {
+        if (proposal.getSlots() == null || proposal.getSlots().isEmpty()) {
+            return "No slots provided";
+        }
+
+        return proposal.getSlots().stream()
+                .map(slot -> formatSessionDate(slot.getScheduledStart()) + " at " + formatSessionTime(slot.getScheduledStart()))
+                .toList()
+                .toString()
+                .replace("[", "")
+                .replace("]", "");
+    }
+
+    private String formatAcceptedProposalSlot(SessionProposal proposal) {
+        if (proposal.getSlots() == null || proposal.getSlots().isEmpty()) {
+            return "Accepted proposed time";
+        }
+
+        return proposal.getSlots().stream()
+                .filter(slot -> proposal.getAcceptedSlotId() != null
+                        && proposal.getAcceptedSlotId().equals(slot.getId()))
+                .findFirst()
+                .map(slot -> formatSessionDate(slot.getScheduledStart()) + " at " + formatSessionTime(slot.getScheduledStart()))
+                .orElseGet(() -> formatProposalSlots(proposal));
     }
 
     private String formatSessionDate(ZonedDateTime dateTime) {
@@ -951,13 +1332,68 @@ public class SessionBookingService {
         return frontendUrl + "/app/sessions/" + sessionId;
     }
 
+    private String buildMentorReviewButtonValue(UUID sessionId) {
+        return "review/" + sessionId;
+    }
+
+    private String buildSessionButtonValue(UUID sessionId) {
+        return sessionId.toString();
+    }
+
 
     private ZonedDateTime resolveConfirmedStart(Session session, ZonedDateTime requestedStart) {
         return requestedStart != null ? requestedStart : session.getScheduledStart();
     }
 
-    private ZonedDateTime resolveConfirmedEnd(ZonedDateTime confirmedStart) {
-        return confirmedStart.plusHours(1);
+    private ZonedDateTime resolveConfirmedEnd(Session session, ZonedDateTime confirmedStart, ZonedDateTime requestedEnd) {
+        if (requestedEnd != null) {
+            return requestedEnd;
+        }
+
+        long durationMinutes = session.getScheduledStart() != null && session.getScheduledEnd() != null
+                ? Duration.between(session.getScheduledStart(), session.getScheduledEnd()).toMinutes()
+                : SubscriptionService.DEFAULT_SESSION_DURATION_MINUTES;
+
+        if (durationMinutes <= 0 || durationMinutes > 24 * 60) {
+            durationMinutes = SubscriptionService.DEFAULT_SESSION_DURATION_MINUTES;
+        }
+
+        return confirmedStart.plusMinutes(durationMinutes);
+    }
+
+    private ZonedDateTime resolveProposalSlotEnd(Session session, ZonedDateTime slotStart, ZonedDateTime requestedEnd) {
+        return resolveConfirmedEnd(session, slotStart, requestedEnd);
+    }
+
+    private SessionProposal loadPendingProposal(UUID sessionId, UUID proposalId) {
+        SessionProposal proposal = sessionProposalRepository.findById(proposalId)
+                .orElseThrow(() -> new IllegalArgumentException("Session proposal not found"));
+
+        if (!sessionId.equals(proposal.getSessionId())) {
+            throw new IllegalArgumentException("Session proposal does not belong to the session");
+        }
+
+        if (proposal.getStatus() != SessionProposal.ProposalStatus.PENDING_MENTEE_RESPONSE) {
+            throw new IllegalStateException("Session proposal is no longer pending");
+        }
+
+        return proposal;
+    }
+
+    private SessionProposalSlot resolveAcceptedSlot(SessionProposal proposal, UUID slotId) {
+        List<SessionProposalSlot> slots = proposal.getSlots() == null ? List.of() : proposal.getSlots();
+        if (slots.isEmpty()) {
+            throw new IllegalArgumentException("Session proposal has no slots");
+        }
+
+        if (slotId == null && slots.size() == 1) {
+            return slots.get(0);
+        }
+
+        return slots.stream()
+                .filter(slot -> slot.getId() != null && slot.getId().equals(slotId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Selected proposal slot was not found"));
     }
 
     private void validateConfirmedSchedule(ZonedDateTime startTime, ZonedDateTime endTime) {

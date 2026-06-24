@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.ZonedDateTime;
+import java.util.Map;
 
 @Data
 @Builder
@@ -27,10 +28,14 @@ public class CreateSessionRequestDto {
     @NotNull(message = "Scheduled start time is required")
     private ZonedDateTime scheduledStart;
 
+    private ZonedDateTime scheduledEnd;
+
     @NotNull(message = "Meeting platform is required")
     private Session.MeetingPlatform meetingPlatform;
 
     private String menteeMessage;
+
+    private Map<String, Object> questionnaireResponses;
 
     private String companyProgramId;
 

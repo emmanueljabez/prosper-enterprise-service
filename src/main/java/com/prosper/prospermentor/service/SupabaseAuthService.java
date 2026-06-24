@@ -524,6 +524,16 @@ public class SupabaseAuthService {
                                                          String firstName,
                                                          String lastName,
                                                          String redirectTo) {
+        return generateSignupConfirmationLink(email, password, role, firstName, lastName, null, redirectTo);
+    }
+
+    public Mono<JsonNode> generateSignupConfirmationLink(String email,
+                                                         String password,
+                                                         String role,
+                                                         String firstName,
+                                                         String lastName,
+                                                         String phoneNumber,
+                                                         String redirectTo) {
         if (!isValidEmail(email)) {
             return Mono.error(new IllegalArgumentException("Invalid email format: " + email));
         }
@@ -542,6 +552,12 @@ public class SupabaseAuthService {
         if (lastName != null && !lastName.trim().isEmpty()) {
             userMetadata.put("lastName", lastName);
             userMetadata.put("last_name", lastName);
+        }
+        if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
+            String normalizedPhone = phoneNumber.trim();
+            userMetadata.put("phoneNumber", normalizedPhone);
+            userMetadata.put("phone_number", normalizedPhone);
+            userMetadata.put("phone", normalizedPhone);
         }
 
         java.util.Map<String, Object> requestBody = new java.util.LinkedHashMap<>();

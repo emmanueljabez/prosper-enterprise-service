@@ -3,12 +3,16 @@ package com.prosper.prospermentor.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.prospermentor.dto.CompleteCompanySignupIntentRequest;
+import com.prosper.prospermentor.entity.Subscription;
+import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
 import com.prosper.prospermentor.security.SupabaseUserPrincipal;
 import com.prosper.prospermentor.service.CompanyAdminRegistrationService;
 import com.prosper.prospermentor.service.SupabaseAuthService;
 import com.prosper.prospermentor.service.ProfileService;
 import com.prosper.prospermentor.service.CompanyService;
+import com.prosper.prospermentor.service.SubscriptionService;
+import com.prosper.prospermentor.service.notification.MenteeNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +22,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,7 +48,9 @@ public class AuthController {
     private final ProfileService profileService;
     private final CompanyService companyService;
     private final CompanyAdminRegistrationService companyAdminRegistrationService;
+    private final SubscriptionService subscriptionService;
     private final ObjectMapper objectMapper;
+    private final MenteeNotificationService menteeNotificationService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -305,6 +315,10 @@ public class AuthController {
                             log.warn("Profile not found for user ID: {}", userId);
                         }
 
+                        if (isFreeTrialRequested(loginRequest)) {
+                            enhancedResponse.put("freeTrial", activateFreeTrial(userUuid));
+                        }
+
                         return Mono.just(ResponseEntity.ok((Object) enhancedResponse));
                     } catch (Exception e) {
                         log.error("Error enriching login response with profile: {}", e.getMessage());
@@ -340,30 +354,75 @@ public class AuthController {
         }
 
         String role = signupRequest.getRole() != null ? signupRequest.getRole() : "mentee";
+        boolean freeTrialRequested = isFreeTrialRequested(signupRequest);
+        String emailVerificationRedirectUrl = buildEmailVerificationRedirectUrl(freeTrialRequested);
 
-        return supabaseAuthService.signUpWithPassword(signupRequest.getEmail(), signupRequest.getPassword(), role)
+        return supabaseAuthService.generateSignupConfirmationLink(
+                        signupRequest.getEmail(),
+                        signupRequest.getPassword(),
+                        role,
+                        signupRequest.getFirstName(),
+                        signupRequest.getLastName(),
+                        signupRequest.getPhoneNumber(),
+                        emailVerificationRedirectUrl
+                )
                 .flatMap(authResponse -> {
                     try {
-                        // Extract user ID from Supabase response
-                        String userId = authResponse.get("user").get("id").asText();
-                        String email = authResponse.get("user").get("email").asText();
+                        JsonNode userNode = authResponse.has("user") ? authResponse.get("user") : authResponse;
+                        if (userNode == null || userNode.isNull() || !userNode.hasNonNull("id")) {
+                            return Mono.just(ResponseEntity.internalServerError()
+                                    .<Object>body(Map.of("error", "Signup provider did not return a user id")));
+                        }
+
+                        String userId = userNode.get("id").asText();
+                        String email = userNode.hasNonNull("email")
+                                ? userNode.get("email").asText()
+                                : signupRequest.getEmail().trim().toLowerCase();
                         UUID userUuid = UUID.fromString(userId);
 
-                        // Create profile in database with role 'mentee'
-                        var profile = profileService.createProfile(userUuid, email, role);
+                        var profile = profileService.createProfileWithDetails(
+                                userUuid,
+                                email,
+                                role,
+                                signupRequest.getFirstName(),
+                                signupRequest.getLastName(),
+                                signupRequest.getPhoneNumber(),
+                                signupRequest.getDateOfBirth()
+                        );
 
-                        // Add profile to response
-                        Map<String, Object> enhancedResponse = objectMapper.convertValue(authResponse, Map.class);
+                        Map<String, Object> enhancedResponse = new LinkedHashMap<>();
+                        enhancedResponse.put("user", toPublicUserPayload(userNode, email));
                         if (profile.isPresent()) {
                             enhancedResponse.put("profile", profile.get());
                         }
+                        enhancedResponse.put("emailVerificationRequired", true);
+                        enhancedResponse.put("message", "Mentee account created. Verify your email, then sign in to continue.");
+
+                        if (freeTrialRequested) {
+                            enhancedResponse.put("freeTrial", activateFreeTrial(userUuid));
+                        }
+
+                        String actionLink = authResponse.hasNonNull("action_link")
+                                ? authResponse.get("action_link").asText()
+                                : null;
+                        if (actionLink == null || actionLink.isBlank()) {
+                            return Mono.just(ResponseEntity.internalServerError()
+                                    .<Object>body(Map.of("error", "Signup provider did not return a confirmation link")));
+                        }
+
+                        menteeNotificationService.sendMenteeEmailConfirmation(
+                                email,
+                                signupRequest.getFirstName(),
+                                freeTrialRequested,
+                                toFrontendConfirmationUrl(authResponse, actionLink, freeTrialRequested, role)
+                        );
 
                         log.info("User created successfully: {} with profile", email);
                         return Mono.just(ResponseEntity.ok((Object) enhancedResponse));
                     } catch (Exception e) {
                         log.error("Error creating profile after signup: {}", e.getMessage());
-                        // Return Supabase response even if profile creation fails
-                        return Mono.just(ResponseEntity.ok((Object) authResponse));
+                        return Mono.just(ResponseEntity.internalServerError()
+                                .<Object>body(Map.of("error", "Failed to process signup. Please try again or contact support.")));
                     }
                 })
                 .onErrorResume(error -> {
@@ -372,6 +431,8 @@ public class AuthController {
 
                     // Handle user already exists scenarios
                     if (errorMessage.contains("User already registered") ||
+                        errorMessage.contains("already exists") ||
+                        errorMessage.contains("email_exists") ||
                         errorMessage.contains("422") ||
                         errorMessage.contains("Database error saving new user") ||
                         errorMessage.contains("unexpected_failure")) {
@@ -719,6 +780,88 @@ public class AuthController {
         return normalized;
     }
 
+    private String buildEmailVerificationRedirectUrl(boolean freeTrialRequested) {
+        String base = normalizeBaseUrl(frontendUrl) + "/auth/login?email_verified=1";
+        if (!freeTrialRequested) {
+            return base;
+        }
+        return base + "&audience=mentee&trial=1&product=FREE_TRIAL";
+    }
+
+    private Map<String, Object> toPublicUserPayload(JsonNode userNode, String fallbackEmail) {
+        Map<String, Object> user = new LinkedHashMap<>();
+        user.put("id", userNode.get("id").asText());
+        user.put("email", userNode.hasNonNull("email") ? userNode.get("email").asText() : fallbackEmail);
+
+        if (userNode.hasNonNull("email_confirmed_at")) {
+            user.put("emailConfirmedAt", userNode.get("email_confirmed_at").asText());
+        }
+
+        return user;
+    }
+
+    private String toFrontendConfirmationUrl(JsonNode signupResponse,
+                                             String actionLink,
+                                             boolean freeTrialRequested,
+                                             String role) {
+        String tokenHash = resolveTokenHash(signupResponse, actionLink);
+        String type = resolveVerificationType(signupResponse, actionLink);
+        StringBuilder url = new StringBuilder(normalizeBaseUrl(frontendUrl))
+                .append("/auth/confirm-email?token_hash=")
+                .append(URLEncoder.encode(tokenHash, StandardCharsets.UTF_8))
+                .append("&type=")
+                .append(URLEncoder.encode(type, StandardCharsets.UTF_8));
+
+        if (freeTrialRequested) {
+            url.append("&audience=mentee&trial=1&product=FREE_TRIAL");
+        } else if (role != null && !role.isBlank()) {
+            url.append("&audience=")
+                    .append(URLEncoder.encode(role.trim().toLowerCase(), StandardCharsets.UTF_8));
+        }
+
+        return url.toString();
+    }
+
+    private String resolveTokenHash(JsonNode signupResponse, String actionLink) {
+        if (signupResponse.hasNonNull("hashed_token")) {
+            return signupResponse.get("hashed_token").asText();
+        }
+        if (signupResponse.hasNonNull("token_hash")) {
+            return signupResponse.get("token_hash").asText();
+        }
+        String token = getQueryParam(actionLink, "token");
+        if (token != null && !token.isBlank()) {
+            return token;
+        }
+        throw new IllegalStateException("Signup provider did not return a confirmation token");
+    }
+
+    private String resolveVerificationType(JsonNode signupResponse, String actionLink) {
+        if (signupResponse.hasNonNull("verification_type")) {
+            return signupResponse.get("verification_type").asText();
+        }
+        String type = getQueryParam(actionLink, "type");
+        return type == null || type.isBlank() ? "signup" : type;
+    }
+
+    private String getQueryParam(String url, String name) {
+        int queryStart = url.indexOf('?');
+        if (queryStart < 0 || queryStart == url.length() - 1) {
+            return null;
+        }
+        int fragmentStart = url.indexOf('#', queryStart);
+        String query = fragmentStart >= 0 ? url.substring(queryStart + 1, fragmentStart) : url.substring(queryStart + 1);
+        for (String part : query.split("&")) {
+            int equalsIndex = part.indexOf('=');
+            String key = equalsIndex >= 0 ? part.substring(0, equalsIndex) : part;
+            if (name.equals(URLDecoder.decode(key, StandardCharsets.UTF_8))) {
+                String value = equalsIndex >= 0 ? part.substring(equalsIndex + 1) : "";
+                return URLDecoder.decode(value, StandardCharsets.UTF_8);
+            }
+        }
+        return null;
+    }
+
     private String buildPasswordResetRateLimitMessage(String errorMessage) {
         Matcher matcher = PASSWORD_RESET_RATE_LIMIT_PATTERN.matcher(Optional.ofNullable(errorMessage).orElse(""));
         if (matcher.find()) {
@@ -728,21 +871,74 @@ public class AuthController {
         return "Please wait a moment before requesting another reset email.";
     }
 
+    private boolean isFreeTrialRequested(LoginRequest request) {
+        return request != null && isFreeTrialRequested(request.getProduct(), request.getTrial());
+    }
+
+    private boolean isFreeTrialRequested(SignupRequest request) {
+        return request != null && isFreeTrialRequested(request.getProduct(), request.getTrial());
+    }
+
+    private boolean isFreeTrialRequested(String product, Boolean trial) {
+        return Boolean.TRUE.equals(trial)
+                || "FREE_TRIAL".equalsIgnoreCase(String.valueOf(product).trim());
+    }
+
+    private Map<String, Object> activateFreeTrial(UUID userId) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("requested", true);
+
+        try {
+            ApiResponse<Subscription> response = subscriptionService.activateFreeTrial(userId);
+            payload.put("activated", response.isSuccess());
+            payload.put("message", response.getMessage());
+            payload.put("sessionDurationMinutes", SubscriptionService.TRIAL_SESSION_DURATION_MINUTES);
+            if (response.getData() != null) {
+                payload.put("subscriptionId", response.getData().getId());
+                payload.put("status", response.getData().getStatus());
+                payload.put("remainingSessions", response.getData().getRemainingSessionsCount());
+            }
+        } catch (Exception error) {
+            log.error("Failed to activate free trial for user {}: {}", userId, error.getMessage(), error);
+            payload.put("activated", false);
+            payload.put("message", "Free trial could not be activated. Please contact support.");
+            payload.put("sessionDurationMinutes", SubscriptionService.TRIAL_SESSION_DURATION_MINUTES);
+        }
+
+        return payload;
+    }
+
     // Request DTOs
     public static class LoginRequest {
         private String email;
         private String password;
+        private String product;
+        private Boolean trial;
+        private String audience;
 
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
+        public String getProduct() { return product; }
+        public void setProduct(String product) { this.product = product; }
+        public Boolean getTrial() { return trial; }
+        public void setTrial(Boolean trial) { this.trial = trial; }
+        public String getAudience() { return audience; }
+        public void setAudience(String audience) { this.audience = audience; }
     }
 
     public static class SignupRequest {
         private String email;
         private String password;
         private String role;
+        private String product;
+        private Boolean trial;
+        private String audience;
+        private String firstName;
+        private String lastName;
+        private String phoneNumber;
+        private String dateOfBirth;
 
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
@@ -750,6 +946,20 @@ public class AuthController {
         public void setPassword(String password) { this.password = password; }
         public String getRole() { return role; }
         public void setRole(String role) { this.role = role; }
+        public String getProduct() { return product; }
+        public void setProduct(String product) { this.product = product; }
+        public Boolean getTrial() { return trial; }
+        public void setTrial(Boolean trial) { this.trial = trial; }
+        public String getAudience() { return audience; }
+        public void setAudience(String audience) { this.audience = audience; }
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+        public String getPhoneNumber() { return phoneNumber; }
+        public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+        public String getDateOfBirth() { return dateOfBirth; }
+        public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
     }
 
     public static class RefreshTokenRequest {

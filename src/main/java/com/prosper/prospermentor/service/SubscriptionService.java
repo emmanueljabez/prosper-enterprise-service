@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,18 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class SubscriptionService {
+
+    public static final int DEFAULT_SESSION_DURATION_MINUTES = 60;
+    public static final int TRIAL_SESSION_DURATION_MINUTES = 30;
+    private static final Set<String> PUBLIC_MENTEE_SESSION_PACKAGE_CODES = Set.of(
+            "SINGLE_SESSION",
+            "PACK_3",
+            "PACK_5",
+            "PACK_10",
+            "THREE_SESSION_PACK",
+            "FIVE_SESSION_PACK",
+            "TEN_SESSION_PACK"
+    );
 
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
@@ -126,6 +139,65 @@ public class SubscriptionService {
         return resolveEffectiveEntitlement(userId).map(this::buildEffectiveSubscriptionPayload);
     }
 
+    public ApiResponse<Subscription> activateFreeTrial(UUID userId) {
+        if (userId == null) {
+            return ApiResponse.error("User ID is required");
+        }
+
+        List<Subscription> subscriptionHistory = subscriptionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        Optional<Subscription> activeTrial = subscriptionHistory.stream()
+                .filter(this::isTrialSubscription)
+                .filter(Subscription::isActive)
+                .findFirst();
+        if (activeTrial.isPresent()) {
+            return ApiResponse.success("Free trial is already active", activeTrial.get());
+        }
+
+        boolean alreadyUsedTrial = subscriptionHistory.stream().anyMatch(this::isTrialSubscription);
+        if (alreadyUsedTrial) {
+            return ApiResponse.error("Free trial already used for this account");
+        }
+
+        Optional<Subscription> activeIndividualSubscription = getActiveIndividualSubscription(userId);
+        if (activeIndividualSubscription.isPresent()) {
+            return ApiResponse.error("User already has an active subscription");
+        }
+
+        Optional<SubscriptionPlan> trialPlanOpt = resolveFreeTrialPlan();
+        if (trialPlanOpt.isEmpty()) {
+            return ApiResponse.error("Free trial plan is not configured");
+        }
+
+        SubscriptionPlan trialPlan = trialPlanOpt.get();
+        if (!Boolean.TRUE.equals(trialPlan.getIsActive())) {
+            return ApiResponse.error("Free trial plan is not active");
+        }
+        if (!trialPlan.supportsIndividualPurchases()) {
+            return ApiResponse.error("Free trial plan is not available for individual users");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endDate = now.plusDays(30);
+
+        Subscription subscription = new Subscription();
+        subscription.setUserId(userId);
+        subscription.setPlan(trialPlan);
+        subscription.setBillingInterval(BillingInterval.MONTHLY);
+        subscription.setSessionsPerMonth(Math.max(1, trialPlan.getSessionsPerPeriod() != null ? trialPlan.getSessionsPerPeriod() : 1));
+        subscription.setSessionsUsed(0);
+        subscription.setStartDate(now);
+        subscription.setEndDate(endDate);
+        subscription.setCurrentPeriodStart(now);
+        subscription.setCurrentPeriodEnd(endDate);
+        subscription.setStatus(Subscription.SubscriptionStatus.TRIAL);
+        subscription.setAutoRenew(false);
+        subscription.setIsTrial(true);
+
+        Subscription savedSubscription = subscriptionRepository.save(subscription);
+        log.info("Activated free trial subscription {} for user {}", savedSubscription.getId(), userId);
+        return ApiResponse.success("Free trial activated", savedSubscription);
+    }
+
     private Optional<ResolvedEntitlement> resolveEffectiveEntitlement(UUID userId) {
         Optional<ResolvedEntitlement> corporateEntitlement = resolveCorporateEntitlement(userId);
         // For company-sponsored employees, the company seat is the source of truth for mentor-session gating.
@@ -157,6 +229,7 @@ public class SubscriptionService {
                     );
                     eligibility.setSubscriptionSource(SessionBookingEligibility.SubscriptionSource.CORPORATE);
                     eligibility.setCompanyId(allocation.getCompany() != null ? allocation.getCompany().getId() : null);
+                    eligibility.setSessionDurationMinutes(DEFAULT_SESSION_DURATION_MINUTES);
                     return new ResolvedEntitlement(
                             eligibility,
                             null,
@@ -199,6 +272,7 @@ public class SubscriptionService {
                 0
         );
         eligibility.setSubscriptionSource(SessionBookingEligibility.SubscriptionSource.PERSONAL_CREDIT);
+        eligibility.setSessionDurationMinutes(DEFAULT_SESSION_DURATION_MINUTES);
 
         return Optional.of(new ResolvedEntitlement(
                 eligibility,
@@ -389,6 +463,7 @@ public class SubscriptionService {
                                                               Subscription subscription) {
         eligibility.setSubscriptionSource(source);
         eligibility.setNextBillingDate(subscription != null ? subscription.getCurrentPeriodEnd() : null);
+        eligibility.setSessionDurationMinutes(resolveSessionDurationMinutes(subscription));
         return eligibility;
     }
 
@@ -396,6 +471,11 @@ public class SubscriptionService {
                                                               SessionBookingEligibility.SubscriptionSource source,
                                                               CompanySubscriptionMember member) {
         eligibility.setSubscriptionSource(source);
+        eligibility.setSessionDurationMinutes(resolveSessionDurationMinutes(
+                member != null && member.getCompanySubscription() != null
+                        ? member.getCompanySubscription().getPlan()
+                        : null
+        ));
         if (member != null && member.getCompanySubscription() != null) {
             eligibility.setCompanyId(member.getCompanySubscription().getCompany() != null
                     ? member.getCompanySubscription().getCompany().getId()
@@ -404,6 +484,42 @@ public class SubscriptionService {
             eligibility.setNextBillingDate(member.getCompanySubscription().getCurrentPeriodEnd());
         }
         return eligibility;
+    }
+
+    private int resolveSessionDurationMinutes(Subscription subscription) {
+        if (subscription == null) {
+            return DEFAULT_SESSION_DURATION_MINUTES;
+        }
+
+        if (Boolean.TRUE.equals(subscription.getIsTrial())
+                || subscription.getStatus() == Subscription.SubscriptionStatus.TRIAL
+                || isFreeTrialPlan(subscription.getPlan())) {
+            return TRIAL_SESSION_DURATION_MINUTES;
+        }
+
+        return resolveSessionDurationMinutes(subscription.getPlan());
+    }
+
+    private int resolveSessionDurationMinutes(SubscriptionPlan plan) {
+        return isFreeTrialPlan(plan) ? TRIAL_SESSION_DURATION_MINUTES : DEFAULT_SESSION_DURATION_MINUTES;
+    }
+
+    private boolean isFreeTrialPlan(SubscriptionPlan plan) {
+        return plan != null && "FREE_TRIAL".equalsIgnoreCase(String.valueOf(plan.getCode()));
+    }
+
+    private Optional<SubscriptionPlan> resolveFreeTrialPlan() {
+        return subscriptionPlanRepository.findByCode("FREE_TRIAL")
+                .or(() -> subscriptionPlanRepository.findByCode("ALL_ACCESS"));
+    }
+
+    private boolean isTrialSubscription(Subscription subscription) {
+        if (subscription == null) {
+            return false;
+        }
+        return Boolean.TRUE.equals(subscription.getIsTrial())
+                || subscription.getStatus() == Subscription.SubscriptionStatus.TRIAL
+                || isFreeTrialPlan(subscription.getPlan());
     }
 
     private Map<String, Object> buildEffectiveSubscriptionPayload(ResolvedEntitlement entitlement) {
@@ -417,6 +533,9 @@ public class SubscriptionService {
         payload.put("companySubscriptionId", entitlement.eligibility.getCompanySubscriptionId());
         payload.put("message", entitlement.eligibility.getMessage());
         payload.put("reason", entitlement.eligibility.getReason());
+        payload.put("sessionDurationMinutes", entitlement.eligibility.getSessionDurationMinutes() != null
+                ? entitlement.eligibility.getSessionDurationMinutes()
+                : DEFAULT_SESSION_DURATION_MINUTES);
 
         if (entitlement.subscription != null) {
             payload.put("subscription", entitlement.subscription);
@@ -551,6 +670,7 @@ public class SubscriptionService {
 
         List<RecommendedPlanDto> recommendedPlans = allPlans.stream()
             .filter(SubscriptionPlan::supportsIndividualPurchases)
+            .filter(this::isPublicMenteeSessionPackage)
             // Filter to ONLY plans that have MENTOR_SESSION feature enabled and available
             // This ensures we only recommend plans that allow one-on-one mentor bookings
             .filter(plan -> {
@@ -593,6 +713,8 @@ public class SubscriptionService {
                 .currency(plan.getCurrency())
                 .sessionsPerPeriod(plan.getSessionsPerPeriod())
                 .displayOrder(plan.getDisplayOrder())
+                .features(plan.getFeatures())
+                .billingType(plan.getBillingType() != null ? plan.getBillingType().name() : null)
                 .build())
             .collect(Collectors.toList());
 
@@ -605,6 +727,14 @@ public class SubscriptionService {
         }
 
         return recommendedPlans;
+    }
+
+    private boolean isPublicMenteeSessionPackage(SubscriptionPlan plan) {
+        if (plan == null || plan.getCode() == null) {
+            return false;
+        }
+
+        return PUBLIC_MENTEE_SESSION_PACKAGE_CODES.contains(plan.getCode().trim().toUpperCase());
     }
 
     /**
@@ -1921,6 +2051,10 @@ public class SubscriptionService {
         }
 
         Optional<Subscription> activeSubscriptionOpt = getActiveSubscription(userId);
+        if (isOneTimePlan(newPlan)) {
+            return applyOneTimePlanInvoicePayment(userId, newPlan, resolvedInterval, activeSubscriptionOpt);
+        }
+
         if (activeSubscriptionOpt.isPresent()) {
             Subscription activeSubscription = activeSubscriptionOpt.get();
             if (activeSubscription.getPlan() != null
@@ -1958,6 +2092,42 @@ public class SubscriptionService {
         subscription = subscriptionRepository.save(subscription);
         log.info("Created active subscription {} for user {} from invoice payment", subscription.getId(), userId);
         return ApiResponse.success("Subscription activated successfully", subscription);
+    }
+
+    private ApiResponse<Subscription> applyOneTimePlanInvoicePayment(UUID userId,
+                                                                     SubscriptionPlan plan,
+                                                                     BillingInterval billingInterval,
+                                                                     Optional<Subscription> activeSubscriptionOpt) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endDate = now.plusMonths(resolvePlanDurationMonths(plan, billingInterval));
+
+        Subscription subscription = activeSubscriptionOpt.orElseGet(Subscription::new);
+        if (subscription.getId() == null) {
+            subscription.setUserId(userId);
+            if (subscription.getStartDate() == null) {
+                subscription.setStartDate(now);
+            }
+        }
+
+        subscription.setPlan(plan);
+        subscription.setBillingInterval(billingInterval);
+        subscription.setSessionsPerMonth(plan.getSessionsPerPeriod());
+        subscription.setSessionsUsed(0);
+        subscription.setCurrentPeriodStart(now);
+        subscription.setCurrentPeriodEnd(endDate);
+        subscription.setEndDate(endDate);
+        subscription.setStatus(Subscription.SubscriptionStatus.ACTIVE);
+        subscription.setAutoRenew(false);
+        subscription.setIsTrial(false);
+
+        subscription = subscriptionRepository.save(subscription);
+        log.info("Applied one-time plan {} to subscription {} for user {} from invoice payment",
+                plan.getCode(), subscription.getId(), userId);
+        return ApiResponse.success("Session package activated successfully", subscription);
+    }
+
+    private boolean isOneTimePlan(SubscriptionPlan plan) {
+        return plan != null && plan.getBillingType() == SubscriptionPlan.BillingType.ONE_TIME;
     }
 
     public ApiResponse<Subscription> applyZeroCostPlanChange(UUID userId, UUID planId, BillingInterval billingInterval) {

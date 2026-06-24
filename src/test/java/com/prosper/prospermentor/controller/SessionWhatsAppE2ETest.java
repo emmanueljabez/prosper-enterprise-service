@@ -1,6 +1,7 @@
 package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.config.RestTemplateConfig;
+import com.prosper.prospermentor.repository.SessionOutcomeRepository;
 import com.prosper.prospermentor.security.JwtAuthenticationFilter;
 import com.prosper.prospermentor.service.NautixWhatsAppService;
 import com.prosper.prospermentor.service.SessionBookingService;
@@ -49,6 +50,9 @@ class SessionWhatsAppE2ETest {
 
     @MockBean
     private SessionBookingService sessionBookingService;
+
+    @MockBean
+    private SessionOutcomeRepository sessionOutcomeRepository;
 
     @MockBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;

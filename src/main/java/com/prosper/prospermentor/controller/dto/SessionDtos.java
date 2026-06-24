@@ -5,6 +5,8 @@ import com.prosper.prospermentor.dto.RecommendedPlanDto;
 import com.prosper.prospermentor.dto.SessionBookingEligibility;
 import com.prosper.prospermentor.entity.Session;
 import com.prosper.prospermentor.entity.SessionOutcomeActionItem;
+import com.prosper.prospermentor.entity.SessionProposal;
+import com.prosper.prospermentor.entity.SessionSupportRequest;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -96,6 +98,44 @@ public class SessionDtos {
         private String reason;
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ProposedSessionSlotRequestDto {
+        @NotNull(message = "scheduledStart is required")
+        private ZonedDateTime scheduledStart;
+        private ZonedDateTime scheduledEnd;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ProposeSessionAlternativeRequestDto {
+        private String mentorMessage;
+        private List<ProposedSessionSlotRequestDto> slots;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RespondToSessionProposalRequestDto {
+        private UUID slotId;
+        private String response;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ContactSessionSupportRequestDto {
+        @NotNull(message = "requesterType is required")
+        private SessionSupportRequest.RequesterType requesterType;
+        private String message;
+    }
+
     /**
      * Request DTO for completing a session with structured outcomes.
      */
@@ -174,6 +214,7 @@ public class SessionDtos {
         private Session.PaymentStatus paymentStatus;
         private Boolean paymentRequired;
         private String menteeMessage;
+        private Map<String, Object> questionnaireResponses;
         private String mentorResponse;
         private String calendarEventId;
         private LocalDateTime confirmedAt;
@@ -189,9 +230,53 @@ public class SessionDtos {
         private String menteeName;
         private String companyProgramName;
         private SessionOutcomeDto outcome;
+        private SessionProposalResponseDto activeProposal;
         private long durationMinutes;
         private boolean canBeModified;
         private boolean isFutureBooking;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SessionProposalResponseDto {
+        private UUID id;
+        private UUID sessionId;
+        private SessionProposal.ProposalType proposalType;
+        private SessionProposal.ProposalStatus status;
+        private String mentorMessage;
+        private String menteeResponse;
+        private UUID acceptedSlotId;
+        private LocalDateTime proposedAt;
+        private LocalDateTime respondedAt;
+        private LocalDateTime expiresAt;
+        private List<SessionProposalSlotResponseDto> slots;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SessionProposalSlotResponseDto {
+        private UUID id;
+        private ZonedDateTime scheduledStart;
+        private ZonedDateTime scheduledEnd;
+        private Integer sortOrder;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SessionSupportRequestResponseDto {
+        private UUID id;
+        private UUID sessionId;
+        private SessionSupportRequest.RequesterType requesterType;
+        private UUID requesterId;
+        private String message;
+        private SessionSupportRequest.SupportStatus status;
+        private LocalDateTime createdAt;
     }
     
     /**

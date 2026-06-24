@@ -58,7 +58,7 @@ class InvoiceServiceRedirectNormalizationTest {
     }
 
     @Test
-    void buildPublicInvoicePayload_shouldNormalizeLocalhostRedirectsToConfiguredFrontend() {
+    void buildPublicInvoicePayload_shouldPreserveOriginatorRedirectUrls() {
         Invoice invoice = invoice();
         invoice.setRedirectSuccessUrl("http://localhost:3000/app/admin/activate?invoice_paid=1");
         invoice.setRedirectCancelUrl("http://localhost:3000/app/admin/activate?invoice_cancelled=1");
@@ -69,8 +69,8 @@ class InvoiceServiceRedirectNormalizationTest {
         Map<String, Object> payload = invoiceService.buildPublicInvoicePayload(invoice.getPublicToken());
 
         assertThat(payload)
-                .containsEntry("redirectSuccessUrl", "https://enterprise.prospermentor.com/app/admin/activate?invoice_paid=1")
-                .containsEntry("redirectCancelUrl", "https://enterprise.prospermentor.com/app/admin/activate?invoice_cancelled=1")
+                .containsEntry("redirectSuccessUrl", "http://localhost:3000/app/admin/activate?invoice_paid=1")
+                .containsEntry("redirectCancelUrl", "http://localhost:3000/app/admin/activate?invoice_cancelled=1")
                 .containsEntry("paymentUrl", "https://enterprise.prospermentor.com/payment/invoice/" + invoice.getPublicToken());
     }
 

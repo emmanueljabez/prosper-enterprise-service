@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -64,13 +66,30 @@ public class RecommendedPlanDto {
     private Integer displayOrder;
 
     /**
+     * Additional display features configured on the plan.
+     */
+    private String features;
+
+    /**
+     * Billing type for display and checkout decisions.
+     */
+    private String billingType;
+
+    /**
      * Get formatted price for display
      */
     public String getFormattedPrice() {
-        if (cost.compareTo(BigDecimal.ZERO) == 0) {
+        BigDecimal resolvedCost = cost != null ? cost : BigDecimal.ZERO;
+        if (resolvedCost.compareTo(BigDecimal.ZERO) == 0) {
             return "Free";
         }
-        return String.format("%s %s/month", currency, cost);
+
+        String amount = NumberFormat.getNumberInstance(Locale.US).format(resolvedCost);
+        if ("ONE_TIME".equalsIgnoreCase(billingType)) {
+            return String.format("%s %s", currency, amount);
+        }
+
+        return String.format("%s %s/month", currency, amount);
     }
 
     /**
@@ -79,6 +98,14 @@ public class RecommendedPlanDto {
     public String getSessionsDescription() {
         if (sessionsPerPeriod == -1) {
             return "Unlimited sessions";
+        }
+        if ("ONE_TIME".equalsIgnoreCase(billingType)) {
+            return sessionsPerPeriod == 1
+                    ? "1 one-on-one session"
+                    : String.format("%d one-on-one sessions", sessionsPerPeriod);
+        }
+        if (sessionsPerPeriod == 1) {
+            return "1 session per month";
         }
         return String.format("%d sessions per month", sessionsPerPeriod);
     }

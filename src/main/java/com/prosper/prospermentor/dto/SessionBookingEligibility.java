@@ -75,6 +75,11 @@ public class SessionBookingEligibility {
     private LocalDateTime nextBillingDate;
 
     /**
+     * Effective booking duration for the next session.
+     */
+    private Integer sessionDurationMinutes;
+
+    /**
      * Create an eligible response
      */
     public static SessionBookingEligibility eligible(String message, Integer sessionsRemaining, Integer addonSessionsRemaining) {

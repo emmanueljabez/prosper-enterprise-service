@@ -61,10 +61,10 @@ SERVER="${DEPLOY_SERVER:?DEPLOY_SERVER is required}"
 USER="${DEPLOY_USER:?DEPLOY_USER is required}"
 PASSWORD="${DEPLOY_PASSWORD:?DEPLOY_PASSWORD is required}"
 DOMAIN="${DEPLOY_DOMAIN:-enterprise.prospermentor.com}"
-APP_NAME="prospermentor"
-REMOTE_DIR="/opt/prospermentor"
+APP_NAME="${DEPLOY_APP_NAME:-prospermentor}"
+REMOTE_DIR="${DEPLOY_REMOTE_DIR:-/opt/prosper/backend}"
 JAR_FILE="build/libs/ProsperMentor-0.0.1-SNAPSHOT.jar"
-SERVICE_NAME="prospermentor"
+SERVICE_NAME="${DEPLOY_SERVICE_NAME:-prosper-backend}"
 LOCAL_LOCK_DIR="/tmp/${APP_NAME}-deploy.lock"
 REMOTE_LOCK_DIR="/tmp/${APP_NAME}-deploy.lock"
 REMOTE_TMP_JAR="${REMOTE_DIR}/${APP_NAME}.jar.upload-$$"
@@ -202,8 +202,9 @@ rsync_copy() {
     done
 
     SSHPASS="$PASSWORD" \
-    RSYNC_RSH="env LC_ALL=C LANG=C $(printf '%q' "$SSHPASS_BIN") -e ssh${ssh_opts_joined}" \
-    env LC_ALL=C LANG=C rsync -av --inplace --partial --progress "$1" "$USER@$SERVER:$2"
+    env LC_ALL=C LANG=C rsync -av --inplace --partial --progress \
+        -e "env LC_ALL=C LANG=C $(printf '%q' "$SSHPASS_BIN") -e ssh${ssh_opts_joined}" \
+        "$1" "$USER@$SERVER:$2"
 }
 
 get_local_file_size() {

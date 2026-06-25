@@ -285,10 +285,13 @@ public class ProfileController {
                      page, size, isVerified, searchTerm);
 
             Page<Profile> mentorsPage = profileService.getAllMentorsPaginated(page, size, isVerified, searchTerm);
+            List<Map<String, Object>> mentors = mentorsPage.getContent().stream()
+                    .map(profileService::toMentorProfileResponse)
+                    .toList();
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("mentors", mentorsPage.getContent());
+            response.put("mentors", mentors);
             response.put("currentPage", mentorsPage.getNumber());
             response.put("totalPages", mentorsPage.getTotalPages());
             response.put("totalItems", mentorsPage.getTotalElements());

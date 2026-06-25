@@ -5,6 +5,7 @@ import com.prosper.prospermentor.entity.MenteeProfile;
 import com.prosper.prospermentor.entity.MentorProfile;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.repository.MenteeProfileRepository;
+import com.prosper.prospermentor.repository.MentorSkillRepository;
 import com.prosper.prospermentor.repository.MentorProfileRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class ProfileService {
     private final ProfileRepository profileRepository;
     private final MenteeProfileRepository menteeProfileRepository;
     private final MentorProfileRepository mentorProfileRepository;
+    private final MentorSkillRepository mentorSkillRepository;
 
     /**
      * Create a new profile for a user
@@ -218,6 +220,7 @@ public class ProfileService {
                     }
                     break;
                 case "MENTOR":
+                    addMentorSkillTopics(completeProfile, userId);
                     Optional<MentorProfile> mentorProfile = mentorProfileRepository.findById(userId);
                     if (mentorProfile.isPresent()) {
                         completeProfile.put("mentorProfile", createMentorProfileMap(mentorProfile.get()));
@@ -351,7 +354,7 @@ public class ProfileService {
     /**
      * Create a complete map representation of a mentor profile including basic profile and mentor-specific data
      */
-    private Map<String, Object> createMentorCompleteProfileMap(Profile profile) {
+    public Map<String, Object> toMentorProfileResponse(Profile profile) {
         Map<String, Object> completeProfile = new HashMap<>();
         
         // Add basic profile information
@@ -382,8 +385,23 @@ public class ProfileService {
         if (mentorProfile.isPresent()) {
             completeProfile.put("mentorProfile", createMentorProfileMap(mentorProfile.get()));
         }
+        addMentorSkillTopics(completeProfile, profile.getId());
 
         return completeProfile;
+    }
+
+    private void addMentorSkillTopics(Map<String, Object> profile, UUID mentorId) {
+        List<String> topics = getMentorSkillTopics(mentorId);
+        profile.put("mentorSkillTopics", topics);
+        profile.put("topics", topics);
+    }
+
+    private List<String> getMentorSkillTopics(UUID mentorId) {
+        return mentorSkillRepository.findSkillNamesByMentorId(mentorId).stream()
+                .filter(topic -> topic != null && !topic.isBlank())
+                .map(String::trim)
+                .distinct()
+                .toList();
     }
 
     /**

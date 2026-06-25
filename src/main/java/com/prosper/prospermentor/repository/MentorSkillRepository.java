@@ -58,6 +58,12 @@ public interface MentorSkillRepository extends JpaRepository<MentorSkill, Mentor
     List<UUID> findSkillIdsByMentorId(@Param("mentorId") UUID mentorId);
 
     /**
+     * Get skill names for a mentor.
+     */
+    @Query("SELECT s.name FROM MentorSkill ms JOIN ms.skill s WHERE ms.mentorId = :mentorId")
+    List<String> findSkillNamesByMentorId(@Param("mentorId") UUID mentorId);
+
+    /**
      * Get mentor IDs for a skill
      */
     @Query("SELECT ms.mentorId FROM MentorSkill ms WHERE ms.skillId = :skillId")
@@ -88,5 +94,3 @@ public interface MentorSkillRepository extends JpaRepository<MentorSkill, Mentor
     @Query("SELECT DISTINCT ms.mentorId FROM MentorSkill ms WHERE ms.skillId IN :skillIds")
     List<UUID> findMentorsWithAnySkill(@Param("skillIds") List<UUID> skillIds);
 }
-
-

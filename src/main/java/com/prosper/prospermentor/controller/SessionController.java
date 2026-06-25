@@ -762,6 +762,7 @@ public class SessionController {
                 .companyProgramParticipantId(session.getCompanyProgramParticipantId())
                 .title(session.getTitle())
                 .description(session.getDescription())
+                .bookingSource(session.getBookingSource())
                 .scheduledStart(session.getScheduledStart())
                 .scheduledEnd(session.getScheduledEnd())
                 .status(session.getStatus())

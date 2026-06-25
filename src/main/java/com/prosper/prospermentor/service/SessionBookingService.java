@@ -73,6 +73,9 @@ public class SessionBookingService {
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
+    @Value("${app.b2c-frontend-url:https://www.prospermentor.com}")
+    private String b2cFrontendUrl;
+
     @Value("${support.mentor-experience.whatsapp:}")
     private String mentorExperienceWhatsApp;
 
@@ -184,6 +187,7 @@ public class SessionBookingService {
         session.setScheduledEnd(request.getScheduledStart().plusMinutes(resolveSessionDurationMinutes(eligibility)));
         session.setMeetingPlatform(request.getMeetingPlatform());
         session.setMenteeMessage(request.getMenteeMessage());
+        session.setBookingSource(resolveBookingSource(request.getBookingSource()));
         applyQuestionnaireResponses(session, request.getQuestionnaireResponses());
 
         // Get mentor profile for hourly rate (since it's not in base Profile entity)
@@ -1036,7 +1040,7 @@ public class SessionBookingService {
                         defaultString(session.getTitle(), "Mentorship Session"),
                         sessionDate,
                         defaultString(session.getMenteeMessage(), "No notes provided"),
-                        buildMentorReviewButtonValue(session.getId())
+                        buildMentorReviewButtonValue(session)
                 );
 
                 nautixWhatsAppService.sendTemplateMessage(
@@ -1090,7 +1094,7 @@ public class SessionBookingService {
                         sessionDate,
                         sessionTime,
                         defaultString(session.getMenteeMessage(), "No message provided"),
-                        buildSessionButtonValue(session.getId())
+                        buildSessionButtonValue(session)
                 );
 
                 nautixWhatsAppService.sendTemplateMessage(
@@ -1148,7 +1152,7 @@ public class SessionBookingService {
                     defaultString(session.getTitle(), "Mentorship Session"),
                     formatProposalSlots(proposal),
                     defaultString(proposal.getMentorMessage(), "Please review the proposed alternative time."),
-                    buildSessionButtonValue(session.getId())
+                    buildSessionButtonValue(session)
             );
 
             nautixWhatsAppService.sendTemplateMessage(
@@ -1212,7 +1216,7 @@ public class SessionBookingService {
                     fullName(mentee),
                     defaultString(session.getTitle(), "Mentorship Session"),
                     responseText,
-                    buildSessionButtonValue(session.getId())
+                    buildSessionButtonValue(session)
             );
 
             nautixWhatsAppService.sendTemplateMessage(
@@ -1248,7 +1252,7 @@ public class SessionBookingService {
                     firstName(requester),
                     defaultString(session.getTitle(), "Mentorship Session"),
                     fullName(counterpart),
-                    buildSessionButtonValue(session.getId())
+                    buildSessionButtonValue(session)
             );
 
             nautixWhatsAppService.sendTemplateMessage(
@@ -1324,20 +1328,49 @@ public class SessionBookingService {
         return (value == null || value.isBlank()) ? fallback : value;
     }
 
-    private String buildMentorReviewLink(UUID sessionId) {
-        return frontendUrl + "/app/sessions/review/" + sessionId;
+    private Session.BookingSource resolveBookingSource(Session.BookingSource bookingSource) {
+        return bookingSource != null ? bookingSource : Session.BookingSource.ENTERPRISE;
     }
 
-    private String buildSessionDetailsLink(UUID sessionId) {
-        return frontendUrl + "/app/sessions/" + sessionId;
+    private String resolveFrontendUrl(Session session) {
+        String configuredUrl = session != null && session.getBookingSource() == Session.BookingSource.B2C
+                ? b2cFrontendUrl
+                : frontendUrl;
+
+        if (configuredUrl == null || configuredUrl.isBlank()) {
+            configuredUrl = "https://enterprise.prospermentor.com";
+        }
+
+        while (configuredUrl.endsWith("/")) {
+            configuredUrl = configuredUrl.substring(0, configuredUrl.length() - 1);
+        }
+
+        return configuredUrl;
     }
 
-    private String buildMentorReviewButtonValue(UUID sessionId) {
-        return "review/" + sessionId;
+    private String buildMentorReviewLink(Session session) {
+        return resolveFrontendUrl(session) + "/app/sessions/review/" + session.getId();
     }
 
-    private String buildSessionButtonValue(UUID sessionId) {
-        return sessionId.toString();
+    private String buildSessionDetailsLink(Session session) {
+        String path = session != null && session.getBookingSource() == Session.BookingSource.B2C
+                ? "/sessions/"
+                : "/app/sessions/";
+        return resolveFrontendUrl(session) + path + session.getId();
+    }
+
+    private String buildMentorReviewButtonValue(Session session) {
+        if (session != null && session.getBookingSource() == Session.BookingSource.B2C) {
+            return buildMentorReviewLink(session);
+        }
+        return "review/" + session.getId();
+    }
+
+    private String buildSessionButtonValue(Session session) {
+        if (session != null && session.getBookingSource() == Session.BookingSource.B2C) {
+            return buildSessionDetailsLink(session);
+        }
+        return session.getId().toString();
     }
 
 

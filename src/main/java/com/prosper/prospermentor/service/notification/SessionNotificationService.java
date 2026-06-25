@@ -48,6 +48,9 @@ public class SessionNotificationService {
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
 
+    @Value("${app.b2c-frontend-url:https://www.prospermentor.com}")
+    private String b2cFrontendUrl;
+
     /**
      * Send session confirmation to mentee
      */
@@ -99,7 +102,7 @@ public class SessionNotificationService {
             context.setVariable("meetingDetails", meetingDetails);
             context.setVariable("appName", appName);
             context.setVariable("baseUrl", baseUrl);
-            context.setVariable("frontendUrl", frontendUrl);
+            context.setVariable("frontendUrl", resolveFrontendUrl(session));
             context.setVariable("sessionDate", session.getScheduledStart()
                     .format(DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)));
             context.setVariable("sessionTime", session.getScheduledStart()
@@ -176,7 +179,7 @@ public class SessionNotificationService {
                     proposal.getSlots() != null && proposal.getSlots().size() > 1 ? "s" : "",
                     formatProposalSlotsHtml(proposal),
                     escapeHtml(defaultString(proposal.getMentorMessage(), "Please review the proposed alternative time.")),
-                    escapeHtml(buildSessionReviewLink(session.getId()))
+                    escapeHtml(buildSessionReviewLink(session))
             );
 
             emailInterface.sendEmail(
@@ -219,7 +222,7 @@ public class SessionNotificationService {
                     proposal.getSlots() != null && proposal.getSlots().size() > 1 ? "s" : "",
                     formatProposalSlotsHtml(proposal),
                     escapeHtml(defaultString(proposal.getMenteeResponse(), "No note provided")),
-                    escapeHtml(buildSessionReviewLink(session.getId()))
+                    escapeHtml(buildSessionReviewLink(session))
             );
 
             emailInterface.sendEmail(
@@ -330,7 +333,7 @@ public class SessionNotificationService {
             context.setVariable("reason", reason);
             context.setVariable("appName", appName);
             context.setVariable("baseUrl", baseUrl);
-            context.setVariable("frontendUrl", frontendUrl);
+            context.setVariable("frontendUrl", resolveFrontendUrl(session));
             
             String htmlContent = templateEngine.process("email/session-cancelled-mentee", context);
 
@@ -353,7 +356,7 @@ public class SessionNotificationService {
             context.setVariable("reason", reason);
             context.setVariable("appName", appName);
             context.setVariable("baseUrl", baseUrl);
-            context.setVariable("frontendUrl", frontendUrl);
+            context.setVariable("frontendUrl", resolveFrontendUrl(session));
             
             String htmlContent = templateEngine.process("email/session-cancelled-mentor", context);
 
@@ -366,14 +369,22 @@ public class SessionNotificationService {
         }
     }
 
-    private String buildSessionReviewLink(java.util.UUID sessionId) {
-        String normalizedFrontendUrl = frontendUrl == null || frontendUrl.isBlank()
+    private String buildSessionReviewLink(Session session) {
+        return resolveFrontendUrl(session) + "/app/sessions/review/" + session.getId();
+    }
+
+    private String resolveFrontendUrl(Session session) {
+        String configuredUrl = session != null && session.getBookingSource() == Session.BookingSource.B2C
+                ? b2cFrontendUrl
+                : frontendUrl;
+
+        String normalizedFrontendUrl = configuredUrl == null || configuredUrl.isBlank()
                 ? "http://localhost:3000"
-                : frontendUrl.trim();
+                : configuredUrl.trim();
         while (normalizedFrontendUrl.endsWith("/")) {
             normalizedFrontendUrl = normalizedFrontendUrl.substring(0, normalizedFrontendUrl.length() - 1);
         }
-        return normalizedFrontendUrl + "/app/sessions/review/" + sessionId;
+        return normalizedFrontendUrl;
     }
 
     private String formatProposalSlotsHtml(SessionProposal proposal) {

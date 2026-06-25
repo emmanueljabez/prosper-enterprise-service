@@ -194,6 +194,10 @@ public class Session {
     @Column(name = "booking_context_document", columnDefinition = "TEXT")
     private String bookingContextDocument;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_source", length = 30)
+    private BookingSource bookingSource = BookingSource.ENTERPRISE;
+
     /**
      * Mentor's response to the session request
      */
@@ -437,5 +441,10 @@ public class Session {
         PERSONAL_CREDIT,
         INDIVIDUAL_SUBSCRIPTION,
         SUBSCRIPTION_ADDON
+    }
+
+    public enum BookingSource {
+        ENTERPRISE,
+        B2C
     }
 }

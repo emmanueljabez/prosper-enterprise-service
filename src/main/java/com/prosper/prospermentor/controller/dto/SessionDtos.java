@@ -202,6 +202,7 @@ public class SessionDtos {
         private UUID companyProgramParticipantId;
         private String title;
         private String description;
+        private Session.BookingSource bookingSource;
         private ZonedDateTime scheduledStart;
         private ZonedDateTime scheduledEnd;
         private Session.SessionStatus status;

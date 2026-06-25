@@ -134,6 +134,53 @@ class SessionBookingNotificationTemplateTest {
         );
     }
 
+    @Test
+    void sendSessionNotificationToMentor_shouldUseB2cReviewLinksForB2cBookings() {
+        JavaMailSender mailSender = mock(JavaMailSender.class);
+        TemplateEngine engine = mock(TemplateEngine.class);
+        ProfileRepository profileRepository = mock(ProfileRepository.class);
+        EmailInterface emailInterface = mock(EmailInterface.class);
+        SessionNotificationService service = new SessionNotificationService(mailSender, engine, profileRepository, emailInterface);
+        ReflectionTestUtils.setField(service, "appName", "ProsperMentor");
+        ReflectionTestUtils.setField(service, "baseUrl", "https://api.prospermentor.com");
+        ReflectionTestUtils.setField(service, "frontendUrl", "https://enterprise.prospermentor.com");
+        ReflectionTestUtils.setField(service, "b2cFrontendUrl", "https://www.prospermentor.com");
+
+        UUID sessionId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        Session session = new Session();
+        session.setId(sessionId);
+        session.setTitle("Career Strategy");
+        session.setBookingSource(Session.BookingSource.B2C);
+        session.setScheduledStart(ZonedDateTime.of(2026, 10, 24, 10, 0, 0, 0, ZoneId.of("Africa/Nairobi")));
+        session.setScheduledEnd(ZonedDateTime.of(2026, 10, 24, 11, 0, 0, 0, ZoneId.of("Africa/Nairobi")));
+
+        Profile mentor = new Profile();
+        mentor.setId(UUID.fromString("55555555-5555-5555-5555-555555555555"));
+        mentor.setEmail("mentor@example.com");
+
+        Profile mentee = new Profile();
+        mentee.setId(UUID.fromString("66666666-6666-6666-6666-666666666666"));
+
+        Skill skill = new Skill("Career Strategy");
+
+        when(engine.process(eq("email/booking-notification-mentor"), any(Context.class)))
+                .thenAnswer(invocation -> {
+                    Context context = invocation.getArgument(1);
+                    return context.getVariable("frontendUrl")
+                            + "/app/sessions/review/"
+                            + ((Session) context.getVariable("session")).getId();
+                });
+
+        service.sendSessionNotificationToMentor(session, mentor, mentee, null, skill);
+
+        verify(emailInterface).sendEmail(
+                eq("mentor@example.com"),
+                eq("New Session Request - Career Strategy"),
+                eq("https://www.prospermentor.com/app/sessions/review/" + sessionId),
+                eq(List.of())
+        );
+    }
+
     private SpringTemplateEngine templateEngine() {
         ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
         resolver.setPrefix("templates/");

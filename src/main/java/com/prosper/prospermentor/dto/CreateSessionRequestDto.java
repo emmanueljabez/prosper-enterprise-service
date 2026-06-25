@@ -43,6 +43,8 @@ public class CreateSessionRequestDto {
 
     private String journeyInstanceStepId;
 
+    private Session.BookingSource bookingSource;
+
     /**
      * Preferred currency for payment (e.g., "KES", "UGX", "USD")
      * If not provided, defaults to KES

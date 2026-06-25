@@ -21,6 +21,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +68,22 @@ class SubscriptionServicePlanInvoicePaymentTest {
         assertThat(saved.getIsTrial()).isFalse();
         assertThat(saved.getAutoRenew()).isFalse();
         assertThat(saved.getCurrentPeriodEnd()).isAfter(LocalDateTime.now().plusDays(29));
+    }
+
+    @Test
+    void quotePlanInvoice_shouldChargeFullOneTimePackagePriceWhenUserHasActivePlan() {
+        UUID userId = UUID.randomUUID();
+        SubscriptionPlan pack3 = oneTimePlan("PACK_3", 3, 11);
+
+        when(subscriptionPlanRepository.findById(pack3.getId())).thenReturn(Optional.of(pack3));
+
+        var quote = subscriptionService.quotePlanInvoice(userId, pack3.getId(), BillingInterval.MONTHLY);
+
+        assertThat(quote).containsEntry("context", "PLAN_PURCHASE");
+        assertThat((BigDecimal) quote.get("amount")).isEqualByComparingTo(new BigDecimal("5.00"));
+        assertThat(quote).containsEntry("subscriptionId", null);
+        assertThat(quote).containsEntry("currentPlanId", null);
+        verify(subscriptionRepository, never()).findActiveSubscriptionByUserId(eq(userId), any(LocalDateTime.class));
     }
 
     private SubscriptionPlan oneTimePlan(String code, int sessions, int displayOrder) {

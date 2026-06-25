@@ -2365,6 +2365,19 @@ public class SubscriptionService {
         quote.put("billingInterval", targetInterval);
         quote.put("requiresPayment", Boolean.TRUE);
 
+        if (isOneTimePlan(targetPlan)) {
+            BigDecimal amount = targetAmount.setScale(2, java.math.RoundingMode.HALF_UP);
+            quote.put("context", "PLAN_PURCHASE");
+            quote.put("amount", amount);
+            quote.put("description", String.format("Purchase session package: %s", targetPlan.getName()));
+            quote.put("subscriptionId", null);
+            quote.put("currentPlanId", null);
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                quote.put("requiresPayment", Boolean.FALSE);
+            }
+            return quote;
+        }
+
         Optional<Subscription> activeSubscriptionOpt = getActiveSubscription(userId);
         if (activeSubscriptionOpt.isPresent()) {
             Subscription currentSubscription = activeSubscriptionOpt.get();

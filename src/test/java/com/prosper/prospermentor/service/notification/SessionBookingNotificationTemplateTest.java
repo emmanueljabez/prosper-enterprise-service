@@ -4,8 +4,11 @@ import com.prosper.prospermentor.EmailInterface;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.entity.Skill;
 import com.prosper.prospermentor.entity.Session;
+import com.prosper.prospermentor.entity.SessionProposal;
+import com.prosper.prospermentor.entity.SessionProposalSlot;
 import com.prosper.prospermentor.repository.ProfileRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thymeleaf.TemplateEngine;
@@ -23,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -179,6 +183,79 @@ class SessionBookingNotificationTemplateTest {
                 eq("https://www.prospermentor.com/app/sessions/review/" + sessionId),
                 eq(List.of())
         );
+    }
+
+    @Test
+    void sendAlternativeProposalToMentee_shouldUseDedicatedProposalRoute() {
+        JavaMailSender mailSender = mock(JavaMailSender.class);
+        TemplateEngine engine = mock(TemplateEngine.class);
+        ProfileRepository profileRepository = mock(ProfileRepository.class);
+        EmailInterface emailInterface = mock(EmailInterface.class);
+        SessionNotificationService service = new SessionNotificationService(mailSender, engine, profileRepository, emailInterface);
+        ReflectionTestUtils.setField(service, "frontendUrl", "https://enterprise.prospermentor.com");
+        ReflectionTestUtils.setField(service, "b2cFrontendUrl", "https://www.prospermentor.com");
+
+        UUID enterpriseSessionId = UUID.fromString("77777777-7777-7777-7777-777777777777");
+        Session enterpriseSession = proposalSession(enterpriseSessionId, Session.BookingSource.ENTERPRISE);
+        SessionProposal enterpriseProposal = proposal(enterpriseSession);
+
+        Profile mentor = new Profile();
+        mentor.setFirstName("Grace");
+        mentor.setLastName("Hopper");
+
+        Profile mentee = new Profile();
+        mentee.setEmail("mentee@example.com");
+        mentee.setFirstName("Ada");
+
+        UUID b2cSessionId = UUID.fromString("88888888-8888-8888-8888-888888888888");
+        Session b2cSession = proposalSession(b2cSessionId, Session.BookingSource.B2C);
+        SessionProposal b2cProposal = proposal(b2cSession);
+
+        service.sendAlternativeProposalToMentee(enterpriseProposal, enterpriseSession, mentor, mentee);
+        service.sendAlternativeProposalToMentee(b2cProposal, b2cSession, mentor, mentee);
+
+        ArgumentCaptor<String> htmlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(emailInterface, times(2)).sendEmail(
+                eq("mentee@example.com"),
+                eq("Alternative Time Proposed - Leadership Coaching"),
+                htmlCaptor.capture(),
+                eq(List.of())
+        );
+
+        assertThat(htmlCaptor.getAllValues().get(0))
+                .contains("https://enterprise.prospermentor.com/app/sessions/proposals/" + enterpriseSessionId)
+                .doesNotContain("/app/sessions/review/" + enterpriseSessionId);
+        assertThat(htmlCaptor.getAllValues().get(1))
+                .contains("https://www.prospermentor.com/sessions/proposals/" + b2cSessionId)
+                .doesNotContain("/app/sessions/review/" + b2cSessionId);
+    }
+
+    private static Session proposalSession(UUID sessionId, Session.BookingSource bookingSource) {
+        Session session = new Session();
+        session.setId(sessionId);
+        session.setTitle("Leadership Coaching");
+        session.setBookingSource(bookingSource);
+        session.setScheduledStart(ZonedDateTime.of(2026, 10, 24, 10, 0, 0, 0, ZoneId.of("Africa/Nairobi")));
+        session.setScheduledEnd(ZonedDateTime.of(2026, 10, 24, 11, 0, 0, 0, ZoneId.of("Africa/Nairobi")));
+        return session;
+    }
+
+    private static SessionProposal proposal(Session session) {
+        SessionProposal proposal = new SessionProposal();
+        proposal.setId(UUID.randomUUID());
+        proposal.setSession(session);
+        proposal.setSessionId(session.getId());
+        proposal.setStatus(SessionProposal.ProposalStatus.PENDING_MENTEE_RESPONSE);
+        proposal.setProposalType(SessionProposal.ProposalType.SINGLE_SLOT);
+        proposal.setMentorMessage("Can you make this slot?");
+
+        SessionProposalSlot slot = new SessionProposalSlot();
+        slot.setId(UUID.randomUUID());
+        slot.setProposal(proposal);
+        slot.setScheduledStart(ZonedDateTime.of(2026, 10, 25, 14, 0, 0, 0, ZoneId.of("Africa/Nairobi")));
+        slot.setScheduledEnd(ZonedDateTime.of(2026, 10, 25, 15, 0, 0, 0, ZoneId.of("Africa/Nairobi")));
+        proposal.getSlots().add(slot);
+        return proposal;
     }
 
     private SpringTemplateEngine templateEngine() {

@@ -142,6 +142,70 @@ class SessionBookingServiceCorporateAllocationTest {
     }
 
     @Test
+    void cancelSession_whenMenteeCancelsFutureIndividualSubscriptionBooking_shouldReturnConsumedSubscriptionSession() {
+        Session session = new Session();
+        session.setId(UUID.randomUUID());
+        session.setMentorId(UUID.randomUUID());
+        session.setMenteeId(UUID.randomUUID());
+        session.setStatus(Session.SessionStatus.CONFIRMED);
+        session.setScheduledStart(java.time.ZonedDateTime.now().plusDays(2));
+        session.setScheduledEnd(java.time.ZonedDateTime.now().plusDays(2).plusHours(1));
+        session.setEntitlementSource(Session.EntitlementSource.INDIVIDUAL_SUBSCRIPTION);
+        session.setConsumedSubscriptionId(UUID.randomUUID());
+
+        Profile mentor = new Profile();
+        mentor.setId(session.getMentorId());
+        Profile mentee = new Profile();
+        mentee.setId(session.getMenteeId());
+
+        when(sessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(profileRepository.findById(session.getMentorId())).thenReturn(Optional.of(mentor));
+        when(profileRepository.findById(session.getMenteeId())).thenReturn(Optional.of(mentee));
+
+        sessionBookingService.cancelSession(session.getId(), Session.CancelledBy.MENTEE, "Need to reschedule");
+
+        verify(subscriptionService).returnConsumedSessionForDeclinedBooking(
+                session.getMenteeId(),
+                session.getConsumedSubscriptionId(),
+                null
+        );
+        assertThat(session.getEntitlementReturnedAt()).isNotNull();
+    }
+
+    @Test
+    void cancelSession_whenMenteeCancelsAfterScheduledStart_shouldNotReturnIndividualEntitlement() {
+        Session session = new Session();
+        session.setId(UUID.randomUUID());
+        session.setMentorId(UUID.randomUUID());
+        session.setMenteeId(UUID.randomUUID());
+        session.setStatus(Session.SessionStatus.CONFIRMED);
+        session.setScheduledStart(java.time.ZonedDateTime.now().minusHours(2));
+        session.setScheduledEnd(java.time.ZonedDateTime.now().minusHours(1));
+        session.setEntitlementSource(Session.EntitlementSource.INDIVIDUAL_SUBSCRIPTION);
+        session.setConsumedSubscriptionId(UUID.randomUUID());
+
+        Profile mentor = new Profile();
+        mentor.setId(session.getMentorId());
+        Profile mentee = new Profile();
+        mentee.setId(session.getMenteeId());
+
+        when(sessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        when(sessionRepository.save(any(Session.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(profileRepository.findById(session.getMentorId())).thenReturn(Optional.of(mentor));
+        when(profileRepository.findById(session.getMenteeId())).thenReturn(Optional.of(mentee));
+
+        sessionBookingService.cancelSession(session.getId(), Session.CancelledBy.MENTEE, "Missed it");
+
+        verify(subscriptionService, never()).returnConsumedSessionForDeclinedBooking(
+                any(UUID.class),
+                any(),
+                any()
+        );
+        assertThat(session.getEntitlementReturnedAt()).isNull();
+    }
+
+    @Test
     void cancelSession_whenMentorDeclinesAddonBackedBooking_shouldReturnConsumedAddonSession() {
         Session session = new Session();
         session.setId(UUID.randomUUID());

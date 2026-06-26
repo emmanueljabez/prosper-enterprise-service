@@ -476,7 +476,7 @@ class SessionBookingServiceWhatsAppTest {
                                 + " at "
                                 + secondAlternativeStart.format(DateTimeFormatter.ofPattern("h:mm a z", Locale.ENGLISH)),
                         "I can make either of these slots work.",
-                        sessionId.toString()
+                        "proposals/" + sessionId
                 ))
         );
         verify(notificationService).sendAlternativeProposalToMentee(

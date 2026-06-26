@@ -179,7 +179,7 @@ public class SessionNotificationService {
                     proposal.getSlots() != null && proposal.getSlots().size() > 1 ? "s" : "",
                     formatProposalSlotsHtml(proposal),
                     escapeHtml(defaultString(proposal.getMentorMessage(), "Please review the proposed alternative time.")),
-                    escapeHtml(buildSessionReviewLink(session))
+                    escapeHtml(buildMenteeProposalLink(session))
             );
 
             emailInterface.sendEmail(
@@ -371,6 +371,13 @@ public class SessionNotificationService {
 
     private String buildSessionReviewLink(Session session) {
         return resolveFrontendUrl(session) + "/app/sessions/review/" + session.getId();
+    }
+
+    private String buildMenteeProposalLink(Session session) {
+        String path = session != null && session.getBookingSource() == Session.BookingSource.B2C
+                ? "/sessions/proposals/"
+                : "/app/sessions/proposals/";
+        return resolveFrontendUrl(session) + path + session.getId();
     }
 
     private String resolveFrontendUrl(Session session) {

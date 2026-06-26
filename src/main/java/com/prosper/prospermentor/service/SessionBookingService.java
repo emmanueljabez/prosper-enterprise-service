@@ -762,9 +762,6 @@ public class SessionBookingService {
     }
 
     private void returnIndividualEntitlementIfNeeded(Session session, Session.CancelledBy cancelledBy) {
-        if (cancelledBy != Session.CancelledBy.MENTOR) {
-            return;
-        }
         if (session.getCorporateAllocationId() != null) {
             return;
         }
@@ -777,6 +774,9 @@ public class SessionBookingService {
         if (!isIndividualSubscriptionEntitlement(session.getEntitlementSource())) {
             return;
         }
+        if (!shouldReturnIndividualEntitlement(cancelledBy, session)) {
+            return;
+        }
 
         subscriptionService.returnConsumedSessionForDeclinedBooking(
                 session.getMenteeId(),
@@ -784,7 +784,18 @@ public class SessionBookingService {
                 session.getConsumedSubscriptionAddonId()
         );
         session.setEntitlementReturnedAt(LocalDateTime.now());
-        log.info("Returned individual entitlement for mentor-declined session {}", session.getId());
+        log.info("Returned individual entitlement for cancelled session {}", session.getId());
+    }
+
+    private boolean shouldReturnIndividualEntitlement(Session.CancelledBy cancelledBy, Session session) {
+        if (cancelledBy == Session.CancelledBy.MENTOR) {
+            return true;
+        }
+        if (cancelledBy == Session.CancelledBy.MENTEE) {
+            ZonedDateTime scheduledStart = session.getScheduledStart();
+            return scheduledStart != null && ZonedDateTime.now().isBefore(scheduledStart);
+        }
+        return false;
     }
 
     private boolean isIndividualSubscriptionEntitlement(Session.EntitlementSource source) {
@@ -1152,7 +1163,7 @@ public class SessionBookingService {
                     defaultString(session.getTitle(), "Mentorship Session"),
                     formatProposalSlots(proposal),
                     defaultString(proposal.getMentorMessage(), "Please review the proposed alternative time."),
-                    buildSessionButtonValue(session)
+                    buildMenteeProposalButtonValue(session)
             );
 
             nautixWhatsAppService.sendTemplateMessage(
@@ -1371,6 +1382,13 @@ public class SessionBookingService {
             return buildSessionDetailsLink(session);
         }
         return session.getId().toString();
+    }
+
+    private String buildMenteeProposalButtonValue(Session session) {
+        if (session != null && session.getBookingSource() == Session.BookingSource.B2C) {
+            return resolveFrontendUrl(session) + "/sessions/proposals/" + session.getId();
+        }
+        return "proposals/" + session.getId();
     }
 
 

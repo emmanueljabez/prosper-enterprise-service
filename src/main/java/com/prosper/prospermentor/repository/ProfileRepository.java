@@ -34,6 +34,11 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID>, JpaSpec
     Optional<Profile> findByEmail(String email);
 
     /**
+     * Find profile by email without requiring the caller to match stored casing.
+     */
+    Optional<Profile> findByEmailIgnoreCase(String email);
+
+    /**
      * Find profile by ID with company eagerly fetched
      */
     @Query("SELECT p FROM Profile p LEFT JOIN FETCH p.company WHERE p.id = :id")

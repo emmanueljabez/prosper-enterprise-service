@@ -5,6 +5,7 @@ import com.prosper.prospermentor.entity.Subscription;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.service.CompanyAdminRegistrationService;
 import com.prosper.prospermentor.service.CompanyService;
+import com.prosper.prospermentor.service.PasswordResetService;
 import com.prosper.prospermentor.service.ProfileService;
 import com.prosper.prospermentor.service.SubscriptionService;
 import com.prosper.prospermentor.service.SupabaseAuthService;
@@ -38,6 +39,7 @@ class AuthControllerFreeTrialTest {
     @Mock private CompanyAdminRegistrationService companyAdminRegistrationService;
     @Mock private SubscriptionService subscriptionService;
     @Mock private MenteeNotificationService menteeNotificationService;
+    @Mock private PasswordResetService passwordResetService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private AuthController authController;
@@ -51,7 +53,8 @@ class AuthControllerFreeTrialTest {
                 companyAdminRegistrationService,
                 subscriptionService,
                 objectMapper,
-                menteeNotificationService
+                menteeNotificationService,
+                passwordResetService
         );
         ReflectionTestUtils.setField(authController, "frontendUrl", "https://enterprise.prospermentor.com");
     }

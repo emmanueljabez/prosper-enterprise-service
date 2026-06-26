@@ -323,61 +323,6 @@ public class SupabaseAuthService {
     }
 
     /**
-     * Send password reset email using Supabase recovery flow.
-     */
-    public Mono<JsonNode> sendPasswordResetEmail(String email, String redirectTo) {
-        if (!isValidEmail(email)) {
-            return Mono.error(new IllegalArgumentException("Invalid email format: " + email));
-        }
-
-        Map<String, Object> requestBody = new java.util.HashMap<>();
-        requestBody.put("email", email.trim().toLowerCase());
-        if (redirectTo != null && !redirectTo.isBlank()) {
-            requestBody.put("redirect_to", redirectTo.trim());
-        }
-
-        return supabaseWebClient
-                .post()
-                .uri("/auth/v1/recover")
-                .bodyValue(requestBody)
-                .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> response.bodyToMono(String.class)
-                                .map(body -> new RuntimeException("Password reset request failed: " + response.statusCode() + " - " + body))
-                )
-                .bodyToMono(JsonNode.class)
-                .doOnSuccess(result -> log.info("Password reset email flow triggered for {}", email))
-                .doOnError(error -> log.error("Failed to trigger password reset for {}: {}", email, error.getMessage()));
-    }
-
-    /**
-     * Complete password reset using a recovery access token.
-     */
-    public Mono<JsonNode> resetPasswordWithAccessToken(String accessToken, String newPassword) {
-        if (accessToken == null || accessToken.trim().isEmpty()) {
-            return Mono.error(new IllegalArgumentException("Access token is required"));
-        }
-
-        Map<String, Object> requestBody = Map.of("password", newPassword);
-
-        return supabaseWebClient
-                .put()
-                .uri("/auth/v1/user")
-                .header("Authorization", "Bearer " + accessToken.trim())
-                .bodyValue(requestBody)
-                .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> response.bodyToMono(String.class)
-                                .map(body -> new RuntimeException("Password reset failed: " + response.statusCode() + " - " + body))
-                )
-                .bodyToMono(JsonNode.class)
-                .doOnSuccess(result -> log.info("Password reset completed successfully"))
-                .doOnError(error -> log.error("Failed to complete password reset: {}", error.getMessage()));
-    }
-
-    /**
      * Confirm an email verification token hash without redirecting the browser to Supabase.
      */
     public Mono<JsonNode> verifyEmailTokenHash(String tokenHash, String type) {

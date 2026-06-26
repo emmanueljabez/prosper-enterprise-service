@@ -8,6 +8,7 @@ import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
 import com.prosper.prospermentor.security.SupabaseUserPrincipal;
 import com.prosper.prospermentor.service.CompanyAdminRegistrationService;
+import com.prosper.prospermentor.service.PasswordResetService;
 import com.prosper.prospermentor.service.SupabaseAuthService;
 import com.prosper.prospermentor.service.ProfileService;
 import com.prosper.prospermentor.service.CompanyService;
@@ -29,8 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * REST controller for authentication-related endpoints
@@ -41,9 +40,6 @@ import java.util.regex.Pattern;
 @Slf4j
 public class AuthController {
 
-    private static final String PASSWORD_RESET_FALLBACK_PATH = "/reset-password";
-    private static final Pattern PASSWORD_RESET_RATE_LIMIT_PATTERN = Pattern.compile("after\\s+(\\d+)\\s+seconds", Pattern.CASE_INSENSITIVE);
-
     private final SupabaseAuthService supabaseAuthService;
     private final ProfileService profileService;
     private final CompanyService companyService;
@@ -51,6 +47,7 @@ public class AuthController {
     private final SubscriptionService subscriptionService;
     private final ObjectMapper objectMapper;
     private final MenteeNotificationService menteeNotificationService;
+    private final PasswordResetService passwordResetService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -457,22 +454,15 @@ public class AuthController {
                     .<Object>body(Map.of("error", "Email is required")));
         }
 
-        String redirectTo = resolvePasswordResetRedirect(request.getRedirectTo());
-
-        return supabaseAuthService.sendPasswordResetEmail(request.getEmail(), redirectTo)
+        return Mono.fromRunnable(() -> passwordResetService.requestPasswordReset(request.getEmail()))
                 .then(Mono.just(ResponseEntity.ok((Object) Map.of(
                         "message", "If an account exists for that email, a password reset link has been sent."
                 ))))
                 .onErrorResume(error -> {
                     String errorMessage = error.getMessage();
-                    if (errorMessage.contains("Invalid email format")) {
+                    if (errorMessage != null && errorMessage.contains("Invalid email format")) {
                         return Mono.just(ResponseEntity.badRequest()
                                 .<Object>body(Map.of("error", "Invalid email format")));
-                    }
-
-                    if (errorMessage.contains("429") || errorMessage.contains("over_email_send_rate_limit")) {
-                        return Mono.just(ResponseEntity.status(429)
-                                .<Object>body(Map.of("error", buildPasswordResetRateLimitMessage(errorMessage))));
                     }
 
                     log.error("Forgot password flow failed: {}", errorMessage);
@@ -486,9 +476,10 @@ public class AuthController {
      */
     @PostMapping("/reset-password")
     public Mono<ResponseEntity<Object>> resetPassword(@RequestBody ResetPasswordRequest request) {
-        if (request.getAccessToken() == null || request.getAccessToken().trim().isEmpty()) {
+        String resetToken = request.getResolvedToken();
+        if (resetToken == null || resetToken.trim().isEmpty()) {
             return Mono.just(ResponseEntity.badRequest()
-                    .<Object>body(Map.of("error", "Access token is required")));
+                    .<Object>body(Map.of("error", "Reset token is required")));
         }
 
         if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
@@ -501,17 +492,22 @@ public class AuthController {
                     .<Object>body(Map.of("error", "Password must be at least 8 characters long")));
         }
 
-        return supabaseAuthService.resetPasswordWithAccessToken(request.getAccessToken(), request.getPassword())
-                .map(result -> ResponseEntity.ok((Object) Map.of(
+        return passwordResetService.resetPasswordWithToken(resetToken, request.getPassword())
+                .then(Mono.just(ResponseEntity.ok((Object) Map.of(
                         "message", "Password updated successfully"
-                )))
+                ))))
                 .onErrorResume(error -> {
                     String errorMessage = error.getMessage();
                     log.error("Reset password flow failed: {}", errorMessage);
 
-                    if (errorMessage.contains("401") || errorMessage.contains("403")) {
+                    if (errorMessage != null && errorMessage.contains("Reset link is invalid or has expired")) {
                         return Mono.just(ResponseEntity.status(401)
                                 .<Object>body(Map.of("error", "Reset link is invalid or has expired")));
+                    }
+
+                    if (errorMessage != null && errorMessage.contains("Password")) {
+                        return Mono.just(ResponseEntity.badRequest()
+                                .<Object>body(Map.of("error", errorMessage)));
                     }
 
                     return Mono.just(ResponseEntity.internalServerError()
@@ -751,23 +747,6 @@ public class AuthController {
         return Mono.just(ResponseEntity.ok((Object) Map.of("message", "No active session to logout")));
     }
 
-    private String resolvePasswordResetRedirect(String requestedRedirect) {
-        String normalizedFrontendUrl = normalizeBaseUrl(frontendUrl);
-        String fallback = normalizedFrontendUrl + PASSWORD_RESET_FALLBACK_PATH;
-
-        if (requestedRedirect == null || requestedRedirect.trim().isEmpty()) {
-            return fallback;
-        }
-
-        String candidate = requestedRedirect.trim();
-        if (candidate.startsWith(normalizedFrontendUrl)) {
-            return candidate;
-        }
-
-        log.warn("Ignoring password reset redirect outside configured frontend origin: {}", candidate);
-        return fallback;
-    }
-
     private String normalizeBaseUrl(String value) {
         String normalized = value == null || value.trim().isEmpty()
                 ? "http://localhost:3000"
@@ -860,15 +839,6 @@ public class AuthController {
             }
         }
         return null;
-    }
-
-    private String buildPasswordResetRateLimitMessage(String errorMessage) {
-        Matcher matcher = PASSWORD_RESET_RATE_LIMIT_PATTERN.matcher(Optional.ofNullable(errorMessage).orElse(""));
-        if (matcher.find()) {
-            return "Please wait " + matcher.group(1) + " seconds before requesting another reset email.";
-        }
-
-        return "Please wait a moment before requesting another reset email.";
     }
 
     private boolean isFreeTrialRequested(LoginRequest request) {
@@ -1005,13 +975,19 @@ public class AuthController {
     }
 
     public static class ResetPasswordRequest {
-        private String accessToken;
+        private String token;
         private String password;
+        private String accessToken;
 
-        public String getAccessToken() { return accessToken; }
-        public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
+        public String getToken() { return token; }
+        public void setToken(String token) { this.token = token; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
+        public String getAccessToken() { return accessToken; }
+        public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
+        public String getResolvedToken() {
+            return token != null && !token.trim().isEmpty() ? token : accessToken;
+        }
     }
 
     public static class CompanyRegistrationSignupRequest {

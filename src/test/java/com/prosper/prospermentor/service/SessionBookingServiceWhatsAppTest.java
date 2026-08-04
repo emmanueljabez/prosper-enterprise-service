@@ -96,6 +96,8 @@ class SessionBookingServiceWhatsAppTest {
     private EmployeeSessionAllocationService employeeSessionAllocationService;
     @Mock
     private PersonalSessionCreditService personalSessionCreditService;
+    @Mock
+    private CompanyMentorEnrollmentService companyMentorEnrollmentService;
 
     @InjectMocks
     private SessionBookingService sessionBookingService;
@@ -105,6 +107,8 @@ class SessionBookingServiceWhatsAppTest {
         ReflectionTestUtils.setField(sessionBookingService, "frontendUrl", "https://enterprise.prospermentor.com");
         lenient().when(employeeSessionAllocationService.findActiveAllocationForProfile(any(UUID.class)))
                 .thenReturn(Optional.empty());
+        lenient().when(companyMentorEnrollmentService.isMentorPubliclyDiscoverable(any(UUID.class)))
+                .thenReturn(true);
     }
 
     @Test

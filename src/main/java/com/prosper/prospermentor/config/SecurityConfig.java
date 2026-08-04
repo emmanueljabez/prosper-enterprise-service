@@ -91,6 +91,7 @@ public class SecurityConfig {
                 // Company invitation endpoints (public for employee signup)
                 .requestMatchers("/api/v1/companies/whitelist/verify-invitation").permitAll()
                 .requestMatchers("/api/v1/companies/register").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/company-mentor-invitations/verify").permitAll()
                 
                 // Demo endpoints (public endpoint only)
                 .requestMatchers("/api/demo/public").permitAll()

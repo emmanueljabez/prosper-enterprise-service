@@ -27,6 +27,7 @@ class ProfileServiceTest {
     @Mock private MenteeProfileRepository menteeProfileRepository;
     @Mock private MentorProfileRepository mentorProfileRepository;
     @Mock private MentorSkillRepository mentorSkillRepository;
+    @Mock private CompanyMentorEnrollmentService companyMentorEnrollmentService;
 
     private ProfileService profileService;
 
@@ -36,7 +37,8 @@ class ProfileServiceTest {
                 profileRepository,
                 menteeProfileRepository,
                 mentorProfileRepository,
-                mentorSkillRepository
+                mentorSkillRepository,
+                companyMentorEnrollmentService
         );
     }
 

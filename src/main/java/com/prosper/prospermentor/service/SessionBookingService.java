@@ -69,6 +69,7 @@ public class SessionBookingService {
     private final PersonalSessionCreditService personalSessionCreditService;
     private final SessionProposalRepository sessionProposalRepository;
     private final SessionSupportRequestRepository sessionSupportRequestRepository;
+    private final CompanyMentorEnrollmentService companyMentorEnrollmentService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -103,7 +104,8 @@ public class SessionBookingService {
                                 EmployeeSessionAllocationService employeeSessionAllocationService,
                                 PersonalSessionCreditService personalSessionCreditService,
                                 SessionProposalRepository sessionProposalRepository,
-                                SessionSupportRequestRepository sessionSupportRequestRepository) {
+                                SessionSupportRequestRepository sessionSupportRequestRepository,
+                                CompanyMentorEnrollmentService companyMentorEnrollmentService) {
         this.sessionRepository = sessionRepository;
         this.profileRepository = profileRepository;
         this.mentorProfileRepository = mentorProfileRepository;
@@ -126,6 +128,7 @@ public class SessionBookingService {
         this.personalSessionCreditService = personalSessionCreditService;
         this.sessionProposalRepository = sessionProposalRepository;
         this.sessionSupportRequestRepository = sessionSupportRequestRepository;
+        this.companyMentorEnrollmentService = companyMentorEnrollmentService;
     }
     
     /**
@@ -165,6 +168,8 @@ public class SessionBookingService {
         if (mentee.getRole().trim().compareTo("mentee") != 0) {
             throw new IllegalArgumentException("User is not a mentee");
         }
+
+        validateMentorBookabilityForRequest(request, mentor, mentee);
 
         Skill skill = skillRepository.findById(UUID.fromString(request.getSkillId()))
                 .orElseThrow(() -> new IllegalArgumentException("Skill not found"));
@@ -301,6 +306,26 @@ public class SessionBookingService {
 
         log.info("Successfully created session request: {}", session.getId());
         return session;
+    }
+
+    private void validateMentorBookabilityForRequest(CreateSessionRequestDto request, Profile mentor, Profile mentee) {
+        UUID mentorId = mentor.getId();
+        UUID requestedProgramId = parseOptionalUuid(request.getCompanyProgramId());
+
+        if (requestedProgramId == null) {
+            if (!companyMentorEnrollmentService.isMentorPubliclyDiscoverable(mentorId)) {
+                throw new IllegalArgumentException("Selected mentor is not available for public booking");
+            }
+            return;
+        }
+
+        UUID menteeCompanyId = mentee.getCompany() != null ? mentee.getCompany().getId() : null;
+        boolean companyBookable = menteeCompanyId != null
+                && companyMentorEnrollmentService.canCompanyBookMentor(menteeCompanyId, requestedProgramId, mentorId);
+        boolean publicBookable = companyMentorEnrollmentService.isMentorPubliclyDiscoverable(mentorId);
+        if (!companyBookable && !publicBookable) {
+            throw new IllegalArgumentException("Selected mentor is not available for this company program");
+        }
     }
 
     private void applyQuestionnaireResponses(Session session, Map<String, Object> questionnaireResponses) {

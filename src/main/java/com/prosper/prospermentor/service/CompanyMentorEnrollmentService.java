@@ -42,6 +42,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -392,6 +393,11 @@ public class CompanyMentorEnrollmentService {
 
     @Transactional(readOnly = true)
     public Set<UUID> eligibleCompanyMentorIds(UUID companyId, UUID companyProgramId) {
+        return eligibleCompanyMentorPoolMembersByMentorId(companyId, companyProgramId).keySet();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, CompanyMentorDtos.PoolMemberDto> eligibleCompanyMentorPoolMembersByMentorId(UUID companyId, UUID companyProgramId) {
         return membershipRepository.findByCompany_IdAndMembershipStatusIn(
                         companyId,
                         Set.of(CompanyMentorPoolMembership.MembershipStatus.ACTIVE)
@@ -399,11 +405,13 @@ public class CompanyMentorEnrollmentService {
                 .stream()
                 .filter(membership -> Boolean.TRUE.equals(membership.getCompanyBookable()))
                 .filter(membership -> membershipAllowsProgram(membership, companyProgramId))
-                .map(CompanyMentorPoolMembership::getMentorProfile)
-                .filter(Objects::nonNull)
-                .map(Profile::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                .filter(membership -> membership.getMentorProfile() != null && membership.getMentorProfile().getId() != null)
+                .collect(Collectors.toMap(
+                        membership -> membership.getMentorProfile().getId(),
+                        this::toPoolMemberDto,
+                        (first, second) -> first,
+                        LinkedHashMap::new
+                ));
     }
 
     private List<CompanyMentorDtos.ImportRowResult> parseImportRows(Company company, MultipartFile file) {

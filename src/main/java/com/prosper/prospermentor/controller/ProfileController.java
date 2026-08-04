@@ -316,6 +316,11 @@ public class ProfileController {
         try {
             log.info("Fetching mentor profile by ID: {}", mentorId);
 
+            if (!profileService.isPublicMentorVisible(mentorId)) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("error", "Mentor profile not found"));
+            }
+
             var mentorProfile = profileService.getCompleteProfile(mentorId);
             if (mentorProfile.isEmpty()) {
                 return ResponseEntity.status(404)

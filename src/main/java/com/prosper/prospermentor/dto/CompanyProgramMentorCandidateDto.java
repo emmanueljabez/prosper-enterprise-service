@@ -26,6 +26,10 @@ public class CompanyProgramMentorCandidateDto {
     private List<String> specializations;
     private Boolean isAvailable;
     private String source;
+    private UUID companyMentorMembershipId;
+    private Boolean companyBookable;
+    private String visibilityMode;
+    private String publicApprovalStatus;
     private Integer rankOrder;
     private BigDecimal recommendationScore;
     private String recommendationReason;

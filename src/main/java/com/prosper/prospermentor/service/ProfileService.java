@@ -35,6 +35,7 @@ public class ProfileService {
     private final MenteeProfileRepository menteeProfileRepository;
     private final MentorProfileRepository mentorProfileRepository;
     private final MentorSkillRepository mentorSkillRepository;
+    private final CompanyMentorEnrollmentService companyMentorEnrollmentService;
 
     /**
      * Create a new profile for a user
@@ -295,7 +296,11 @@ public class ProfileService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "created_at"));
 
-        return profileRepository.findByRoleWithFilters("mentor", isVerified, searchTerm, pageable);
+        return profileRepository.findPublicMentorsWithFilters("mentor", isVerified, searchTerm, pageable);
+    }
+
+    public boolean isPublicMentorVisible(UUID mentorId) {
+        return companyMentorEnrollmentService.isMentorPubliclyDiscoverable(mentorId);
     }
 
     /**

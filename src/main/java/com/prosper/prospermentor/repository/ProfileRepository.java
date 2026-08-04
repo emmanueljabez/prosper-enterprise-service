@@ -91,6 +91,49 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID>, JpaSpec
         Pageable pageable);
 
     /**
+     * Find public mentor profiles while excluding company-sourced private mentors unless
+     * they were already public or have been approved for public listing.
+     */
+    @Query(value = """
+        SELECT * FROM profiles p
+        WHERE p.role = CAST(:role AS user_role)
+        AND (:isVerified IS NULL OR p.is_verified = :isVerified)
+        AND (:searchTerm IS NULL OR
+             LOWER(p.first_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR
+             LOWER(p.last_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+        AND NOT EXISTS (
+            SELECT 1
+            FROM company_mentor_pool_memberships cmm
+            WHERE cmm.mentor_profile_id = p.id
+              AND cmm.membership_status = 'ACTIVE'
+              AND cmm.public_listing_preexisting = false
+              AND cmm.public_approval_status <> 'APPROVED'
+        )
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM profiles p
+        WHERE p.role = CAST(:role AS user_role)
+        AND (:isVerified IS NULL OR p.is_verified = :isVerified)
+        AND (:searchTerm IS NULL OR
+             LOWER(p.first_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR
+             LOWER(p.last_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+        AND NOT EXISTS (
+            SELECT 1
+            FROM company_mentor_pool_memberships cmm
+            WHERE cmm.mentor_profile_id = p.id
+              AND cmm.membership_status = 'ACTIVE'
+              AND cmm.public_listing_preexisting = false
+              AND cmm.public_approval_status <> 'APPROVED'
+        )
+        """,
+        nativeQuery = true)
+    Page<Profile> findPublicMentorsWithFilters(
+            @Param("role") String role,
+            @Param("isVerified") Boolean isVerified,
+            @Param("searchTerm") String searchTerm,
+            Pageable pageable);
+
+    /**
      * Insert profile with proper enum casting
      */
     @Modifying

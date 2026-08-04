@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.service;
 
+import com.prosper.prospermentor.dto.CompanyMentorDtos;
 import com.prosper.prospermentor.dto.CompanyProgramMentorCandidateDto;
 import com.prosper.prospermentor.dto.EmployeeCompanyProgramMatchDto;
 import com.prosper.prospermentor.dto.MentorAssignmentSummaryDto;
@@ -45,23 +46,36 @@ public class CompanyProgramMentorAssignmentService {
     private final ProgramMentorRepository programMentorRepository;
     private final ProfileRepository profileRepository;
     private final MentorProfileRepository mentorProfileRepository;
+    private final CompanyMentorEnrollmentService companyMentorEnrollmentService;
 
     @Transactional(readOnly = true)
     public List<CompanyProgramMentorCandidateDto> getMentorCandidates(UUID companyProgramId, String search) {
         CompanyProgram companyProgram = companyProgramRepository.findById(companyProgramId)
                 .orElseThrow(() -> new NoSuchElementException("Company program not found"));
 
-        MentorCandidateSource source = companyProgram.getProgram() != null
+        MentorCandidateSource regularSource = companyProgram.getProgram() != null
                 ? MentorCandidateSource.PROGRAM_POOL
                 : MentorCandidateSource.GLOBAL_POOL;
 
-        Set<UUID> candidateMentorIds = resolveCandidateMentorIds(companyProgram);
+        Set<UUID> regularCandidateMentorIds = resolveRegularCandidateMentorIds(companyProgram);
+        UUID companyId = companyProgram.getCompany() != null ? companyProgram.getCompany().getId() : null;
+        Map<UUID, CompanyMentorDtos.PoolMemberDto> companyPoolMembersByMentorId = companyId != null
+                ? companyMentorEnrollmentService.eligibleCompanyMentorPoolMembersByMentorId(companyId, companyProgramId)
+                : Map.of();
+
+        Set<UUID> candidateMentorIds = new LinkedHashSet<>(regularCandidateMentorIds);
+        candidateMentorIds.addAll(companyPoolMembersByMentorId.keySet());
         if (candidateMentorIds.isEmpty()) {
             return List.of();
         }
 
         String normalizedSearch = normalizeSearch(search);
-        return buildMentorCandidateDtos(candidateMentorIds, normalizedSearch, source);
+        return buildMentorCandidateDtos(
+                candidateMentorIds,
+                normalizedSearch,
+                regularSource,
+                companyPoolMembersByMentorId
+        );
     }
 
     public ApiResponse<MentorAssignmentSummaryDto> assignMentor(UUID participantId, UUID mentorId, UUID assignedByUserId) {
@@ -97,8 +111,13 @@ public class CompanyProgramMentorAssignmentService {
         }
 
         if (requireCompanyProgramCandidate) {
-            Set<UUID> candidateMentorIds = resolveCandidateMentorIds(companyProgram);
-            if (!candidateMentorIds.contains(mentorId)) {
+            Set<UUID> regularCandidateMentorIds = resolveRegularCandidateMentorIds(companyProgram);
+            UUID companyId = companyProgram.getCompany() != null ? companyProgram.getCompany().getId() : null;
+            boolean regularPublicCandidate = regularCandidateMentorIds.contains(mentorId)
+                    && companyMentorEnrollmentService.isMentorPubliclyDiscoverable(mentorId);
+            boolean companyBookableCandidate = companyId != null
+                    && companyMentorEnrollmentService.canCompanyBookMentor(companyId, companyProgram.getId(), mentorId);
+            if (!regularPublicCandidate && !companyBookableCandidate) {
                 return ApiResponse.error("Selected mentor is not available for this company program");
             }
         }
@@ -196,7 +215,7 @@ public class CompanyProgramMentorAssignmentService {
                 .toList();
     }
 
-    private Set<UUID> resolveCandidateMentorIds(CompanyProgram companyProgram) {
+    private Set<UUID> resolveRegularCandidateMentorIds(CompanyProgram companyProgram) {
         List<UUID> catalogProgramIds = CompanyProgramCatalogSupport.orderedProgramIds(companyProgram);
         if (!catalogProgramIds.isEmpty()) {
             List<UUID> templateMentorIds = programMentorRepository.findMentorIdsByProgramIdIn(catalogProgramIds);
@@ -215,7 +234,8 @@ public class CompanyProgramMentorAssignmentService {
 
     private List<CompanyProgramMentorCandidateDto> buildMentorCandidateDtos(Set<UUID> candidateMentorIds,
                                                                             String search,
-                                                                            MentorCandidateSource source) {
+                                                                            MentorCandidateSource regularSource,
+                                                                            Map<UUID, CompanyMentorDtos.PoolMemberDto> companyPoolMembersByMentorId) {
         List<Profile> mentorProfiles = profileRepository.findAllById(candidateMentorIds).stream()
                 .filter(this::isMentorProfile)
                 .toList();
@@ -226,8 +246,17 @@ public class CompanyProgramMentorAssignmentService {
 
         return mentorProfiles.stream()
                 .filter(profile -> mentorDetailsById.containsKey(profile.getId()))
+                .filter(profile -> companyPoolMembersByMentorId.containsKey(profile.getId())
+                        || companyMentorEnrollmentService.isMentorPubliclyDiscoverable(profile.getId()))
                 .filter(profile -> matchesSearch(profile, mentorDetailsById.get(profile.getId()), search))
-                .map(profile -> toMentorCandidateDto(profile, mentorDetailsById.get(profile.getId()), source))
+                .map(profile -> toMentorCandidateDto(
+                        profile,
+                        mentorDetailsById.get(profile.getId()),
+                        companyPoolMembersByMentorId.containsKey(profile.getId())
+                                ? MentorCandidateSource.COMPANY_POOL
+                                : regularSource,
+                        companyPoolMembersByMentorId.get(profile.getId())
+                ))
                 .sorted(Comparator
                         .comparing((CompanyProgramMentorCandidateDto candidate) -> candidate.getRating() == null ? java.math.BigDecimal.ZERO : candidate.getRating())
                         .reversed()
@@ -291,7 +320,8 @@ public class CompanyProgramMentorAssignmentService {
 
     private CompanyProgramMentorCandidateDto toMentorCandidateDto(Profile mentor,
                                                                   MentorProfile mentorProfile,
-                                                                  MentorCandidateSource source) {
+                                                                  MentorCandidateSource source,
+                                                                  CompanyMentorDtos.PoolMemberDto companyPoolMember) {
         return CompanyProgramMentorCandidateDto.builder()
                 .mentorId(mentor.getId())
                 .mentorName(buildDisplayName(mentor))
@@ -305,6 +335,14 @@ public class CompanyProgramMentorAssignmentService {
                 .specializations(mentorProfile != null ? mentorProfile.getSpecializations() : List.of())
                 .isAvailable(mentorProfile != null ? mentorProfile.getIsAvailable() : null)
                 .source(source.name())
+                .companyMentorMembershipId(companyPoolMember != null ? companyPoolMember.getId() : null)
+                .companyBookable(companyPoolMember != null ? companyPoolMember.isCompanyBookable() : null)
+                .visibilityMode(companyPoolMember != null && companyPoolMember.getVisibilityMode() != null
+                        ? companyPoolMember.getVisibilityMode().name()
+                        : null)
+                .publicApprovalStatus(companyPoolMember != null && companyPoolMember.getPublicApprovalStatus() != null
+                        ? companyPoolMember.getPublicApprovalStatus().name()
+                        : null)
                 .build();
     }
 
@@ -366,6 +404,7 @@ public class CompanyProgramMentorAssignmentService {
 
     private enum MentorCandidateSource {
         PROGRAM_POOL,
-        GLOBAL_POOL
+        GLOBAL_POOL,
+        COMPANY_POOL
     }
 }

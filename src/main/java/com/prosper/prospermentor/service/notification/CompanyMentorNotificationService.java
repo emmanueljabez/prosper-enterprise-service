@@ -43,7 +43,7 @@ public class CompanyMentorNotificationService {
                                                       LocalDateTime expiresAt) {
         String invitationUrl = buildInvitationUrl(rawToken);
         boolean emailSent = sendEmail(company, email, invitationUrl, expiresAt);
-        boolean whatsappSent = sendWhatsapp(company, phone, invitationUrl, expiresAt);
+        boolean whatsappSent = sendWhatsapp(company, phone, rawToken, expiresAt);
         return DeliveryAttemptResult.builder()
                 .emailSent(emailSent)
                 .whatsappSent(whatsappSent)
@@ -73,12 +73,12 @@ public class CompanyMentorNotificationService {
         }
     }
 
-    private boolean sendWhatsapp(Company company, String phone, String invitationUrl, LocalDateTime expiresAt) {
+    private boolean sendWhatsapp(Company company, String phone, String rawToken, LocalDateTime expiresAt) {
         try {
             nautixWhatsAppService.sendTemplateMessage(
                     whatsappTemplateName,
                     phone,
-                    List.of(company.getName(), invitationUrl, expiresAt.toString())
+                    List.of(company.getName(), expiresAt.toString(), rawToken)
             );
             return true;
         } catch (Exception e) {

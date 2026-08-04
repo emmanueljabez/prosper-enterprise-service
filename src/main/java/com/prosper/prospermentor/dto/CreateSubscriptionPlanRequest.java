@@ -32,6 +32,8 @@ public class CreateSubscriptionPlanRequest {
     @NotBlank(message = "Currency is required")
     private String currency = "KES";
 
+    private SubscriptionPlanAudience planAudience = SubscriptionPlanAudience.INDIVIDUAL;
+
     @NotNull(message = "Sessions per period is required")
     private Integer sessionsPerPeriod;
 
@@ -39,9 +41,27 @@ public class CreateSubscriptionPlanRequest {
     @Min(value = 1, message = "Duration must be at least 1 month")
     private Integer durationMonths = 1;
 
+    @Min(value = 0, message = "Yearly cost must be non-negative")
+    private BigDecimal yearlyCost;
+
     private Boolean isActive = true;
 
     private Integer displayOrder = 0;
 
     private String features;
+
+    @Min(value = 1, message = "minSeats must be at least 1")
+    private Integer minSeats = 1;
+
+    @Min(value = 1, message = "defaultSeats must be at least 1")
+    private Integer defaultSeats = 1;
+
+    @Min(value = 1, message = "maxSeats must be at least 1")
+    private Integer maxSeats;
+
+    public enum SubscriptionPlanAudience {
+        INDIVIDUAL,
+        CORPORATE,
+        BOTH
+    }
 }

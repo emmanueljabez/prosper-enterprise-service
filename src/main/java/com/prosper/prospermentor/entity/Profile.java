@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnTransformer;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -37,6 +38,12 @@ public class Profile {
     private String email;
 
     /**
+     * Username - required field, unique identifier
+     */
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
+    /**
      * First name
      */
     @Column(name = "first_name")
@@ -67,6 +74,13 @@ public class Profile {
     private String phone;
 
     /**
+     * Reference to mentee profile
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "company_id")
+    private Company company;
+
+    /**
      * Location/address
      */
     @Column(name = "location")
@@ -74,9 +88,11 @@ public class Profile {
 
     /**
      * User role enum - stored as USER-DEFINED type in PostgreSQL
-     * Store as string and handle casting in repository layer
+     * Converted to lowercase for PostgreSQL custom type compatibility
      */
-    @Column(name = "role", nullable = false)
+    @Column(name = "role", nullable = false, columnDefinition = "user_role")
+    @ColumnTransformer(write = "?::user_role")
+    @Convert(converter = com.prosper.prospermentor.entity.converter.UserRoleConverter.class)
     private String role;
 
     /**
@@ -151,6 +167,14 @@ public class Profile {
     @Column(name = "country")
     private String country;
 
+    /**
+     * One-to-one relationship with MentorProfile
+     * Only populated if the user's role is MENTOR
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", insertable = false, updatable = false)
+    private MentorProfile mentorProfile;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
@@ -170,6 +194,6 @@ public class Profile {
      * Role enum for user types
      */
     public enum Role {
-        MENTEE, MENTOR, ADVISEE, ADVISOR, ADMIN
+        MENTEE, MENTOR, ADVISEE, ADVISOR, ADMIN, COMPANY, COMPANY_ADMIN
     }
 }

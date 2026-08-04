@@ -16,9 +16,18 @@ import java.util.List;
 public class ScheduledTaskService {
     
     private final SessionBookingService sessionBookingService;
+    private final ReviewLifecycleService reviewLifecycleService;
+    private final ReviewWorkflowService reviewWorkflowService;
+    private final CompanyProgramMatchWorkspaceService matchWorkspaceService;
     
-    public ScheduledTaskService(SessionBookingService sessionBookingService) {
+    public ScheduledTaskService(SessionBookingService sessionBookingService,
+                                ReviewLifecycleService reviewLifecycleService,
+                                ReviewWorkflowService reviewWorkflowService,
+                                CompanyProgramMatchWorkspaceService matchWorkspaceService) {
         this.sessionBookingService = sessionBookingService;
+        this.reviewLifecycleService = reviewLifecycleService;
+        this.reviewWorkflowService = reviewWorkflowService;
+        this.matchWorkspaceService = matchWorkspaceService;
     }
     
     /**
@@ -79,6 +88,51 @@ public class ScheduledTaskService {
             
         } catch (Exception e) {
             log.error("Error in daily reports generation task: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Expire review cycles whose 48-hour response window has elapsed (runs every 15 minutes).
+     */
+    @Scheduled(fixedRate = 900000)
+    public void expireDueReviewCycles() {
+        log.info("Running review cycle expiry task");
+
+        try {
+            int expiredCycles = reviewLifecycleService.expireOverdueCycles();
+            log.info("Expired {} review cycles", expiredCycles);
+        } catch (Exception e) {
+            log.error("Error in review cycle expiry task: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send review reminders for pending WhatsApp review requests (runs every 15 minutes).
+     */
+    @Scheduled(fixedRate = 900000, initialDelay = 120000)
+    public void sendReviewReminders() {
+        log.info("Running review reminder task");
+
+        try {
+            int remindersSent = reviewWorkflowService.sendDueReminders();
+            log.info("Sent {} review reminders", remindersSent);
+        } catch (Exception e) {
+            log.error("Error in review reminder task: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Auto-assign mentors after employee selection windows expire (runs every 5 minutes).
+     */
+    @Scheduled(cron = "${company-programs.employee-select.expiry-cron:0 */5 * * * *}")
+    public void processExpiredEmployeeMentorSelections() {
+        log.info("Running employee mentor selection expiry task");
+
+        try {
+            int autoAssigned = matchWorkspaceService.processExpiredEmployeeSelections();
+            log.info("Auto-assigned mentors for {} expired employee selections", autoAssigned);
+        } catch (Exception e) {
+            log.error("Error in employee mentor selection expiry task: {}", e.getMessage(), e);
         }
     }
 }

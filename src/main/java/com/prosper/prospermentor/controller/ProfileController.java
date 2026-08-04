@@ -285,10 +285,13 @@ public class ProfileController {
                      page, size, isVerified, searchTerm);
 
             Page<Profile> mentorsPage = profileService.getAllMentorsPaginated(page, size, isVerified, searchTerm);
+            List<Map<String, Object>> mentors = mentorsPage.getContent().stream()
+                    .map(profileService::toMentorProfileResponse)
+                    .toList();
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("mentors", mentorsPage.getContent());
+            response.put("mentors", mentors);
             response.put("currentPage", mentorsPage.getNumber());
             response.put("totalPages", mentorsPage.getTotalPages());
             response.put("totalItems", mentorsPage.getTotalElements());
@@ -302,6 +305,39 @@ public class ProfileController {
             errorResponse.put("success", false);
             errorResponse.put("error", "Failed to fetch mentors: " + e.getMessage());
             return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+
+    /**
+     * Get a single mentor profile by ID.
+     */
+    @GetMapping("/mentors/{mentorId:[0-9a-fA-F\\-]{36}}")
+    public ResponseEntity<Object> getMentorById(@PathVariable UUID mentorId) {
+        try {
+            log.info("Fetching mentor profile by ID: {}", mentorId);
+
+            if (!profileService.isPublicMentorVisible(mentorId)) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("error", "Mentor profile not found"));
+            }
+
+            var mentorProfile = profileService.getCompleteProfile(mentorId);
+            if (mentorProfile.isEmpty()) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("error", "Mentor profile not found"));
+            }
+
+            Object role = mentorProfile.get().get("role");
+            if (role == null || !"MENTOR".equalsIgnoreCase(role.toString())) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("error", "Mentor profile not found"));
+            }
+
+            return ResponseEntity.ok(mentorProfile.get());
+        } catch (Exception e) {
+            log.error("Error fetching mentor profile {}: {}", mentorId, e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("error", "Failed to fetch mentor profile"));
         }
     }
 

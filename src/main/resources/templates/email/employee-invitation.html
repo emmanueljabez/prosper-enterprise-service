@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You're Invited to [[${appName}]]</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D3748;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .logo-section {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .logo {
+            max-width: 120px;
+            height: auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #9b3699 0%, #7d2a7b 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 20px solid #7d2a7b;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .welcome-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .content {
+            padding: 40px 30px;
+            background: white;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #2D3748;
+            margin-bottom: 20px;
+        }
+        .message {
+            color: #4A5568;
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 24px;
+        }
+        .card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .card.company-info { border-left: 4px solid #9b3699; }
+        .card.cta-card {
+            border-left: 4px solid #10b981;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+        .card h3 {
+            color: #9b3699;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+        .card h3::before {
+            content: '●';
+            color: #9b3699;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .cta-card h3 {
+            color: #059669;
+        }
+        .cta-card h3::before {
+            color: #10b981;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .detail-row:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #2D3748;
+            font-size: 14px;
+            flex-shrink: 0;
+            width: 140px;
+        }
+        .detail-value {
+            color: #4A5568;
+            font-size: 14px;
+            text-align: right;
+            font-weight: 600;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 14px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin: 16px 0;
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+        }
+        .benefits-list {
+            background: #fef3c7;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        .benefits-list h3 {
+            color: #92400e;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .benefit {
+            display: flex;
+            margin-bottom: 16px;
+            align-items: flex-start;
+        }
+        .benefit-icon {
+            background: #f59e0b;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+        .benefit-content {
+            flex: 1;
+        }
+        .benefit-title {
+            font-weight: 600;
+            color: #78350f;
+            margin-bottom: 4px;
+        }
+        .benefit-description {
+            color: #92400e;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .support-info {
+            background: #f0f9ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+            border-left: 4px solid #2196F3;
+        }
+        .support-info strong {
+            color: #1e40af;
+            font-size: 16px;
+        }
+        .support-info p {
+            margin: 8px 0 0 0;
+            color: #1e3a8a;
+        }
+        .support-info a {
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer {
+            background: #f8fafc;
+            padding: 30px;
+            text-align: center;
+            color: #6b7280;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer p {
+            margin: 8px 0;
+            font-size: 13px;
+        }
+        .footer a {
+            color: #9b3699;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .footer a:hover {
+            color: #7d2a7b;
+        }
+        @media (max-width: 600px) {
+            .email-container { margin: 10px; border-radius: 12px; }
+            .header, .content { padding: 24px 20px; }
+            .detail-row { flex-direction: column; }
+            .detail-label { width: auto; margin-bottom: 4px; }
+            .detail-value { text-align: left; }
+            .cta-button { display: block; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="logo-section">
+            <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
+        </div>
+
+        <div class="header">
+            <h1>You're Invited!</h1>
+            <div class="welcome-badge">Join Your Company's Mentorship Program</div>
+        </div>
+
+        <div class="content">
+            <p class="greeting">Hello!</p>
+
+            <p class="message">
+                Great news! <strong th:text="${company.name}">Your Company</strong> has invited you to join
+                <span th:text="${appName}">ProsperMentor</span>, a platform that connects you with expert mentors
+                to help advance your career and professional development.
+            </p>
+
+            <!-- Company Information -->
+            <div class="card company-info">
+                <h3>Invitation Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Company</span>
+                    <span class="detail-value" th:text="${company.name}">Acme Corporation</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Your Email</span>
+                    <span class="detail-value" th:text="${email}">employee@example.com</span>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="card cta-card">
+                <h3>Accept Your Invitation</h3>
+                <p class="message" style="margin-bottom: 16px;">
+                    Click the button below to accept your invitation and create your account. You'll be able to
+                    access exclusive mentorship programs and connect with industry experts.
+                </p>
+                <a th:href="${invitationUrl}" class="cta-button">Accept Invitation & Sign Up</a>
+                <p style="font-size: 12px; color: #6b7280; margin-top: 12px;">
+                    This invitation link will expire in 7 days. If you need a new invitation, please contact your company administrator.
+                </p>
+            </div>
+
+            <!-- Benefits -->
+            <div class="benefits-list">
+                <h3>What You'll Get Access To</h3>
+
+                <div class="benefit">
+                    <div class="benefit-icon">1</div>
+                    <div class="benefit-content">
+                        <div class="benefit-title">Expert Mentorship</div>
+                        <div class="benefit-description">
+                            Connect with experienced professionals who can guide your career growth and development.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="benefit">
+                    <div class="benefit-icon">2</div>
+                    <div class="benefit-content">
+                        <div class="benefit-title">Personalized Programs</div>
+                        <div class="benefit-description">
+                            Access curated mentorship programs tailored to your career goals and interests.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="benefit">
+                    <div class="benefit-icon">3</div>
+                    <div class="benefit-content">
+                        <div class="benefit-title">Flexible Scheduling</div>
+                        <div class="benefit-description">
+                            Book sessions at times that work for you with our easy-to-use scheduling system.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="benefit">
+                    <div class="benefit-icon">4</div>
+                    <div class="benefit-content">
+                        <div class="benefit-title">Company-Sponsored</div>
+                        <div class="benefit-description">
+                            Your company is investing in your growth - take advantage of this valuable opportunity!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Information -->
+            <div class="support-info">
+                <strong>Need Help?</strong>
+                <p>If you have any questions about this invitation or need assistance getting started,
+                   our support team is here to help at
+                    <a href="mailto:support@prospermentor.com">support@prospermentor.com</a>
+                </p>
+            </div>
+
+            <p style="margin-top: 32px; color: #4A5568;">
+                We're excited to have you join the <span th:text="${appName}">ProsperMentor</span> community!<br>
+                <strong>The <span th:text="${appName}">ProsperMentor</span> Team</strong>
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 <span th:text="${appName}">ProsperMentor</span>. All rights reserved.</p>
+            <p style="color: #9ca3af; font-size: 12px; margin-top: 8px;">
+                This is an automated email. Please do not reply to this email.
+            </p>
+            <p><a th:href="${baseUrl}">Visit our platform</a> | <a href="mailto:support@prospermentor.com">Contact Support</a></p>
+        </div>
+    </div>
+</body>
+</html>

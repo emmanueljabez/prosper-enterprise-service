@@ -12,8 +12,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * ProgramMentor entity representing the many-to-many relationship between programs and mentors
+ * ProgramMentor entity representing the many-to-many relationship between programs and mentor profiles
  * Maps to the program_mentors table in Supabase
+ * Links Program entities to Profile entities (where role is MENTOR)
  */
 @Entity
 @Table(name = "program_mentors")
@@ -38,7 +39,7 @@ public class ProgramMentor {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mentor_id", insertable = false, updatable = false)
-    private MentorProfile mentor;
+    private Profile mentor;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.dto;
 
+import com.prosper.prospermentor.entity.BillingInterval;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,4 +24,6 @@ public class UpgradeSubscriptionRequest {
 
     @NotNull(message = "Phone number is required for payment")
     private String phoneNumber;
+
+    private BillingInterval billingInterval = BillingInterval.MONTHLY;
 }

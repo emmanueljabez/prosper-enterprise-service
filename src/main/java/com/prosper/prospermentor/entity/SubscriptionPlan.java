@@ -129,6 +129,31 @@ public class SubscriptionPlan {
     private BigDecimal addonSessionCost;
 
     /**
+     * Which buyer audience this plan supports.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_audience", nullable = false, length = 20)
+    private PlanAudience planAudience = PlanAudience.INDIVIDUAL;
+
+    /**
+     * Minimum seats allowed when purchasing a corporate subscription.
+     */
+    @Column(name = "min_seats", nullable = false)
+    private Integer minSeats = 1;
+
+    /**
+     * Default seats suggested for corporate checkout.
+     */
+    @Column(name = "default_seats", nullable = false)
+    private Integer defaultSeats = 1;
+
+    /**
+     * Optional max seats allowed for a corporate purchase.
+     */
+    @Column(name = "max_seats")
+    private Integer maxSeats;
+
+    /**
      * Plan features - structured relationship with features
      */
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
@@ -169,6 +194,48 @@ public class SubscriptionPlan {
      */
     public boolean isFree() {
         return cost.compareTo(BigDecimal.ZERO) == 0;
+    }
+
+    public boolean supportsIndividualPurchases() {
+        return planAudience == PlanAudience.INDIVIDUAL || planAudience == PlanAudience.BOTH;
+    }
+
+    public boolean supportsCorporatePurchases() {
+        return planAudience == PlanAudience.CORPORATE || planAudience == PlanAudience.BOTH;
+    }
+
+    public boolean supportsBillingInterval(BillingInterval billingInterval) {
+        BillingInterval resolvedInterval = billingInterval != null ? billingInterval : BillingInterval.MONTHLY;
+        return resolvedInterval != BillingInterval.ANNUAL
+                || isFree()
+                || (yearlyCost != null && yearlyCost.compareTo(BigDecimal.ZERO) > 0);
+    }
+
+    public BigDecimal resolvePriceForInterval(BillingInterval billingInterval) {
+        BillingInterval resolvedInterval = billingInterval != null ? billingInterval : BillingInterval.MONTHLY;
+
+        if (resolvedInterval == BillingInterval.ANNUAL) {
+            if (isFree()) {
+                return BigDecimal.ZERO;
+            }
+            if (yearlyCost == null || yearlyCost.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalStateException("Annual billing is not configured for this plan");
+            }
+            return yearlyCost;
+        }
+
+        return cost != null ? cost : BigDecimal.ZERO;
+    }
+
+    public int resolveDurationMonthsForInterval(BillingInterval billingInterval) {
+        BillingInterval resolvedInterval = billingInterval != null ? billingInterval : BillingInterval.MONTHLY;
+        if (resolvedInterval == BillingInterval.ANNUAL) {
+            return 12;
+        }
+        if (durationMonths == null || durationMonths <= 0) {
+            return 1;
+        }
+        return durationMonths;
     }
 
     /**
@@ -236,5 +303,11 @@ public class SubscriptionPlan {
         RECURRING,    // Monthly/yearly recurring subscription
         ONE_TIME,     // One-time payment (like Summit access)
         FREE          // Free tier (no billing)
+    }
+
+    public enum PlanAudience {
+        INDIVIDUAL,
+        CORPORATE,
+        BOTH
     }
 }

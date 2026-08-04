@@ -4,6 +4,7 @@ import com.prosper.prospermentor.entity.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +20,7 @@ import java.util.UUID;
  * Repository interface for Profile entity
  */
 @Repository
-public interface ProfileRepository extends JpaRepository<Profile, UUID> {
+public interface ProfileRepository extends JpaRepository<Profile, UUID>, JpaSpecificationExecutor<Profile> {
 
     /**
      * Find all profiles by role using native query with type cast
@@ -33,10 +34,27 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
     Optional<Profile> findByEmail(String email);
 
     /**
+     * Find profile by email without requiring the caller to match stored casing.
+     */
+    Optional<Profile> findByEmailIgnoreCase(String email);
+
+    /**
+     * Find profile by ID with company eagerly fetched
+     */
+    @Query("SELECT p FROM Profile p LEFT JOIN FETCH p.company WHERE p.id = :id")
+    Optional<Profile> findByIdWithCompany(@Param("id") UUID id);
+
+    /**
      * Find profiles by role using native query with type cast
      */
     @Query(value = "SELECT * FROM profiles WHERE role = CAST(:role AS user_role)", nativeQuery = true)
     List<Profile> findByRole(@Param("role") String role);
+
+    /**
+     * Find all profiles linked to a company with the company relationship loaded.
+     */
+    @Query("SELECT p FROM Profile p LEFT JOIN FETCH p.company WHERE p.company.id = :companyId")
+    List<Profile> findByCompanyId(@Param("companyId") UUID companyId);
 
     /**
      * Find profiles by role with pagination using native query with type cast
@@ -71,6 +89,49 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
         @Param("isVerified") Boolean isVerified,
         @Param("searchTerm") String searchTerm,
         Pageable pageable);
+
+    /**
+     * Find public mentor profiles while excluding company-sourced private mentors unless
+     * they were already public or have been approved for public listing.
+     */
+    @Query(value = """
+        SELECT * FROM profiles p
+        WHERE p.role = CAST(:role AS user_role)
+        AND (:isVerified IS NULL OR p.is_verified = :isVerified)
+        AND (:searchTerm IS NULL OR
+             LOWER(p.first_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR
+             LOWER(p.last_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+        AND NOT EXISTS (
+            SELECT 1
+            FROM company_mentor_pool_memberships cmm
+            WHERE cmm.mentor_profile_id = p.id
+              AND cmm.membership_status = 'ACTIVE'
+              AND cmm.public_listing_preexisting = false
+              AND cmm.public_approval_status <> 'APPROVED'
+        )
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM profiles p
+        WHERE p.role = CAST(:role AS user_role)
+        AND (:isVerified IS NULL OR p.is_verified = :isVerified)
+        AND (:searchTerm IS NULL OR
+             LOWER(p.first_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR
+             LOWER(p.last_name) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+        AND NOT EXISTS (
+            SELECT 1
+            FROM company_mentor_pool_memberships cmm
+            WHERE cmm.mentor_profile_id = p.id
+              AND cmm.membership_status = 'ACTIVE'
+              AND cmm.public_listing_preexisting = false
+              AND cmm.public_approval_status <> 'APPROVED'
+        )
+        """,
+        nativeQuery = true)
+    Page<Profile> findPublicMentorsWithFilters(
+            @Param("role") String role,
+            @Param("isVerified") Boolean isVerified,
+            @Param("searchTerm") String searchTerm,
+            Pageable pageable);
 
     /**
      * Insert profile with proper enum casting
@@ -189,4 +250,30 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID> {
      * Check if profile exists by email
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Check if profile exists by username
+     */
+    boolean existsByUsername(String username);
+
+    /**
+     * Update profile's company_id
+     * Uses native query to avoid role casting issues
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE profiles SET company_id = :companyId, updated_at = :updatedAt WHERE id = :profileId", nativeQuery = true)
+    int updateCompanyId(@Param("profileId") UUID profileId,
+                        @Param("companyId") UUID companyId,
+                        @Param("updatedAt") ZonedDateTime updatedAt);
+
+    /**
+     * Remove company association from profile
+     * Uses native query to avoid role casting issues
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "UPDATE profiles SET company_id = NULL, updated_at = :updatedAt WHERE id = :profileId", nativeQuery = true)
+    int removeCompanyId(@Param("profileId") UUID profileId,
+                        @Param("updatedAt") ZonedDateTime updatedAt);
 }

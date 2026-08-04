@@ -1,6 +1,7 @@
 package com.prosper.prospermentor.controller.dto;
 
 import com.prosper.prospermentor.entity.Program;
+import com.prosper.prospermentor.entity.ProgramMentor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -56,6 +57,6 @@ public class ProgramDtos {
         private String[] focusAreas;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
-        private List<ProgramMentorDto> mentors;
+        private List<ProgramMentor> mentors;
     }
 }

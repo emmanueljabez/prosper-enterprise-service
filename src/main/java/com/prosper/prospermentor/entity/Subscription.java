@@ -80,6 +80,10 @@ public class Subscription {
     @Column(name = "current_period_end", nullable = false)
     private LocalDateTime currentPeriodEnd;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_interval", nullable = false, length = 20)
+    private BillingInterval billingInterval = BillingInterval.MONTHLY;
+
     /**
      * Subscription status
      */
@@ -93,6 +97,48 @@ public class Subscription {
      */
     @Column(name = "auto_renew", nullable = false)
     private Boolean autoRenew = true;
+
+    /**
+     * Whether a reusable card/token is available for automatic renewal.
+     */
+    @Column(name = "auto_renew_card_on_file", nullable = false)
+    private Boolean autoRenewCardOnFile = false;
+
+    /**
+     * CyberSource payment token (if returned by gateway).
+     */
+    @Column(name = "auto_renew_payment_token", length = 255)
+    private String autoRenewPaymentToken;
+
+    /**
+     * CyberSource customer token used for recurring charges.
+     */
+    @Column(name = "auto_renew_customer_token", length = 255)
+    private String autoRenewCustomerToken;
+
+    /**
+     * CyberSource payment instrument ID used for recurring charges.
+     */
+    @Column(name = "auto_renew_payment_instrument_id", length = 255)
+    private String autoRenewPaymentInstrumentId;
+
+    /**
+     * Card metadata for display/audit.
+     */
+    @Column(name = "auto_renew_card_type", length = 50)
+    private String autoRenewCardType;
+
+    @Column(name = "auto_renew_card_last_four", length = 4)
+    private String autoRenewCardLastFour;
+
+    @Column(name = "auto_renew_tokenized_at")
+    private LocalDateTime autoRenewTokenizedAt;
+
+    @Column(name = "auto_renew_last_charge_at")
+    private LocalDateTime autoRenewLastChargeAt;
+
+    @Column(name = "auto_renew_last_failure_reason", columnDefinition = "TEXT")
+    private String autoRenewLastFailureReason;
 
     /**
      * Whether this is a trial subscription
@@ -136,9 +182,11 @@ public class Subscription {
      * Check if subscription is currently active
      */
     public boolean isActive() {
-        return status == SubscriptionStatus.ACTIVE &&
-               LocalDateTime.now().isBefore(endDate) &&
-               LocalDateTime.now().isAfter(startDate);
+        LocalDateTime now = LocalDateTime.now();
+        boolean activeStatus = status == SubscriptionStatus.ACTIVE || status == SubscriptionStatus.TRIAL;
+        boolean started = startDate == null || !now.isBefore(startDate);
+        boolean notEnded = endDate == null || !now.isAfter(endDate);
+        return activeStatus && started && notEnded;
     }
 
     /**
@@ -162,6 +210,16 @@ public class Subscription {
         this.sessionsUsed++;
     }
 
+    public void decrementSessionsUsed() {
+        if (plan != null && plan.isUnlimited()) {
+            return;
+        }
+        if (this.sessionsUsed == null || this.sessionsUsed <= 0) {
+            return;
+        }
+        this.sessionsUsed--;
+    }
+
     /**
      * Reset sessions used (for new billing period)
      */
@@ -176,12 +234,36 @@ public class Subscription {
         if (!autoRenew) {
             throw new IllegalStateException("Auto-renew is disabled for this subscription");
         }
+        applyPaidRenewal();
+    }
 
-        this.currentPeriodStart = this.currentPeriodEnd;
-        this.currentPeriodEnd = this.currentPeriodEnd.plusMonths(1);
-        this.endDate = this.currentPeriodEnd;
+    /**
+     * Apply one paid renewal cycle regardless of auto-renew toggle.
+     * Used when renewal is triggered manually or fulfilled via invoice payment.
+     */
+    public void applyPaidRenewal() {
+        LocalDateTime anchor = currentPeriodEnd != null
+                ? currentPeriodEnd
+                : (endDate != null ? endDate : LocalDateTime.now());
+        LocalDateTime nextPeriodEnd = anchor.plusMonths(resolveBillingDurationMonths());
+
+        this.currentPeriodStart = anchor;
+        this.currentPeriodEnd = nextPeriodEnd;
+        this.endDate = nextPeriodEnd;
         this.sessionsUsed = 0;
         this.status = SubscriptionStatus.ACTIVE;
+    }
+
+    /**
+     * Check whether this subscription has sufficient card-on-file token data
+     * for automatic CyberSource renewal attempts.
+     */
+    public boolean hasAutoRenewPaymentMethod() {
+        if (!Boolean.TRUE.equals(autoRenewCardOnFile)) {
+            return false;
+        }
+        return autoRenewCustomerToken != null && !autoRenewCustomerToken.isBlank()
+                && autoRenewPaymentInstrumentId != null && !autoRenewPaymentInstrumentId.isBlank();
     }
 
     /**
@@ -190,6 +272,13 @@ public class Subscription {
     public void cancel() {
         this.status = SubscriptionStatus.CANCELLED;
         this.autoRenew = false;
+    }
+
+    private int resolveBillingDurationMonths() {
+        if (plan == null) {
+            return 1;
+        }
+        return plan.resolveDurationMonthsForInterval(billingInterval);
     }
 
     /**

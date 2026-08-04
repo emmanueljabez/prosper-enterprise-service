@@ -40,6 +40,15 @@ public interface SubscriptionAddonRepository extends JpaRepository<SubscriptionA
     List<SubscriptionAddon> findActiveAddonsWithRemaining(@Param("subscriptionId") UUID subscriptionId, @Param("now") LocalDateTime now);
 
     /**
+     * Find consumed session add-ons that can be restored after a mentor decline.
+     */
+    @Query("SELECT a FROM SubscriptionAddon a WHERE a.subscription.id = :subscriptionId " +
+           "AND a.addonType = 'EXTRA_SESSION' AND a.used > 0 " +
+           "AND a.status IN ('ACTIVE', 'EXHAUSTED') " +
+           "ORDER BY a.updatedAt DESC, a.purchasedAt DESC")
+    List<SubscriptionAddon> findRestorableSessionAddons(@Param("subscriptionId") UUID subscriptionId);
+
+    /**
      * Find expired addons that need status update
      */
     @Query("SELECT a FROM SubscriptionAddon a WHERE a.status = 'ACTIVE' " +

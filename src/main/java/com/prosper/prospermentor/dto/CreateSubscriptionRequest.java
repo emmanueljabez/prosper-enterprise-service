@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.dto;
 
+import com.prosper.prospermentor.entity.BillingInterval;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -30,4 +31,12 @@ public class CreateSubscriptionRequest {
      */
     @Pattern(regexp = "^(\\+?254|0)?[17]\\d{8}$", message = "Invalid phone number format")
     private String phoneNumber;
+
+    /**
+     * Preferred currency for payment (e.g., "KES", "UGX", "USD")
+     * If not provided, defaults to KES
+     */
+    private String currency;
+
+    private BillingInterval billingInterval = BillingInterval.MONTHLY;
 }

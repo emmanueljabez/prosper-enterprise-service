@@ -140,6 +140,43 @@ public class MentorService {
     }
 
     /**
+     * Bulk update multiple availability slots
+     * This will delete all existing availability for the mentor and create new ones
+     */
+    public List<MentorAvailabilityDTO.Response> updateBulkAvailability(MentorAvailabilityDTO.BulkUpdateRequest request) {
+        log.info("Bulk updating availability for mentor: {} with {} new slots",
+                request.getMentorId(), request.getSlots().size());
+
+        // First, delete all existing availability for this mentor
+        log.info("Deleting all existing availability slots for mentor: {}", request.getMentorId());
+        deleteAllMentorAvailability(request.getMentorId());
+
+        // Now create the new availability slots
+        List<MentorAvailabilityDTO.Response> responses = new ArrayList<>();
+
+        for (MentorAvailabilityDTO.BulkUpdateRequest.TimeSlot slot : request.getSlots()) {
+            try {
+                MentorAvailabilityDTO.CreateRequest createRequest = MentorAvailabilityDTO.CreateRequest.builder()
+                        .mentorId(request.getMentorId())
+                        .dayOfWeek(slot.getDayOfWeek())
+                        .startTime(slot.getStartTime())
+                        .endTime(slot.getEndTime())
+                        .isActive(slot.getIsActive())
+                        .build();
+
+                responses.add(createAvailability(createRequest));
+            } catch (IllegalArgumentException e) {
+                log.warn("Skipping slot due to validation error: {}", e.getMessage());
+                // Continue with next slot
+            }
+        }
+
+        log.info("Successfully replaced availability for mentor: {} with {} new slots",
+                request.getMentorId(), responses.size());
+        return responses;
+    }
+
+    /**
      * Delete an availability slot
      */
     public void deleteAvailability(Long id) {

@@ -128,6 +128,16 @@ public class SupabaseUserDetails implements UserDetails {
     }
 
     /**
+     * Backward-compatible company admin check.
+     * Existing environments may still use COMPANY or corporate_admin-like tokens.
+     */
+    public boolean isCompanyAdmin() {
+        return hasRole("COMPANY_ADMIN")
+                || hasRole("CORPORATE_ADMIN")
+                || hasRole("COMPANY");
+    }
+
+    /**
      * Get display name (first name + last name or email if not available)
      */
     public String getDisplayName() {

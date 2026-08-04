@@ -45,7 +45,25 @@ public class CompanySignupIntentService {
         }
 
         Company company = companyService.createPendingCompanyRegistration(
-                new CreateCompanyRequest(companyName, workEmail, phoneNumber, null, null, null, null, null, null, null, null)
+                new CreateCompanyRequest(
+                        companyName,
+                        workEmail,
+                        phoneNumber,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                )
         );
 
         CompanySignupIntent intent = new CompanySignupIntent();
@@ -65,13 +83,34 @@ public class CompanySignupIntentService {
 
     @Transactional(readOnly = true)
     public CompanySignupIntent requireActiveIntent(String token) {
-        CompanySignupIntent intent = companySignupIntentRepository.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Company signup intent not found"));
+        CompanySignupIntent intent = requireExistingIntent(token);
 
         if (intent.getStatus() != CompanySignupIntent.SignupIntentStatus.PENDING) {
             throw new IllegalStateException("Company signup intent is no longer active");
         }
 
+        return validateNotExpired(intent);
+    }
+
+    @Transactional(readOnly = true)
+    public CompanySignupIntent requirePurchasableIntent(String token) {
+        CompanySignupIntent intent = requireExistingIntent(token);
+
+        if (intent.getStatus() != CompanySignupIntent.SignupIntentStatus.PENDING
+                && intent.getStatus() != CompanySignupIntent.SignupIntentStatus.COMPLETED) {
+            throw new IllegalStateException("Company signup intent is no longer available for activation");
+        }
+
+        return validateNotExpired(intent);
+    }
+
+    private CompanySignupIntent requireExistingIntent(String token) {
+        CompanySignupIntent intent = companySignupIntentRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Company signup intent not found"));
+        return intent;
+    }
+
+    private CompanySignupIntent validateNotExpired(CompanySignupIntent intent) {
         if (intent.getExpiresAt().isBefore(LocalDateTime.now())) {
             intent.setStatus(CompanySignupIntent.SignupIntentStatus.EXPIRED);
             companySignupIntentRepository.save(intent);
@@ -88,6 +127,12 @@ public class CompanySignupIntentService {
         intent.setLinkedProfileId(linkedProfileId);
         intent.setCompletedAt(LocalDateTime.now());
         companySignupIntentRepository.save(intent);
+    }
+
+    public CompanySignupIntent updateTargetSessionCount(String token, Integer targetSessionCount) {
+        CompanySignupIntent intent = requirePurchasableIntent(token);
+        intent.setTargetSessionCount(targetSessionCount);
+        return companySignupIntentRepository.save(intent);
     }
 
     public Map<String, Object> toPublicPayload(CompanySignupIntent intent) {

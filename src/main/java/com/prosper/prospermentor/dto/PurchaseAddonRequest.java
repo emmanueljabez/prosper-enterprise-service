@@ -27,4 +27,10 @@ public class PurchaseAddonRequest {
      */
     @NotBlank(message = "Phone number is required")
     private String phoneNumber;
+
+    /**
+     * Preferred currency for payment (e.g., "KES", "UGX", "USD")
+     * If not provided, defaults to KES
+     */
+    private String currency;
 }

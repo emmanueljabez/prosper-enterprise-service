@@ -22,9 +22,9 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
      * Find active subscription for a user
      */
     @Query("SELECT s FROM Subscription s WHERE s.userId = :userId " +
-           "AND s.status = 'ACTIVE' " +
+           "AND s.status IN ('ACTIVE', 'TRIAL') " +
            "AND s.startDate <= :now " +
-           "AND s.endDate > :now " +
+           "AND s.endDate >= :now " +
            "ORDER BY s.createdAt DESC")
     Optional<Subscription> findActiveSubscriptionByUserId(
             @Param("userId") UUID userId,
@@ -44,7 +44,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     /**
      * Find subscriptions expiring soon
      */
-    @Query("SELECT s FROM Subscription s WHERE s.status = 'ACTIVE' " +
+    @Query("SELECT s FROM Subscription s WHERE s.status IN ('ACTIVE', 'TRIAL') " +
            "AND s.endDate BETWEEN :start AND :end " +
            "AND s.autoRenew = true")
     List<Subscription> findSubscriptionsExpiringBetween(
@@ -55,18 +55,26 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
     /**
      * Find expired subscriptions that need status update
      */
-    @Query("SELECT s FROM Subscription s WHERE s.status = 'ACTIVE' " +
+    @Query("SELECT s FROM Subscription s WHERE s.status IN ('ACTIVE', 'TRIAL') " +
            "AND s.endDate < :now")
     List<Subscription> findExpiredActiveSubscriptions(@Param("now") LocalDateTime now);
+
+    /**
+     * Find active subscriptions that are due/overdue for renewal and have auto-renew enabled.
+     */
+    @Query("SELECT s FROM Subscription s WHERE s.status = 'ACTIVE' " +
+           "AND s.autoRenew = true " +
+           "AND s.endDate <= :now")
+    List<Subscription> findDueAutoRenewSubscriptions(@Param("now") LocalDateTime now);
 
     /**
      * Check if user has any active subscription
      */
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
            "FROM Subscription s WHERE s.userId = :userId " +
-           "AND s.status = 'ACTIVE' " +
+           "AND s.status IN ('ACTIVE', 'TRIAL') " +
            "AND s.startDate <= :now " +
-           "AND s.endDate > :now")
+           "AND s.endDate >= :now")
     boolean hasActiveSubscription(
             @Param("userId") UUID userId,
             @Param("now") LocalDateTime now

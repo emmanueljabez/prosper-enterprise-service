@@ -1,15 +1,23 @@
 package com.prosper.prospermentor.controller;
 
+import com.prosper.prospermentor.controller.dto.SessionDtos.SessionResponseDto;
 import com.prosper.prospermentor.dto.*;
+import com.prosper.prospermentor.entity.BillingInterval;
+import com.prosper.prospermentor.entity.Session;
 import com.prosper.prospermentor.entity.Subscription;
 import com.prosper.prospermentor.entity.SubscriptionAddon;
 import com.prosper.prospermentor.entity.SubscriptionPlan;
 import com.prosper.prospermentor.model.ApiResponse;
+import com.prosper.prospermentor.service.SessionBookingService;
+import com.prosper.prospermentor.service.SubscriptionRenewalCoordinatorService;
 import com.prosper.prospermentor.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,9 +38,15 @@ import java.util.UUID;
 public class SubscriptionController {
 
     private final SubscriptionService subscriptionService;
+    private final SessionBookingService sessionBookingService;
+    private final SubscriptionRenewalCoordinatorService subscriptionRenewalCoordinatorService;
 
-    public SubscriptionController(SubscriptionService subscriptionService) {
+    public SubscriptionController(SubscriptionService subscriptionService,
+                                  SessionBookingService sessionBookingService,
+                                  SubscriptionRenewalCoordinatorService subscriptionRenewalCoordinatorService) {
         this.subscriptionService = subscriptionService;
+        this.sessionBookingService = sessionBookingService;
+        this.subscriptionRenewalCoordinatorService = subscriptionRenewalCoordinatorService;
     }
 
     /**
@@ -44,14 +58,8 @@ public class SubscriptionController {
         log.info("Getting active subscription for user: {}", userId);
 
         try {
-            return subscriptionService.getActiveSubscription(userId)
-                    .map(subscription -> {
-                        Map<String, Object> data = new HashMap<>();
-                        data.put("subscription", subscription);
-                        data.put("remainingSessions", subscription.getRemainingSessionsCount());
-                        data.put("canBookSession", subscription.hasAvailableSessions());
-                        return ResponseEntity.ok(ApiResponse.success("Active subscription retrieved successfully", data));
-                    })
+            return subscriptionService.getEffectiveSubscriptionData(userId)
+                    .map(data -> ResponseEntity.ok(ApiResponse.success("Active subscription retrieved successfully", data)))
                     .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body(ApiResponse.error("No active subscription found")));
 
@@ -168,6 +176,36 @@ public class SubscriptionController {
     }
 
     /**
+     * Apply a plan change immediately when no payment is required.
+     */
+    @PostMapping("/apply-plan")
+    @Operation(summary = "Apply plan without payment", description = "Create or change a subscription immediately when no payment is required")
+    public ResponseEntity<ApiResponse<Subscription>> applyPlanWithoutPayment(
+            @Valid @RequestBody ApplyPlanRequest request) {
+
+        log.info("Applying plan {} for user {} without payment", request.getPlanId(), request.getUserId());
+
+        try {
+            ApiResponse<Subscription> response = subscriptionService.applyZeroCostPlanChange(
+                    request.getUserId(),
+                    request.getPlanId(),
+                    request.getBillingInterval()
+            );
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
+        } catch (Exception e) {
+            log.error("Error applying plan without payment: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to apply plan: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Cancel subscription
      */
     @DeleteMapping("/cancel")
@@ -193,6 +231,75 @@ public class SubscriptionController {
     }
 
     /**
+     * Trigger a manual renewal using invoice-first flow.
+     * If automatic card charge is possible it completes immediately, otherwise
+     * an invoice/payment URL is returned for user checkout.
+     */
+    @PostMapping("/renew-now")
+    @Operation(summary = "Renew subscription now", description = "Create renewal invoice and attempt automatic charge when possible")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> renewSubscriptionNow(
+            @Valid @RequestBody RenewNowRequest request) {
+        log.info("Manual renew requested for user {}", request.getUserId());
+
+        try {
+            SubscriptionRenewalCoordinatorService.RenewalExecutionResult result =
+                    subscriptionRenewalCoordinatorService.initiateManualRenewal(request.getUserId());
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("chargedAutomatically", result.isChargedAutomatically());
+            data.put("invoiceId", result.getInvoiceId());
+            data.put("invoiceNumber", result.getInvoiceNumber());
+            data.put("paymentUrl", result.getPaymentUrl());
+            data.put("paymentId", result.getPaymentId());
+            data.put("transactionId", result.getTransactionId());
+            data.put("renewed", result.isSuccess());
+            data.put("requiresManualPayment", !result.isSuccess() && result.getPaymentUrl() != null);
+
+            if (result.isSuccess() || result.getPaymentUrl() != null) {
+                return ResponseEntity.ok(ApiResponse.success(result.getMessage(), data));
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(result.getMessage(), data));
+        } catch (Exception e) {
+            log.error("Error processing manual renewal for user {}: {}", request.getUserId(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to process renewal: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Enable or disable auto-renew for a user's active subscription.
+     */
+    @PatchMapping("/auto-renew")
+    @Operation(summary = "Update auto-renew preference", description = "Enable or disable auto-renew for active subscription")
+    public ResponseEntity<ApiResponse<Subscription>> updateAutoRenew(
+            @Valid @RequestBody UpdateAutoRenewRequest request) {
+        log.info("Updating auto-renew for user {} to {}", request.getUserId(), request.getAutoRenew());
+
+        try {
+            ApiResponse<Subscription> response = subscriptionService.updateAutoRenewPreference(
+                    request.getUserId(),
+                    request.getAutoRenew()
+            );
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            }
+
+            if ("No active subscription found for user".equals(response.getMessage())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            log.error("Error updating auto-renew for user {}: {}", request.getUserId(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to update auto-renew preference: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Check if user can book a session
      */
     @GetMapping("/can-book")
@@ -201,16 +308,23 @@ public class SubscriptionController {
         log.info("Checking if user {} can book a session", userId);
 
         try {
-            boolean canBook = subscriptionService.canBookSession(userId);
-            int remainingSessions = subscriptionService.getRemainingSessionsCount(userId);
+            SessionBookingEligibility eligibility = subscriptionService.checkSessionBookingEligibility(userId);
 
             Map<String, Object> data = new HashMap<>();
-            data.put("canBook", canBook);
-            data.put("remainingSessions", remainingSessions);
+            data.put("canBook", eligibility.isCanBook());
+            data.put("remainingSessions", eligibility.getSessionsRemaining());
+            data.put("addonSessionsRemaining", eligibility.getAddonSessionsRemaining());
+            data.put("subscriptionSource", eligibility.getSubscriptionSource());
+            data.put("companyId", eligibility.getCompanyId());
+            data.put("companySubscriptionId", eligibility.getCompanySubscriptionId());
+            data.put("nextBillingDate", eligibility.getNextBillingDate());
+            data.put("reason", eligibility.getReason());
+            data.put("recommendedPlans", eligibility.getRecommendedPlans());
+            data.put("addOnOption", eligibility.getAddOnOption());
 
-            String message = canBook ?
-                "Booking availability checked successfully" :
-                "Subscription limit reached. Please upgrade your plan or make a payment.";
+            String message = eligibility.isCanBook()
+                ? "Booking availability checked successfully"
+                : eligibility.getMessage();
 
             return ResponseEntity.ok(ApiResponse.success(message, data));
 
@@ -227,13 +341,14 @@ public class SubscriptionController {
     @GetMapping("/plans")
     @Operation(summary = "Get subscription plans", description = "Get list of available subscription plans")
     public ResponseEntity<ApiResponse<List<SubscriptionPlan>>> getSubscriptionPlans(
-            @RequestParam(defaultValue = "false") boolean includeInactive) {
-        log.info("Getting subscription plans (includeInactive: {})", includeInactive);
+            @RequestParam(defaultValue = "false") boolean includeInactive,
+            @RequestParam(required = false) String audience) {
+        log.info("Getting subscription plans (includeInactive: {}, audience: {})", includeInactive, audience);
 
         try {
             List<SubscriptionPlan> plans = includeInactive ?
-                    subscriptionService.getAllPlans() :
-                    subscriptionService.getActivePlans();
+                    subscriptionService.getAllPlans(audience) :
+                    subscriptionService.getActivePlans(audience);
 
             return ResponseEntity.ok(ApiResponse.success("Subscription plans retrieved successfully", plans));
 
@@ -457,13 +572,13 @@ public class SubscriptionController {
      */
     @PostMapping("/addons/purchase")
     @Operation(summary = "Purchase add-on sessions", description = "Purchase extra sessions beyond subscription limit")
-    public ResponseEntity<ApiResponse<SubscriptionAddon>> purchaseAddonSessions(
+    public ResponseEntity<ApiResponse<PurchaseAddonResponse>> purchaseAddonSessions(
             @Valid @RequestBody PurchaseAddonRequest request) {
         log.info("User {} purchasing {} add-on sessions", request.getUserId(), request.getQuantity());
 
         try {
-            ApiResponse<SubscriptionAddon> response = subscriptionService.purchaseAddonSessions(
-                    request.getUserId(), request.getQuantity(), request.getPhoneNumber());
+            ApiResponse<PurchaseAddonResponse> response = subscriptionService.purchaseAddonSessions(
+                    request.getUserId(), request.getQuantity(), request.getPhoneNumber(), request.getCurrency());
 
             if (response.isSuccess()) {
                 return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -513,6 +628,161 @@ public class SubscriptionController {
             log.error("Error getting remaining add-on sessions: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to get remaining add-on sessions: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get mentee sessions with pagination and filtering
+     */
+    @GetMapping("/mentee/sessions")
+    @Operation(summary = "Get mentee sessions",
+               description = "Get sessions for a mentee with pagination and filtering support. " +
+                            "Filter options: 'all' (default), 'today', 'upcoming', 'past'")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMenteeSessions(
+            @RequestParam UUID menteeId,
+            @RequestParam(defaultValue = "all") String filter,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Getting sessions for mentee: {} with filter: {} (page: {}, size: {})", menteeId, filter, page, size);
+
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Session> sessionsPage = sessionBookingService.getMenteeSessionsWithFilter(menteeId, filter, pageable);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("sessions", sessionsPage.getContent().stream()
+                    .map(this::toSessionResponseDto)
+                    .toList());
+            data.put("currentPage", sessionsPage.getNumber());
+            data.put("totalPages", sessionsPage.getTotalPages());
+            data.put("totalSessions", sessionsPage.getTotalElements());
+            data.put("hasNext", sessionsPage.hasNext());
+            data.put("hasPrevious", sessionsPage.hasPrevious());
+            data.put("filter", filter);
+
+            return ResponseEntity.ok(ApiResponse.success("Mentee sessions retrieved successfully", data));
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid filter parameter: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting mentee sessions: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get mentee sessions: " + e.getMessage()));
+        }
+    }
+
+    private SessionResponseDto toSessionResponseDto(Session session) {
+        boolean paymentRequired = !sessionBookingService.canUserBookSession(session.getMenteeId());
+
+        return SessionResponseDto.builder()
+                .id(session.getId())
+                .mentorId(session.getMentorId())
+                .menteeId(session.getMenteeId())
+                .skillId(session.getSkillId())
+                .companyProgramId(session.getCompanyProgramId())
+                .companyProgramParticipantId(session.getCompanyProgramParticipantId())
+                .title(session.getTitle())
+                .description(session.getDescription())
+                .scheduledStart(session.getScheduledStart())
+                .scheduledEnd(session.getScheduledEnd())
+                .status(session.getStatus())
+                .meetingPlatform(session.getMeetingPlatform())
+                .meetingUrl(session.getMeetingUrl())
+                .meetingId(session.getMeetingId())
+                .meetingPassword(session.getMeetingPassword())
+                .price(session.getPrice())
+                .currency(session.getCurrency())
+                .paymentStatus(session.getPaymentStatus())
+                .paymentRequired(paymentRequired)
+                .menteeMessage(session.getMenteeMessage())
+                .mentorResponse(session.getMentorResponse())
+                .calendarEventId(session.getCalendarEventId())
+                .confirmedAt(session.getConfirmedAt())
+                .cancelledAt(session.getCancelledAt())
+                .cancellationReason(session.getCancellationReason())
+                .cancelledBy(session.getCancelledBy())
+                .createdAt(session.getCreatedAt())
+                .updatedAt(session.getUpdatedAt())
+                .companyProgramName(session.getCompanyProgram() != null ? session.getCompanyProgram().getName() : null)
+                .durationMinutes(session.getScheduledStart() != null && session.getScheduledEnd() != null
+                        ? session.getDurationMinutes()
+                        : 0)
+                .canBeModified(session.canBeModified())
+                .isFutureBooking(session.getScheduledStart() != null && session.isFutureSession())
+                .build();
+    }
+
+    public static class RenewNowRequest {
+        @jakarta.validation.constraints.NotNull
+        private UUID userId;
+
+        public UUID getUserId() {
+            return userId;
+        }
+
+        public void setUserId(UUID userId) {
+            this.userId = userId;
+        }
+    }
+
+    public static class ApplyPlanRequest {
+        @jakarta.validation.constraints.NotNull
+        private UUID userId;
+
+        @jakarta.validation.constraints.NotNull
+        private UUID planId;
+
+        @jakarta.validation.constraints.NotNull
+        private BillingInterval billingInterval = BillingInterval.MONTHLY;
+
+        public UUID getUserId() {
+            return userId;
+        }
+
+        public void setUserId(UUID userId) {
+            this.userId = userId;
+        }
+
+        public UUID getPlanId() {
+            return planId;
+        }
+
+        public void setPlanId(UUID planId) {
+            this.planId = planId;
+        }
+
+        public BillingInterval getBillingInterval() {
+            return billingInterval;
+        }
+
+        public void setBillingInterval(BillingInterval billingInterval) {
+            this.billingInterval = billingInterval;
+        }
+    }
+
+    public static class UpdateAutoRenewRequest {
+        @jakarta.validation.constraints.NotNull
+        private UUID userId;
+
+        @jakarta.validation.constraints.NotNull
+        private Boolean autoRenew;
+
+        public UUID getUserId() {
+            return userId;
+        }
+
+        public void setUserId(UUID userId) {
+            this.userId = userId;
+        }
+
+        public Boolean getAutoRenew() {
+            return autoRenew;
+        }
+
+        public void setAutoRenew(Boolean autoRenew) {
+            this.autoRenew = autoRenew;
         }
     }
 }

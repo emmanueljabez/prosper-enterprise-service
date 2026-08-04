@@ -139,6 +139,38 @@ public class MentorController {
     }
 
     /**
+     * Bulk update multiple availability slots
+     * This replaces ALL existing availability slots for the mentor with the new ones provided
+     */
+    @PutMapping("/mentor-availability/bulk")
+    @Operation(
+            summary = "Bulk update availability slots",
+            description = "Replace all existing availability slots for a mentor with new ones. " +
+                    "This will delete all previous availability and create the new slots provided."
+    )
+    public ResponseEntity<ApiResponse<List<MentorAvailabilityDTO.Response>>> updateBulkAvailability(
+            @Valid @RequestBody MentorAvailabilityDTO.BulkUpdateRequest request,
+            Authentication authentication) {
+        try {
+            log.info("Bulk updating availability for mentor: {} with {} new slots",
+                    request.getMentorId(), request.getSlots().size());
+
+            List<MentorAvailabilityDTO.Response> responses = availabilityService.updateBulkAvailability(request);
+
+            String message = String.format("Successfully replaced mentor availability with %d new slots",
+                    responses.size());
+
+            return ResponseEntity.ok()
+                    .body(ApiResponse.success(responses, message));
+
+        } catch (Exception e) {
+            log.error("Error bulk updating availability: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error("Failed to bulk update availability slots"));
+        }
+    }
+
+    /**
      * Delete an availability slot
      */
     @DeleteMapping("/mentor-availability/{id}")

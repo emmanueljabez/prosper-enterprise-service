@@ -63,6 +63,18 @@ public class Payment {
     private UUID subscriptionId;
 
     /**
+     * Invoice ID (if payment is tied to a unified invoice flow)
+     */
+    @Column(name = "invoice_id")
+    private UUID invoiceId;
+
+    /**
+     * Company ID when payment belongs to a corporate subscription or invoice.
+     */
+    @Column(name = "company_id")
+    private UUID companyId;
+
+    /**
      * Payment type
      */
     @NotNull
@@ -164,6 +176,36 @@ public class Payment {
     private String metadata;
 
     /**
+     * Gateway transaction ID (for CyberSource, Stripe, etc.)
+     */
+    @Column(name = "gateway_transaction_id", length = 255)
+    private String gatewayTransactionId;
+
+    /**
+     * Gateway reference number
+     */
+    @Column(name = "gateway_reference", length = 255)
+    private String gatewayReference;
+
+    /**
+     * Gateway authorization code
+     */
+    @Column(name = "gateway_auth_code", length = 100)
+    private String gatewayAuthCode;
+
+    /**
+     * Card type (Visa, Mastercard, Amex, etc.)
+     */
+    @Column(name = "card_type", length = 50)
+    private String cardType;
+
+    /**
+     * Last 4 digits of card (for display purposes)
+     */
+    @Column(name = "card_last_four", length = 4)
+    private String cardLastFour;
+
+    /**
      * Audit fields
      */
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -250,6 +292,47 @@ public class Payment {
         return status == PaymentStatus.FAILED && retryCount < 3;
     }
 
+    /**
+     * Mark payment as successful (card payment)
+     */
+    public void markAsCardPaymentSuccessful(String transactionId, String authCode,
+                                           String cardType, String lastFour) {
+        this.status = PaymentStatus.COMPLETED;
+        this.paymentMethod = PaymentMethod.CARD;
+        this.gatewayTransactionId = transactionId;
+        this.gatewayAuthCode = authCode;
+        this.cardType = cardType;
+        this.cardLastFour = lastFour;
+        this.completedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Mark card payment as failed
+     */
+    public void markAsCardPaymentFailed(String errorMessage, String reasonCode) {
+        this.status = PaymentStatus.FAILED;
+        this.paymentMethod = PaymentMethod.CARD;
+        this.errorMessage = errorMessage;
+        this.resultDescription = reasonCode;
+    }
+
+    /**
+     * Check if payment is card payment
+     */
+    public boolean isCardPayment() {
+        return paymentMethod == PaymentMethod.CARD;
+    }
+
+    /**
+     * Get masked card number for display
+     */
+    public String getMaskedCardNumber() {
+        if (cardLastFour != null) {
+            return "•••• •••• •••• " + cardLastFour;
+        }
+        return null;
+    }
+
     // Enums
 
     /**
@@ -261,7 +344,8 @@ public class Payment {
         UPGRADE,           // Payment for subscription upgrade (prorated)
         ADDON,             // Payment for subscription add-ons (e.g., extra sessions)
         TOP_UP,            // Account top-up
-        REFUND             // Refund payment
+        REFUND,            // Refund payment
+        INVOICE            // Payment against a generated invoice
     }
 
     /**

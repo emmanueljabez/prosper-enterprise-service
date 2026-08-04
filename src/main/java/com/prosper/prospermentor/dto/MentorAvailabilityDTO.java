@@ -40,6 +40,7 @@ public class MentorAvailabilityDTO {
         @JsonFormat(pattern = "HH:mm:ss")
         private LocalTime endTime;
 
+        @lombok.Builder.Default
         private Boolean isActive = true;
     }
 
@@ -94,6 +95,44 @@ public class MentorAvailabilityDTO {
             @JsonFormat(pattern = "HH:mm:ss")
             private LocalTime endTime;
 
+            @lombok.Builder.Default
+            private Boolean isActive = true;
+        }
+    }
+
+    /**
+     * Request DTO for bulk updating multiple availability slots
+     * Replaces all existing availability for the mentor with new slots
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BulkUpdateRequest {
+
+        @NotNull(message = "Mentor ID is required")
+        private UUID mentorId;
+
+        @NotNull(message = "Availability slots are required")
+        private java.util.List<TimeSlot> slots;
+
+        @Data
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class TimeSlot {
+            @NotNull(message = "Day of week is required")
+            private DayOfWeek dayOfWeek;
+
+            @NotNull(message = "Start time is required")
+            @JsonFormat(pattern = "HH:mm:ss")
+            private LocalTime startTime;
+
+            @NotNull(message = "End time is required")
+            @JsonFormat(pattern = "HH:mm:ss")
+            private LocalTime endTime;
+
+            @lombok.Builder.Default
             private Boolean isActive = true;
         }
     }
@@ -181,6 +220,8 @@ public class MentorAvailabilityDTO {
     public static class QueryRequest {
         private UUID mentorId;
         private DayOfWeek dayOfWeek;
+
+        @lombok.Builder.Default
         private Boolean activeOnly = true;
     }
 }

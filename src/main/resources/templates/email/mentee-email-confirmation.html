@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm your [[${appName}]] account</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f2f7f4;
+            color: #1f2937;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.55;
+        }
+        .page {
+            width: 100%;
+            padding: 28px 14px;
+        }
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+        .logo {
+            text-align: center;
+            padding-bottom: 18px;
+        }
+        .logo img {
+            max-width: 118px;
+            height: auto;
+        }
+        .hero {
+            background: linear-gradient(135deg, #ecfff8 0%, #fceefd 100%);
+            border-radius: 18px;
+            padding: 30px 28px;
+            box-shadow: 0 12px 28px rgba(15, 63, 53, 0.08);
+        }
+        .hero h1 {
+            margin: 0 0 16px;
+            color: #007963;
+            font-size: 30px;
+            line-height: 1.12;
+        }
+        .copy {
+            margin: 0 0 18px;
+            color: #4b5563;
+            font-size: 15px;
+        }
+        .button {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 13px 24px;
+            border-radius: 999px;
+            background: #027f63;
+            color: #ffffff !important;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .card {
+            margin-top: 18px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 10px 24px rgba(15, 63, 53, 0.06);
+        }
+        .eyebrow {
+            margin: 0 0 8px;
+            color: #007963;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .card h2 {
+            margin: 0 0 8px;
+            color: #007963;
+            font-size: 18px;
+        }
+        .fallback {
+            margin-top: 18px;
+            color: #6b7280;
+            font-size: 12px;
+            line-height: 1.6;
+            word-break: break-all;
+        }
+        .footer {
+            padding: 26px 8px 0;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+        }
+        @media (max-width: 540px) {
+            .hero, .card { padding: 22px; }
+            .hero h1 { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="container">
+            <div class="logo">
+                <img th:src="${baseUrl + '/images/prosper_mentor_logo.png'}" src="https://enterprise.prospermentor.com/images/prosper_mentor_logo.png" alt="Prosper Mentor">
+            </div>
+
+            <div class="hero">
+                <h1>Your growth journey begins here.</h1>
+                <p class="copy">
+                    Hi <span th:text="${firstName ?: 'there'}">there</span>,
+                    welcome to Prosper Mentor. Confirm your email to activate your account
+                    <span th:if="${freeTrial}">and continue to your 30-minute free trial</span>.
+                </p>
+                <a th:href="${confirmationUrl}" class="button">Confirm Email</a>
+                <p class="fallback">
+                    If the button does not work, copy and paste this link into your browser:<br>
+                    <span th:text="${confirmationUrl}">confirmation-link</span>
+                </p>
+            </div>
+
+            <div class="card">
+                <p class="eyebrow">Curated Matching</p>
+                <h2>Meet mentors aligned to your goals</h2>
+                <p class="copy">
+                    After confirmation, sign in to choose from available mentors and book a focused session.
+                </p>
+            </div>
+
+            <div class="card">
+                <p class="eyebrow">Skill Exchange</p>
+                <h2>Prepare for practical guidance</h2>
+                <p class="copy">
+                    Share your goal, context, and preferred time so your mentor can make the session useful from the start.
+                </p>
+            </div>
+
+            <div class="footer">
+                <p>Support &nbsp; Privacy Policy &nbsp; Unsubscribe</p>
+                <p>&copy; 2026 Prosper Mentor. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

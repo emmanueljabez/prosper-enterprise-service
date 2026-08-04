@@ -7,6 +7,8 @@ import com.prosper.prospermentor.repository.CompanyEmployeeWhitelistRepository;
 import com.prosper.prospermentor.repository.CompanyRepository;
 import com.prosper.prospermentor.repository.ProgramRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
+import com.prosper.prospermentor.repository.ReviewCycleRepository;
+import com.prosper.prospermentor.repository.ReviewRequestRepository;
 import com.prosper.prospermentor.repository.SessionRepository;
 import com.prosper.prospermentor.service.notification.CompanyNotificationService;
 import com.prosper.prospermentor.specification.CompanyEmployeeWhitelistSpecification;
@@ -24,9 +26,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +48,8 @@ public class CompanyService {
     private final CompanyEmployeeWhitelistRepository whitelistRepository;
     private final ProfileService profileService;
     private final SessionRepository sessionRepository;
+    private final ReviewCycleRepository reviewCycleRepository;
+    private final ReviewRequestRepository reviewRequestRepository;
 
     public CompanyService(CompanyRepository companyRepository,
                          ProgramRepository programRepository,
@@ -51,7 +57,9 @@ public class CompanyService {
                          CompanyNotificationService companyNotificationService,
                          CompanyEmployeeWhitelistRepository whitelistRepository,
                          ProfileService profileService,
-                         SessionRepository sessionRepository) {
+                         SessionRepository sessionRepository,
+                         ReviewCycleRepository reviewCycleRepository,
+                         ReviewRequestRepository reviewRequestRepository) {
         this.companyRepository = companyRepository;
         this.programRepository = programRepository;
         this.profileRepository = profileRepository;
@@ -59,6 +67,8 @@ public class CompanyService {
         this.whitelistRepository = whitelistRepository;
         this.profileService = profileService;
         this.sessionRepository = sessionRepository;
+        this.reviewCycleRepository = reviewCycleRepository;
+        this.reviewRequestRepository = reviewRequestRepository;
     }
 
     /**
@@ -83,6 +93,79 @@ public class CompanyService {
     @Transactional(readOnly = true)
     public Optional<Company> getCompanyById(UUID id) {
         return companyRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<CompanyOnboardingStatusDto> getCompanyOnboardingStatus(UUID companyId) {
+        return companyRepository.findById(companyId)
+                .map(company -> ApiResponse.success(
+                        "Company onboarding status retrieved successfully",
+                        buildCompanyOnboardingStatus(company)
+                ))
+                .orElseGet(() -> ApiResponse.error("Company not found"));
+    }
+
+    public ApiResponse<CompanyOnboardingStatusDto> updateCompanyOnboarding(UUID companyId,
+                                                                            UpdateCompanyOnboardingRequest request) {
+        Optional<Company> companyOpt = companyRepository.findByIdWithRecommendedPrograms(companyId);
+        if (companyOpt.isEmpty()) {
+            return ApiResponse.error("Company not found");
+        }
+
+        Company company = companyOpt.get();
+        company.setIndustry(normalizeNullable(request.getIndustry()));
+        company.setCompanySizeBand(normalizeNullable(request.getCompanySizeBand()));
+        company.setCountry(normalizeNullable(request.getCountry()));
+        company.setTimezone(normalizeNullable(request.getTimezone()));
+        if (request.getMentorshipObjective() != null) {
+            company.setMentorshipObjective(normalizeNullable(request.getMentorshipObjective()));
+        }
+        if (request.getTargetAudienceDescription() != null) {
+            company.setTargetAudienceDescription(normalizeNullable(request.getTargetAudienceDescription()));
+        }
+        if (request.getProgramDesignPreference() != null) {
+            company.setProgramDesignPreference(normalizeNullable(request.getProgramDesignPreference()));
+        }
+
+        if (request.getRecommendedProgramIds() != null) {
+            List<UUID> normalizedProgramIds = request.getRecommendedProgramIds().stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            List<Program> programs = normalizedProgramIds.isEmpty()
+                    ? List.of()
+                    : programRepository.findByIdInOrderByOrderIdAsc(normalizedProgramIds);
+
+            if (programs.size() != normalizedProgramIds.size()) {
+                return ApiResponse.error("One or more selected programs were not found");
+            }
+
+            List<String> invalidPrograms = programs.stream()
+                    .filter(program -> program.getStatus() != Program.ProgramStatus.LIVE)
+                    .map(Program::getName)
+                    .toList();
+
+            if (!invalidPrograms.isEmpty()) {
+                return ApiResponse.error("Only LIVE programs can be selected. Invalid programs: " + String.join(", ", invalidPrograms));
+            }
+
+            company.getRecommendedPrograms().clear();
+            company.getRecommendedPrograms().addAll(sortProgramsByOrderId(programs));
+        }
+
+        List<String> missingFields = missingRequiredOnboardingFields(company);
+        company.setOnboardingCompleted(missingFields.isEmpty());
+        company.setOnboardingCompletedAt(missingFields.isEmpty() ? LocalDateTime.now() : null);
+
+        Company savedCompany = companyRepository.save(company);
+
+        return ApiResponse.success(
+                missingFields.isEmpty()
+                        ? "Company onboarding completed successfully"
+                        : "Company onboarding saved with missing fields",
+                buildCompanyOnboardingStatus(savedCompany)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -145,6 +228,18 @@ public class CompanyService {
 
     @Transactional(readOnly = true)
     public ApiResponse<Map<String, Object>> getCompanySessions(UUID companyId) {
+        return getCompanySessions(companyId, null, null, null, null, null, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<Map<String, Object>> getCompanySessions(UUID companyId,
+                                                               List<String> statuses,
+                                                               List<String> departments,
+                                                               ZonedDateTime startDate,
+                                                               ZonedDateTime endDate,
+                                                               String search,
+                                                               Integer page,
+                                                               Integer size) {
         Optional<Company> companyOpt = companyRepository.findById(companyId);
         if (companyOpt.isEmpty()) {
             return ApiResponse.error("Company not found");
@@ -160,17 +255,464 @@ public class CompanyService {
                 .map(Profile::getId)
                 .toList();
 
-        List<CompanySessionDto> sessions = employeeIds.isEmpty()
+        List<Session> companySessions = employeeIds.isEmpty()
                 ? List.of()
-                : buildCompanySessionsPayload(employeeProfiles, sessionRepository.findByMenteeIdIn(employeeIds));
+                : sessionRepository.findByMenteeIdIn(employeeIds);
+
+        CompanySessionsContext context = buildCompanySessionsContext(employeeProfiles, companySessions);
+        CompanySessionsQuery query = CompanySessionsQuery.of(statuses, departments, startDate, endDate, search);
+
+        List<CompanySessionDto> filteredSessions = context.sessions().stream()
+                .filter(session -> matchesSessionQuery(session, query))
+                .toList();
+
+        PageSlice<CompanySessionDto> pageSlice = paginate(filteredSessions, page, size);
+
+        Set<UUID> visibleSessionIds = filteredSessions.stream()
+                .map(CompanySessionDto::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<Session> filteredDomainSessions = companySessions.stream()
+                .filter(session -> visibleSessionIds.contains(session.getId()))
+                .toList();
+
+        FeedbackQueueSummary feedbackQueue = buildFeedbackQueueSummary(filteredDomainSessions, context.employeesById(), context.mentorsById());
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("companyId", company.getId());
         data.put("companyName", company.getName());
-        data.put("sessions", sessions);
-        data.put("count", sessions.size());
+        data.put("sessions", pageSlice.items());
+        data.put("count", filteredSessions.size());
+        data.put("totalCount", filteredSessions.size());
+        data.put("displayedCount", pageSlice.items().size());
+        data.put("pagination", pageSlice.toMap());
+        data.put("summary", buildSessionSummaryMetrics(filteredDomainSessions));
+        data.put("recentCancellations", buildRecentCancellations(filteredDomainSessions, context.employeesById(), context.mentorsById()));
+        data.put("pendingFeedback", Map.of(
+                "requiredCount", feedbackQueue.requiredCount(),
+                "items", feedbackQueue.items()
+        ));
+        data.put("appliedFilters", query.toMap());
 
         return ApiResponse.success("Company sessions retrieved successfully", data);
+    }
+
+    private CompanySessionsContext buildCompanySessionsContext(List<Profile> employeeProfiles, List<Session> sessions) {
+        Map<UUID, Profile> employeesById = employeeProfiles.stream()
+                .collect(Collectors.toMap(Profile::getId, profile -> profile));
+
+        Set<UUID> mentorIds = sessions.stream()
+                .map(Session::getMentorId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<UUID, Profile> mentorsById = mentorIds.isEmpty()
+                ? Map.of()
+                : profileRepository.findAllById(mentorIds).stream()
+                .collect(Collectors.toMap(Profile::getId, profile -> profile));
+
+        List<CompanySessionDto> normalizedSessions = sessions.stream()
+                .sorted(Comparator.comparing(
+                        (Session session) -> Optional.ofNullable(session.getScheduledStart()).orElse(ZonedDateTime.parse("1970-01-01T00:00:00Z")),
+                        Comparator.reverseOrder()
+                ))
+                .map(session -> toCompanySessionDto(session, employeesById.get(session.getMenteeId()), mentorsById.get(session.getMentorId())))
+                .toList();
+
+        return new CompanySessionsContext(normalizedSessions, employeesById, mentorsById);
+    }
+
+    private boolean matchesSessionQuery(CompanySessionDto session, CompanySessionsQuery query) {
+        if (session == null) {
+            return false;
+        }
+
+        if (!query.statuses().isEmpty()) {
+            String status = normalizeFilterToken(session.getStatus());
+            if (!query.statuses().contains(status)) {
+                return false;
+            }
+        }
+
+        if (!query.departments().isEmpty()) {
+            String department = normalizeFilterToken(session.getDepartment());
+            if (!query.departments().contains(department)) {
+                return false;
+            }
+        }
+
+        if (query.startDate() != null) {
+            ZonedDateTime scheduledStart = session.getScheduledStart();
+            if (scheduledStart == null || scheduledStart.isBefore(query.startDate())) {
+                return false;
+            }
+        }
+
+        if (query.endDate() != null) {
+            ZonedDateTime scheduledStart = session.getScheduledStart();
+            if (scheduledStart == null || scheduledStart.isAfter(query.endDate())) {
+                return false;
+            }
+        }
+
+        if (query.search() != null && !query.search().isBlank()) {
+            String normalizedSearch = query.search();
+            Predicate<String> containsTerm = value ->
+                    value != null && value.toLowerCase(Locale.ROOT).contains(normalizedSearch);
+
+            return containsTerm.test(session.getEmployeeName())
+                    || containsTerm.test(session.getEmployeeEmail())
+                    || containsTerm.test(session.getMentorName())
+                    || containsTerm.test(session.getDepartment())
+                    || containsTerm.test(session.getTitle())
+                    || containsTerm.test(session.getDescription());
+        }
+
+        return true;
+    }
+
+    private PageSlice<CompanySessionDto> paginate(List<CompanySessionDto> sessions, Integer page, Integer size) {
+        int totalItems = sessions.size();
+        boolean paginationApplied = page != null && size != null && size > 0;
+
+        if (!paginationApplied) {
+            return new PageSlice<>(
+                    sessions,
+                    0,
+                    Math.max(totalItems, 1),
+                    totalItems,
+                    1,
+                    false,
+                    false
+            );
+        }
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.max(1, Math.min(size, 200));
+        int totalPages = Math.max(1, (int) Math.ceil(totalItems / (double) safeSize));
+        int fromIndex = Math.min(safePage * safeSize, totalItems);
+        int toIndex = Math.min(fromIndex + safeSize, totalItems);
+        boolean hasPrevious = safePage > 0;
+        boolean hasNext = safePage + 1 < totalPages;
+
+        return new PageSlice<>(
+                sessions.subList(fromIndex, toIndex),
+                safePage,
+                safeSize,
+                totalItems,
+                totalPages,
+                hasNext,
+                hasPrevious
+        );
+    }
+
+    private Map<String, Object> buildSessionSummaryMetrics(List<Session> sessions) {
+        ZonedDateTime now = ZonedDateTime.now();
+        ZonedDateTime sevenDaysLater = now.plusDays(7);
+        ZonedDateTime thirtyDaysAgo = now.minusDays(30);
+        int currentYear = now.getYear();
+
+        List<Session> upcoming = sessions.stream()
+                .filter(session -> session.getScheduledStart() != null)
+                .filter(session -> !session.getScheduledStart().isBefore(now) && !session.getScheduledStart().isAfter(sevenDaysLater))
+                .filter(session -> session.getStatus() != null)
+                .filter(session -> session.getStatus() == Session.SessionStatus.SCHEDULED
+                        || session.getStatus() == Session.SessionStatus.CONFIRMED
+                        || session.getStatus() == Session.SessionStatus.PENDING
+                        || session.getStatus() == Session.SessionStatus.IN_PROGRESS)
+                .toList();
+
+        List<Session> completedThisYear = sessions.stream()
+                .filter(session -> session.getStatus() == Session.SessionStatus.COMPLETED)
+                .filter(session -> session.getScheduledStart() != null)
+                .filter(session -> session.getScheduledStart().getYear() == currentYear)
+                .toList();
+
+        List<Session> cancelledLast30Days = sessions.stream()
+                .filter(session -> session.getStatus() == Session.SessionStatus.CANCELLED
+                        || session.getStatus() == Session.SessionStatus.NO_SHOW)
+                .filter(session -> {
+                    if (session.getCancelledAt() != null) {
+                        return !session.getCancelledAt().atZone(now.getZone()).isBefore(thirtyDaysAgo);
+                    }
+                    return session.getScheduledStart() != null && !session.getScheduledStart().isBefore(thirtyDaysAgo);
+                })
+                .toList();
+
+        List<Integer> ratings = sessions.stream()
+                .map(Session::getRating)
+                .filter(Objects::nonNull)
+                .filter(value -> value > 0)
+                .toList();
+
+        double averageRating = ratings.stream()
+                .mapToInt(Integer::intValue)
+                .average()
+                .orElse(0.0d);
+
+        int roundedAverageRating = (int) Math.round(averageRating * 10);
+        int cancellationRate = sessions.isEmpty()
+                ? 0
+                : (int) Math.round((cancelledLast30Days.size() * 100.0d) / sessions.size());
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("upcomingCount", upcoming.size());
+        summary.put("completedCount", completedThisYear.size());
+        summary.put("cancelledCount", cancelledLast30Days.size());
+        summary.put("avgRating", BigDecimal.valueOf(roundedAverageRating).movePointLeft(1));
+        summary.put("cancellationRate", cancellationRate);
+        summary.put("totalSessions", sessions.size());
+        return summary;
+    }
+
+    private List<Map<String, Object>> buildRecentCancellations(List<Session> sessions,
+                                                               Map<UUID, Profile> employeesById,
+                                                               Map<UUID, Profile> mentorsById) {
+        return sessions.stream()
+                .filter(session -> session.getStatus() == Session.SessionStatus.CANCELLED
+                        || session.getStatus() == Session.SessionStatus.NO_SHOW)
+                .sorted(Comparator
+                        .comparing((Session session) -> Optional.ofNullable(session.getCancelledAt()).orElse(LocalDateTime.MIN), Comparator.reverseOrder())
+                        .thenComparing(session -> Optional.ofNullable(session.getScheduledStart()).orElse(ZonedDateTime.parse("1970-01-01T00:00:00Z")), Comparator.reverseOrder()))
+                .limit(10)
+                .map(session -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("sessionId", session.getId());
+                    entry.put("employeeName", buildDisplayName(employeesById.get(session.getMenteeId()), "Employee"));
+                    entry.put("mentorName", buildDisplayName(mentorsById.get(session.getMentorId()), "Mentor"));
+                    entry.put("title", session.getTitle());
+                    entry.put("status", session.getStatus() != null ? session.getStatus().name() : null);
+                    entry.put("cancelledAt", session.getCancelledAt());
+                    entry.put("cancellationReason", session.getCancellationReason());
+                    entry.put("cancelledBy", session.getCancelledBy() != null ? session.getCancelledBy().name() : null);
+                    return entry;
+                })
+                .toList();
+    }
+
+    private FeedbackQueueSummary buildFeedbackQueueSummary(List<Session> sessions,
+                                                           Map<UUID, Profile> employeesById,
+                                                           Map<UUID, Profile> mentorsById) {
+        List<UUID> completedSessionIds = sessions.stream()
+                .filter(session -> session.getStatus() == Session.SessionStatus.COMPLETED)
+                .map(Session::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (completedSessionIds.isEmpty()) {
+            return new FeedbackQueueSummary(0, List.of());
+        }
+
+        List<ReviewCycle> cycles = reviewCycleRepository.findBySession_IdInAndTypeOrderByCreatedAtDesc(
+                completedSessionIds,
+                ReviewCycle.ReviewType.SESSION
+        );
+
+        if (cycles.isEmpty()) {
+            return new FeedbackQueueSummary(0, List.of());
+        }
+
+        List<UUID> cycleIds = cycles.stream()
+                .map(ReviewCycle::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        Map<UUID, List<ReviewRequest>> requestsByCycleId = reviewRequestRepository
+                .findByReviewCycle_IdInOrderByCreatedAtAsc(cycleIds)
+                .stream()
+                .filter(request -> request.getReviewCycle() != null && request.getReviewCycle().getId() != null)
+                .collect(Collectors.groupingBy(request -> request.getReviewCycle().getId()));
+
+        List<Map<String, Object>> pendingItems = new ArrayList<>();
+        int requiredCount = 0;
+
+        for (ReviewCycle cycle : cycles) {
+            if (cycle == null || cycle.getId() == null || cycle.getSession() == null) {
+                continue;
+            }
+
+            if (cycle.getStatus() != ReviewCycle.ReviewCycleStatus.OPEN
+                    && cycle.getStatus() != ReviewCycle.ReviewCycleStatus.PARTIALLY_SUBMITTED) {
+                continue;
+            }
+
+            List<ReviewRequest> requests = requestsByCycleId.getOrDefault(cycle.getId(), List.of());
+            List<ReviewRequest> pendingRequests = requests.stream()
+                    .filter(request -> request.getStatus() == ReviewRequest.ReviewRequestStatus.PENDING
+                            || request.getStatus() == ReviewRequest.ReviewRequestStatus.SENT
+                            || request.getStatus() == ReviewRequest.ReviewRequestStatus.DELIVERY_FAILED)
+                    .toList();
+
+            if (pendingRequests.isEmpty()) {
+                continue;
+            }
+
+            requiredCount += pendingRequests.size();
+
+            Session session = cycle.getSession();
+            Profile mentorProfile = cycle.getMentorProfile() != null
+                    ? cycle.getMentorProfile()
+                    : mentorsById.get(session.getMentorId());
+            Profile menteeProfile = cycle.getMenteeProfile() != null
+                    ? cycle.getMenteeProfile()
+                    : employeesById.get(session.getMenteeId());
+
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("reviewCycleId", cycle.getId());
+            item.put("sessionId", session.getId());
+            item.put("mentorName", buildDisplayName(mentorProfile, "Mentor"));
+            item.put("menteeName", buildDisplayName(menteeProfile, "Employee"));
+            item.put("sessionTitle", session.getTitle());
+            item.put("completedAt", session.getScheduledEnd());
+            item.put("feedbackWindowExpiresAt", cycle.getExpiresAt());
+            item.put("pendingRequestCount", pendingRequests.size());
+            item.put("pendingRoles", pendingRequests.stream()
+                    .map(ReviewRequest::getReviewerRole)
+                    .filter(Objects::nonNull)
+                    .map(Enum::name)
+                    .distinct()
+                    .toList());
+            pendingItems.add(item);
+        }
+
+        pendingItems.sort(Comparator.comparing(item -> {
+            Object expires = item.get("feedbackWindowExpiresAt");
+            return expires instanceof LocalDateTime value ? value : LocalDateTime.MAX;
+        }));
+
+        return new FeedbackQueueSummary(requiredCount, pendingItems.stream().limit(20).toList());
+    }
+
+    private String normalizeFilterToken(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private record CompanySessionsContext(List<CompanySessionDto> sessions,
+                                          Map<UUID, Profile> employeesById,
+                                          Map<UUID, Profile> mentorsById) {
+    }
+
+    private record FeedbackQueueSummary(int requiredCount, List<Map<String, Object>> items) {
+    }
+
+    private record PageSlice<T>(List<T> items,
+                                int page,
+                                int size,
+                                int totalItems,
+                                int totalPages,
+                                boolean hasNext,
+                                boolean hasPrevious) {
+        Map<String, Object> toMap() {
+            Map<String, Object> pagination = new LinkedHashMap<>();
+            pagination.put("page", page);
+            pagination.put("size", size);
+            pagination.put("totalItems", totalItems);
+            pagination.put("totalPages", totalPages);
+            pagination.put("hasNext", hasNext);
+            pagination.put("hasPrevious", hasPrevious);
+            return pagination;
+        }
+    }
+
+    private record CompanySessionsQuery(Set<String> statuses,
+                                        Set<String> departments,
+                                        ZonedDateTime startDate,
+                                        ZonedDateTime endDate,
+                                        String search) {
+        static CompanySessionsQuery of(List<String> statuses,
+                                       List<String> departments,
+                                       ZonedDateTime startDate,
+                                       ZonedDateTime endDate,
+                                       String search) {
+            Set<String> normalizedStatuses = statuses == null
+                    ? Set.of()
+                    : statuses.stream()
+                    .filter(Objects::nonNull)
+                    .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                    .filter(value -> !value.isBlank())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            Set<String> normalizedDepartments = departments == null
+                    ? Set.of()
+                    : departments.stream()
+                    .filter(Objects::nonNull)
+                    .map(value -> value.trim().toLowerCase(Locale.ROOT))
+                    .filter(value -> !value.isBlank())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            String normalizedSearch = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
+
+            return new CompanySessionsQuery(
+                    normalizedStatuses,
+                    normalizedDepartments,
+                    startDate,
+                    endDate,
+                    normalizedSearch
+            );
+        }
+
+        Map<String, Object> toMap() {
+            Map<String, Object> filters = new LinkedHashMap<>();
+            filters.put("statuses", statuses);
+            filters.put("departments", departments);
+            filters.put("startDate", startDate);
+            filters.put("endDate", endDate);
+            filters.put("search", search);
+            return filters;
+        }
+    }
+
+    private CompanyOnboardingStatusDto buildCompanyOnboardingStatus(Company company) {
+        List<String> missingFields = missingRequiredOnboardingFields(company);
+        boolean completed = missingFields.isEmpty();
+
+        return CompanyOnboardingStatusDto.builder()
+                .companyId(company.getId())
+                .companyName(company.getName())
+                .completed(completed)
+                .missingFields(missingFields)
+                .industry(company.getIndustry())
+                .companySizeBand(company.getCompanySizeBand())
+                .country(company.getCountry())
+                .timezone(company.getTimezone())
+                .mentorshipObjective(company.getMentorshipObjective())
+                .targetAudienceDescription(company.getTargetAudienceDescription())
+                .programDesignPreference(company.getProgramDesignPreference())
+                .recommendedProgramIds(company.getRecommendedPrograms().stream()
+                        .map(Program::getId)
+                        .toList())
+                .completedAt(company.getOnboardingCompletedAt())
+                .build();
+    }
+
+    private List<String> missingRequiredOnboardingFields(Company company) {
+        List<String> missingFields = new ArrayList<>();
+        addMissingIfBlank(missingFields, "industry", company.getIndustry());
+        addMissingIfBlank(missingFields, "companySizeBand", company.getCompanySizeBand());
+        addMissingIfBlank(missingFields, "country", company.getCountry());
+        addMissingIfBlank(missingFields, "timezone", company.getTimezone());
+
+        return missingFields;
+    }
+
+    private void addMissingIfBlank(List<String> missingFields, String fieldName, String value) {
+        if (value == null || value.trim().isEmpty()) {
+            missingFields.add(fieldName);
+        }
+    }
+
+    private String normalizeNullable(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     /**
@@ -236,6 +778,8 @@ public class CompanyService {
                 .department(buildProfileDepartment(employeeProfile))
                 .mentorId(session.getMentorId())
                 .mentorName(buildDisplayName(mentorProfile, "Mentor"))
+                .title(session.getTitle())
+                .description(session.getDescription())
                 .status(session.getStatus() != null ? session.getStatus().name() : null)
                 .platform(session.getMeetingPlatform() != null ? session.getMeetingPlatform().name() : null)
                 .platformDisplayName(session.getMeetingPlatform() != null ? session.getMeetingPlatform().getDisplayName() : null)
@@ -244,6 +788,9 @@ public class CompanyService {
                 .durationMin(session.getScheduledStart() != null && session.getScheduledEnd() != null
                         ? session.getDurationMinutes()
                         : 0L)
+                .cancelledAt(session.getCancelledAt())
+                .cancellationReason(session.getCancellationReason())
+                .cancelledBy(session.getCancelledBy() != null ? session.getCancelledBy().name() : null)
                 .rating(session.getRating())
                 .cost(session.getPrice())
                 .currency(session.getCurrency())
@@ -348,6 +895,12 @@ public class CompanyService {
         company.setAddress(request.getAddress());
         company.setCity(request.getCity());
         company.setCountry(request.getCountry());
+        company.setIndustry(request.getIndustry());
+        company.setCompanySizeBand(request.getCompanySizeBand());
+        company.setTimezone(request.getTimezone());
+        company.setMentorshipObjective(request.getMentorshipObjective());
+        company.setTargetAudienceDescription(request.getTargetAudienceDescription());
+        company.setProgramDesignPreference(request.getProgramDesignPreference());
         company.setPrimaryColor(request.getPrimaryColor());
         company.setSecondaryColor(request.getSecondaryColor());
         company.setIsActive(true);
@@ -397,6 +950,12 @@ public class CompanyService {
         company.setAddress(request.getAddress());
         company.setCity(request.getCity());
         company.setCountry(request.getCountry());
+        company.setIndustry(request.getIndustry());
+        company.setCompanySizeBand(request.getCompanySizeBand());
+        company.setTimezone(request.getTimezone());
+        company.setMentorshipObjective(request.getMentorshipObjective());
+        company.setTargetAudienceDescription(request.getTargetAudienceDescription());
+        company.setProgramDesignPreference(request.getProgramDesignPreference());
         company.setPrimaryColor(request.getPrimaryColor());
         company.setSecondaryColor(request.getSecondaryColor());
         company.setRegistrationToken(UUID.randomUUID().toString());
@@ -466,6 +1025,30 @@ public class CompanyService {
 
         if (request.getCountry() != null) {
             company.setCountry(request.getCountry());
+        }
+
+        if (request.getIndustry() != null) {
+            company.setIndustry(request.getIndustry());
+        }
+
+        if (request.getCompanySizeBand() != null) {
+            company.setCompanySizeBand(request.getCompanySizeBand());
+        }
+
+        if (request.getTimezone() != null) {
+            company.setTimezone(request.getTimezone());
+        }
+
+        if (request.getMentorshipObjective() != null) {
+            company.setMentorshipObjective(request.getMentorshipObjective());
+        }
+
+        if (request.getTargetAudienceDescription() != null) {
+            company.setTargetAudienceDescription(request.getTargetAudienceDescription());
+        }
+
+        if (request.getProgramDesignPreference() != null) {
+            company.setProgramDesignPreference(request.getProgramDesignPreference());
         }
 
         if (request.getPrimaryColor() != null) {
@@ -831,6 +1414,27 @@ public class CompanyService {
             String lastName,
             String phoneNumber,
             String dateOfBirth) {
+        return completeCompanyRegistrationWithProfile(
+                token,
+                userId,
+                email,
+                firstName,
+                lastName,
+                phoneNumber,
+                dateOfBirth,
+                true
+        );
+    }
+
+    public ApiResponse<Map<String, Object>> completeCompanyRegistrationWithProfile(
+            String token,
+            UUID userId,
+            String email,
+            String firstName,
+            String lastName,
+            String phoneNumber,
+            String dateOfBirth,
+            boolean sendRegistrationCompletedEmail) {
 
         log.info("Starting company registration completion for user: {}", userId);
 
@@ -889,10 +1493,12 @@ public class CompanyService {
         company.setRegistrationTokenExpiry(null);
         Company updatedCompany = companyRepository.save(company);
 
-        try {
-            companyNotificationService.sendRegistrationCompletedEmail(updatedCompany);
-        } catch (Exception e) {
-            log.error("Failed to send registration confirmation email to company {}: {}", updatedCompany.getId(), e.getMessage());
+        if (sendRegistrationCompletedEmail) {
+            try {
+                companyNotificationService.sendRegistrationCompletedEmail(updatedCompany);
+            } catch (Exception e) {
+                log.error("Failed to send registration confirmation email to company {}: {}", updatedCompany.getId(), e.getMessage());
+            }
         }
 
         Map<String, Object> responseData = new HashMap<>();

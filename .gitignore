@@ -35,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+.DS_Store
+.worktrees/
+
+# Local deployment profiles and secrets
+.deploy/
+deploy.env

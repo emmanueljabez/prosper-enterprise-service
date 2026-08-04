@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 
@@ -72,6 +73,25 @@ public class MentorAvailability extends BaseEntity {
      */
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    /**
+     * Specific date for this availability (null for recurring weekly slots)
+     * When set, this overrides the day_of_week for a specific date
+     */
+    @Column(name = "date")
+    private LocalDate date;
+
+    /**
+     * Whether this is a recurring weekly slot or a one-time availability
+     */
+    @Column(name = "is_recurring", nullable = false)
+    private Boolean isRecurring = true;
+
+    /**
+     * Meeting platform for this session (e.g., "zoom", "google_meet", "teams")
+     */
+    @Column(name = "meeting_platform", length = 50)
+    private String meetingPlatform = "zoom";
 
     /**
      * Validate that end time is after start time

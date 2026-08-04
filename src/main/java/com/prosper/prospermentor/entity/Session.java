@@ -52,6 +52,24 @@ public class Session {
     private UUID skillId;
 
     /**
+     * Optional company program linkage for corporate bookings
+     */
+    @Column(name = "company_program_id")
+    private UUID companyProgramId;
+
+    /**
+     * Optional company program participant linkage for corporate bookings
+     */
+    @Column(name = "company_program_participant_id")
+    private UUID companyProgramParticipantId;
+
+    /**
+     * Optional employee session allocation linkage for company-funded sessions
+     */
+    @Column(name = "corporate_allocation_id")
+    private UUID corporateAllocationId;
+
+    /**
      * Session title
      */
     @NotBlank
@@ -164,6 +182,22 @@ public class Session {
     @Column(name = "mentee_message", length = 1000)
     private String menteeMessage;
 
+    @Column(name = "booking_primary_goal", columnDefinition = "TEXT")
+    private String bookingPrimaryGoal;
+
+    @Column(name = "booking_already_tried", columnDefinition = "TEXT")
+    private String bookingAlreadyTried;
+
+    @Column(name = "booking_success_looks_like", columnDefinition = "TEXT")
+    private String bookingSuccessLooksLike;
+
+    @Column(name = "booking_context_document", columnDefinition = "TEXT")
+    private String bookingContextDocument;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_source", length = 30)
+    private BookingSource bookingSource = BookingSource.ENTERPRISE;
+
     /**
      * Mentor's response to the session request
      */
@@ -184,6 +218,28 @@ public class Session {
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    @Column(name = "corporate_allocation_consumed_at")
+    private LocalDateTime corporateAllocationConsumedAt;
+
+    @Column(name = "corporate_allocation_returned_at")
+    private LocalDateTime corporateAllocationReturnedAt;
+
+    /**
+     * Individual entitlement consumed for this booking when it is not company-funded.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entitlement_source", length = 40)
+    private EntitlementSource entitlementSource;
+
+    @Column(name = "consumed_subscription_id")
+    private UUID consumedSubscriptionId;
+
+    @Column(name = "consumed_subscription_addon_id")
+    private UUID consumedSubscriptionAddonId;
+
+    @Column(name = "entitlement_returned_at")
+    private LocalDateTime entitlementReturnedAt;
 
     /**
      * Cancellation reason
@@ -210,23 +266,35 @@ public class Session {
     /**
      * Reference to mentor profile
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "mentor_id", insertable = false, updatable = false)
     private MentorProfile mentor;
 
     /**
      * Reference to mentee profile
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "mentee_id", insertable = false, updatable = false)
     private MenteeProfile mentee;
 
     /**
      * Reference to skill/topic
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "skill_id", insertable = false, updatable = false)
     private Skill skill;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_program_id", insertable = false, updatable = false)
+    private CompanyProgram companyProgram;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_program_participant_id", insertable = false, updatable = false)
+    private CompanyProgramParticipant companyProgramParticipant;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "corporate_allocation_id", insertable = false, updatable = false)
+    private EmployeeSessionAllocation corporateAllocation;
 
     /**
      * Audit fields
@@ -366,5 +434,17 @@ public class Session {
         MENTOR,
         SYSTEM,
         ADMIN
+    }
+
+    public enum EntitlementSource {
+        CORPORATE_ALLOCATION,
+        PERSONAL_CREDIT,
+        INDIVIDUAL_SUBSCRIPTION,
+        SUBSCRIPTION_ADDON
+    }
+
+    public enum BookingSource {
+        ENTERPRISE,
+        B2C
     }
 }

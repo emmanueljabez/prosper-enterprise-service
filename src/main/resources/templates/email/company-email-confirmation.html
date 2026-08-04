@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm your [[${appName}]] company account</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #2D3748;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .logo-section {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .logo {
+            max-width: 120px;
+            height: auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #a03b93 0%, #7d2a7b 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 20px solid #7d2a7b;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .welcome-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .content {
+            padding: 42px 30px 34px;
+            background: white;
+        }
+        .greeting {
+            font-size: 18px;
+            color: #2D3748;
+            margin-bottom: 18px;
+        }
+        .message {
+            color: #4A5568;
+            font-size: 15px;
+            line-height: 1.8;
+            margin-bottom: 22px;
+        }
+        .cta-card {
+            background: linear-gradient(135deg, #fdf2fb 0%, #f8e5f4 100%);
+            border: 1px solid #ead0e6;
+            border-left: 4px solid #a03b93;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 26px 0;
+            text-align: center;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #a03b93 0%, #7d2a7b 100%);
+            color: white;
+            padding: 14px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            text-align: center;
+            margin: 16px 0 10px;
+            box-shadow: 0 4px 6px rgba(160, 59, 147, 0.25);
+        }
+        .security-note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+            color: #78350f;
+            font-size: 14px;
+            margin: 24px 0;
+            padding: 18px 20px;
+        }
+        .fallback-link {
+            color: #6b7280;
+            font-size: 12px;
+            line-height: 1.7;
+            margin-top: 18px;
+            word-break: break-all;
+        }
+        .footer {
+            background: #2D3748;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .footer p {
+            margin-bottom: 8px;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .brand-tagline {
+            color: #f6c6f0;
+            font-weight: 700;
+            margin-top: 14px;
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .header, .content, .footer { padding-left: 22px; padding-right: 22px; }
+            .header h1 { font-size: 24px; }
+            .cta-button { display: block; padding-left: 16px; padding-right: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="logo-section">
+            <img th:src="${baseUrl + '/images/prosper_mentor_logo.png'}" src="https://enterprise.prospermentor.com/images/prosper_mentor_logo.png" alt="Prosper Mentor" class="logo">
+        </div>
+
+        <div class="header">
+            <h1>Confirm your company account</h1>
+            <div class="welcome-badge">Company mentorship workspace</div>
+        </div>
+
+        <div class="content">
+            <p class="greeting">Hi <span th:text="${firstName ?: 'there'}">there</span>,</p>
+
+            <p class="message">
+                Your <strong th:text="${companyName ?: 'company'}">company</strong> workspace on
+                <strong th:text="${appName}">ProsperMentor</strong> is almost ready.
+                Confirm your email address first, then sign in to buy sessions and activate the workspace.
+            </p>
+
+            <div class="cta-card">
+                <p class="message" style="margin-bottom: 8px;">
+                    Use the secure button below to verify your email address.
+                </p>
+                <a th:href="${confirmationUrl}" class="cta-button">Confirm Email Address</a>
+                <p class="fallback-link">
+                    If the button does not work, copy and paste this link into your browser:<br>
+                    <span th:text="${confirmationUrl}">confirmation-link</span>
+                </p>
+            </div>
+
+            <div class="security-note">
+                This confirmation link is generated securely and may expire. If you did not create a company account,
+                you can safely ignore this email.
+            </div>
+
+            <p class="message">
+                After verification, sign in with the email and password you used during signup.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>With courage and community,</p>
+            <p><strong>The Prosper Mentor Team</strong></p>
+            <p class="brand-tagline">We Guide. You Conquer.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -21,6 +21,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -305,6 +307,25 @@ class CompanyMentorEnrollmentServiceTest {
         assertThat(result.isCompanyBookable()).isFalse();
     }
 
+    @Test
+    void getMentorPool_shouldSearchMentorsWhenOptionalTitleIsMissing() {
+        CompanyMentorInvitation invitation = invitation("mentor@example.com", "+254720482575");
+        invitation.setTitle(null);
+        CompanyMentorPoolMembership membership = membership(invitation, mentorProfile());
+
+        when(companyRepository.findById(COMPANY_ID)).thenReturn(Optional.of(company));
+        when(invitationRepository.findByCompany_Id(eq(COMPANY_ID), eq(PageRequest.of(0, 20))))
+                .thenReturn(new PageImpl<>(List.of(invitation)));
+        when(membershipRepository.findByCompany_IdAndMembershipStatusIn(eq(COMPANY_ID), any()))
+                .thenReturn(List.of(membership));
+
+        CompanyMentorDtos.MentorPoolResponse response = service.getMentorPool(COMPANY_ID, 0, 20, "mentor@example.com");
+
+        assertThat(response.getMembers()).hasSize(1);
+        assertThat(response.getMembers().get(0).getMentorEmail()).isEqualTo("mentor@example.com");
+        assertThat(response.getMetrics().getTotalCompanyMentors()).isEqualTo(1);
+    }
+
     private CompanyMentorInvitation invitation(String email, String phone) {
         CompanyMentorInvitation invitation = new CompanyMentorInvitation();
         invitation.setId(UUID.fromString("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"));
@@ -316,6 +337,22 @@ class CompanyMentorEnrollmentServiceTest {
         invitation.setInvitationTokenHash(sha256Hex("plain-token"));
         invitation.setInvitationTokenExpiresAt(LocalDateTime.now().plusDays(3));
         return invitation;
+    }
+
+    private CompanyMentorPoolMembership membership(CompanyMentorInvitation invitation, Profile mentor) {
+        CompanyMentorPoolMembership membership = new CompanyMentorPoolMembership();
+        membership.setId(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"));
+        membership.setCompany(company);
+        membership.setMentorProfile(mentor);
+        membership.setSourceInvitation(invitation);
+        membership.setVisibilityMode(CompanyMentorPoolMembership.VisibilityMode.COMPANY_PRIVATE);
+        membership.setMembershipStatus(CompanyMentorPoolMembership.MembershipStatus.ACTIVE);
+        membership.setProfileComplete(true);
+        membership.setAvailabilityComplete(true);
+        membership.setCompanyBookable(true);
+        membership.setPublicApprovalStatus(CompanyMentorPoolMembership.PublicApprovalStatus.NOT_REQUESTED);
+        membership.setPublicListingPreexisting(false);
+        return membership;
     }
 
     private Profile mentorProfile() {

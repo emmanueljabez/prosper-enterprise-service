@@ -68,8 +68,14 @@ SERVICE_NAME="${DEPLOY_SERVICE_NAME:-prosper-backend}"
 LOCAL_LOCK_DIR="/tmp/${APP_NAME}-deploy.lock"
 REMOTE_LOCK_DIR="/tmp/${APP_NAME}-deploy.lock"
 REMOTE_TMP_JAR="${REMOTE_DIR}/${APP_NAME}.jar.upload-$$"
+DEFAULT_SERVICE_PORT="${DEPLOY_SERVICE_PORT:-8080}"
+DEPLOY_HEALTH_PATH="${DEPLOY_HEALTH_PATH:-/api/admin/migration/health}"
 SERVICE_START_TIMEOUT=90
 SERVICE_CHECK_INTERVAL=3
+
+if [[ "$DEPLOY_HEALTH_PATH" != /* ]]; then
+    DEPLOY_HEALTH_PATH="/$DEPLOY_HEALTH_PATH"
+fi
 
 # Resolve sshpass path explicitly (helps when script is run with sudo where PATH differs)
 SSHPASS_BIN="$(command -v sshpass || true)"
@@ -228,7 +234,7 @@ get_remote_service_port() {
 
     port="$(ssh_exec "systemctl show '$SERVICE_NAME' --property=ExecStart | sed 's/^ExecStart=//' | grep -oE -- '--server\\.port=[0-9]+' | head -n 1 | cut -d= -f2")"
     if [ -z "$port" ]; then
-        port="8081"
+        port="$DEFAULT_SERVICE_PORT"
     fi
     echo "$port"
 }
@@ -239,7 +245,8 @@ wait_for_service() {
 
     while [ "$elapsed" -lt "$SERVICE_START_TIMEOUT" ]; do
         if [ "$(ssh_exec "systemctl is-active '$SERVICE_NAME' || true")" = "active" ] \
-            && ssh_exec "ss -ltn '( sport = :$port )' | grep -q LISTEN"; then
+            && ssh_exec "ss -ltn '( sport = :$port )' | grep -q LISTEN" \
+            && ssh_exec "curl -fsS --max-time 5 'http://127.0.0.1:${port}${DEPLOY_HEALTH_PATH}' >/dev/null"; then
             return 0
         fi
 

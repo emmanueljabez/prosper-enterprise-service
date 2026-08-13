@@ -356,7 +356,7 @@ public class CommunityMutationService {
                     author.industry,
                     author.country,
                     COALESCE(author.is_verified, false) AS is_verified
-                FROM community_post_comments c
+                FROM community_comments c
                 JOIN profiles author ON author.id = c.author_profile_id
                 WHERE c.post_id = :postId
                   AND c.status = 'ACTIVE'
@@ -389,7 +389,7 @@ public class CommunityMutationService {
         UUID commentId = UUID.randomUUID();
         OffsetDateTime now = OffsetDateTime.now();
         jdbc.update("""
-                INSERT INTO community_post_comments (
+                INSERT INTO community_comments (
                     id,
                     post_id,
                     author_profile_id,
@@ -442,7 +442,7 @@ public class CommunityMutationService {
         UUID postId = requireCommentOwnerAndPost(viewerId, commentId);
 
         jdbc.update("""
-                UPDATE community_post_comments
+                UPDATE community_comments
                 SET status = 'DELETED',
                     deleted_at = COALESCE(deleted_at, now()),
                     updated_at = now()
@@ -930,7 +930,7 @@ public class CommunityMutationService {
         boolean valid = Boolean.TRUE.equals(jdbc.queryForObject("""
                 SELECT EXISTS (
                     SELECT 1
-                    FROM community_post_comments
+                    FROM community_comments
                     WHERE id = :parentCommentId
                       AND post_id = :postId
                       AND parent_comment_id IS NULL
@@ -948,7 +948,7 @@ public class CommunityMutationService {
         try {
             return jdbc.queryForObject("""
                     SELECT post_id
-                    FROM community_post_comments
+                    FROM community_comments
                     WHERE id = :commentId
                       AND author_profile_id = :viewerId
                       AND status <> 'DELETED'
@@ -973,7 +973,7 @@ public class CommunityMutationService {
             case "COMMENT" -> """
                     SELECT EXISTS (
                         SELECT 1
-                        FROM community_post_comments
+                        FROM community_comments
                         WHERE id = :targetId
                           AND status <> 'DELETED'
                     )

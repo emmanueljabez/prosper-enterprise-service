@@ -13,7 +13,7 @@
 ## File Structure
 
 - Create: `src/main/resources/db/migration/V78__Create_community_foundation_tables.sql`
-  - Defines `community_categories`, `community_posts`, `community_post_reactions`, `community_post_comments`, `community_saved_posts`, `community_blocks`, `community_reports`, `community_mentions`, `community_notification_preferences`, and `community_events_outbox`.
+  - Defines `community_categories`, `community_posts`, `community_post_reactions`, `community_comments`, `community_saved_posts`, `community_blocks`, `community_reports`, `community_mentions`, `community_notification_preferences`, and `community_events_outbox`.
 - Modify: `src/main/java/com/prosper/prospermentor/dto/community/CommunityDtos.java`
   - Adds request/response records for categories, posts, reactions, comments, saves, blocks, reports, and preferences.
 - Create: `src/main/java/com/prosper/prospermentor/service/community/CommunityEventOutboxService.java`
@@ -64,7 +64,7 @@ class CommunityMigrationSourceTest {
                 .contains("CREATE TABLE community_categories")
                 .contains("CREATE TABLE community_posts")
                 .contains("CREATE TABLE community_post_reactions")
-                .contains("CREATE TABLE community_post_comments")
+                .contains("CREATE TABLE community_comments")
                 .contains("CREATE TABLE community_saved_posts")
                 .contains("CREATE TABLE community_blocks")
                 .contains("CREATE TABLE community_reports")

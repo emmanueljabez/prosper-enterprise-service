@@ -72,4 +72,49 @@ class CommunityReadServiceTest {
                 .doesNotContain("p.link_image")
                 .contains("NULL::text AS link_url");
     }
+
+    @Test
+    void feedQueryExcludesCommunityBlocksInBothDirections() {
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        service.getFeed(UUID.randomUUID(), "latest", 20);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("community_blocks")
+                .contains("blocker_profile_id = :viewerId")
+                .contains("blocked_profile_id = p.user_id")
+                .contains("blocker_profile_id = p.user_id")
+                .contains("blocked_profile_id = :viewerId");
+    }
+
+    @Test
+    void recommendationQueryExcludesCommunityBlocksInBothDirections() {
+        UUID viewerId = UUID.randomUUID();
+        when(jdbc.queryForMap(anyString(), any(MapSqlParameterSource.class)))
+                .thenReturn(Map.of(
+                        "id", viewerId,
+                        "role", "mentee",
+                        "industry", "Technology",
+                        "country", "Kenya",
+                        "interests", List.of("leadership")
+                ));
+        when(jdbc.queryForList(anyString(), any(MapSqlParameterSource.class)))
+                .thenReturn(List.of());
+
+        service.getRecommendedPeople(viewerId, 12);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).queryForList(sqlCaptor.capture(), any(MapSqlParameterSource.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("community_blocks")
+                .contains("blocker_profile_id = :viewerId")
+                .contains("blocked_profile_id = p.id")
+                .contains("blocker_profile_id = p.id")
+                .contains("blocked_profile_id = :viewerId");
+    }
 }

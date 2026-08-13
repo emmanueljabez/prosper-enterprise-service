@@ -8,9 +8,11 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -56,7 +58,7 @@ class CommunityReadServiceTest {
     }
 
     @Test
-    void feedQueryDoesNotRequireOptionalLinkPreviewColumns() {
+    void feedQueryUsesLegacyLinkPreviewColumns() {
         when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
                 .thenReturn(List.of());
 
@@ -70,7 +72,10 @@ class CommunityReadServiceTest {
                 .doesNotContain("p.link_title")
                 .doesNotContain("p.link_description")
                 .doesNotContain("p.link_image")
-                .contains("NULL::text AS link_url");
+                .contains("p.link_preview_url AS link_url")
+                .contains("p.link_preview_title AS link_title")
+                .contains("p.link_preview_description AS link_description")
+                .contains("p.link_preview_image AS link_image");
     }
 
     @Test
@@ -89,6 +94,66 @@ class CommunityReadServiceTest {
                 .contains("blocked_profile_id = p.user_id")
                 .contains("blocker_profile_id = p.user_id")
                 .contains("blocked_profile_id = :viewerId");
+    }
+
+    @Test
+    void feedQueryIncludesViewerReactionAndSavedState() {
+        UUID viewerId = UUID.randomUUID();
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        service.getFeed(viewerId, "latest", 20);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM posts p")
+                .contains("EXISTS (")
+                .contains("FROM post_likes pl")
+                .contains("pl.user_id = :viewerId")
+                .contains("FROM saved_posts sp")
+                .contains("sp.user_id = :viewerId")
+                .contains("p.is_hidden AS is_hidden")
+                .contains("p.link_preview_domain")
+                .contains("p.link_preview_site_name");
+    }
+
+    @Test
+    void singlePostQueryUsesLegacyPostsAndBlockFiltering() {
+        UUID viewerId = UUID.randomUUID();
+        UUID postId = UUID.randomUUID();
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.getPost(viewerId, postId))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessage("Community post not found");
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM posts p")
+                .contains("p.id = :postId")
+                .contains("community_blocks");
+    }
+
+    @Test
+    void savedPostsQueryUsesLegacySavedPosts() {
+        UUID viewerId = UUID.randomUUID();
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        service.getSavedPosts(viewerId, 20);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM saved_posts saved")
+                .contains("JOIN posts p ON p.id = saved.post_id")
+                .contains("saved.user_id = :viewerId");
     }
 
     @Test

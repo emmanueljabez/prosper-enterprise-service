@@ -1,8 +1,10 @@
 package com.prosper.prospermentor.service.community;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySavedPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkMember;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendationReason;
@@ -25,6 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -35,6 +38,7 @@ public class CommunityReadService {
 
     @Transactional(readOnly = true)
     public CommunityFeedResponse getFeed(UUID viewerId, String mode, int requestedLimit) {
+        requireViewer(viewerId);
         String normalizedMode = normalizeFeedMode(mode);
         int limit = clampLimit(requestedLimit);
         String orderBy = "ranked".equals(normalizedMode)
@@ -42,29 +46,7 @@ public class CommunityReadService {
                 : "p.created_at DESC";
 
         String sql = """
-                SELECT
-                    p.id,
-                    p.user_id,
-                    p.content,
-                    p.media_url,
-                    p.media_type,
-                    p.image_url,
-                    NULL::text AS link_url,
-                    NULL::text AS link_title,
-                    NULL::text AS link_description,
-                    NULL::text AS link_image,
-                    COALESCE(p.likes_count, 0) AS likes_count,
-                    COALESCE(p.comments_count, 0) AS comments_count,
-                    p.created_at,
-                    author.id AS author_id,
-                    author.first_name,
-                    author.last_name,
-                    author.avatar_url,
-                    author.role::text AS role,
-                    COALESCE(author.bio, '') AS headline,
-                    author.industry,
-                    author.country,
-                    COALESCE(author.is_verified, false) AS is_verified
+                %s
                 FROM posts p
                 JOIN profiles author ON author.id = p.user_id
                 WHERE (COALESCE(p.is_hidden, false) = false
@@ -77,7 +59,7 @@ public class CommunityReadService {
                   )
                 ORDER BY %s
                 LIMIT :limit
-                """.formatted(orderBy);
+                """.formatted(legacyPostSelectColumns(), orderBy);
 
         var parameters = new MapSqlParameterSource()
                 .addValue("viewerId", viewerId)
@@ -85,6 +67,85 @@ public class CommunityReadService {
 
         List<CommunityPostItem> posts = jdbc.query(sql, parameters, postRowMapper());
         return new CommunityFeedResponse(posts, normalizedMode, limit);
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityPostItem getPost(UUID viewerId, UUID postId) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+
+        String sql = """
+                %s
+                FROM posts p
+                JOIN profiles author ON author.id = p.user_id
+                WHERE p.id = :postId
+                  AND (COALESCE(p.is_hidden, false) = false
+                   OR p.user_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                       OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                  )
+                LIMIT 1
+                """.formatted(legacyPostSelectColumns());
+
+        List<CommunityPostItem> posts = jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), postRowMapper());
+        if (posts.isEmpty()) {
+            throw new NoSuchElementException("Community post not found");
+        }
+        return posts.get(0);
+    }
+
+    @Transactional(readOnly = true)
+    public CommunitySavedPostsResponse getSavedPosts(UUID viewerId, int requestedLimit) {
+        requireViewer(viewerId);
+        int limit = clampLimit(requestedLimit);
+
+        String sql = """
+                %s
+                FROM saved_posts saved
+                JOIN posts p ON p.id = saved.post_id
+                JOIN profiles author ON author.id = p.user_id
+                WHERE saved.user_id = :viewerId
+                  AND (COALESCE(p.is_hidden, false) = false
+                   OR p.user_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                       OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                  )
+                ORDER BY saved.created_at DESC
+                LIMIT :limit
+                """.formatted(legacyPostSelectColumns());
+
+        List<CommunityPostItem> posts = jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("limit", limit), postRowMapper());
+        return new CommunitySavedPostsResponse(posts, limit);
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityMyPostsResponse getMyPosts(UUID viewerId, int requestedLimit) {
+        requireViewer(viewerId);
+        int limit = clampLimit(requestedLimit);
+
+        String sql = """
+                %s
+                FROM posts p
+                JOIN profiles author ON author.id = p.user_id
+                WHERE p.user_id = :viewerId
+                ORDER BY p.created_at DESC
+                LIMIT :limit
+                """.formatted(legacyPostSelectColumns());
+
+        List<CommunityPostItem> posts = jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("limit", limit), postRowMapper());
+        return new CommunityMyPostsResponse(posts, limit);
     }
 
     @Transactional(readOnly = true)
@@ -164,6 +225,54 @@ public class CommunityReadService {
             return 20;
         }
         return Math.min(requestedLimit, 50);
+    }
+
+    private String legacyPostSelectColumns() {
+        return """
+                SELECT
+                    p.id,
+                    p.user_id,
+                    p.content,
+                    p.media_url,
+                    p.media_type,
+                    p.image_url,
+                    p.link_preview_url AS link_url,
+                    p.link_preview_title AS link_title,
+                    p.link_preview_description AS link_description,
+                    p.link_preview_image AS link_image,
+                    COALESCE(p.likes_count, 0) AS likes_count,
+                    COALESCE(p.comments_count, 0) AS comments_count,
+                    p.created_at,
+                    author.id AS author_id,
+                    author.first_name,
+                    author.last_name,
+                    author.avatar_url,
+                    author.role::text AS role,
+                    COALESCE(author.bio, '') AS headline,
+                    author.industry,
+                    author.country,
+                    COALESCE(author.is_verified, false) AS is_verified,
+                    p.is_hidden AS is_hidden,
+                    EXISTS (
+                        SELECT 1
+                        FROM post_likes pl
+                        WHERE pl.post_id = p.id
+                          AND pl.user_id = :viewerId
+                    ) AS reacted_by_viewer,
+                    EXISTS (
+                        SELECT 1
+                        FROM saved_posts sp
+                        WHERE sp.post_id = p.id
+                          AND sp.user_id = :viewerId
+                    ) AS saved_by_viewer,
+                    p.link_preview_domain,
+                    p.link_preview_site_name,
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM post_impressions pi
+                        WHERE pi.post_id = p.id
+                    ), 0)::int AS impressions_count
+                """;
     }
 
     public int calculateRecommendationScore(Map<String, Object> viewer, Map<String, Object> candidate) {
@@ -322,7 +431,13 @@ public class CommunityReadService {
                         rs.getString("industry"),
                         rs.getString("country"),
                         rs.getBoolean("is_verified")
-                )
+                ),
+                rs.getBoolean("is_hidden"),
+                rs.getBoolean("reacted_by_viewer"),
+                rs.getBoolean("saved_by_viewer"),
+                rs.getString("link_preview_domain"),
+                rs.getString("link_preview_site_name"),
+                rs.getInt("impressions_count")
         );
     }
 
@@ -362,6 +477,18 @@ public class CommunityReadService {
     private UUID uuid(ResultSet rs, String column) throws SQLException {
         Object value = rs.getObject(column);
         return value instanceof UUID id ? id : UUID.fromString(String.valueOf(value));
+    }
+
+    private void requireViewer(UUID viewerId) {
+        if (viewerId == null) {
+            throw new IllegalArgumentException("Authenticated profile is required");
+        }
+    }
+
+    private void requireId(UUID id, String message) {
+        if (id == null) {
+            throw new IllegalArgumentException(message);
+        }
     }
 
     private boolean sameText(Object left, Object right) {

@@ -35,13 +35,31 @@ public final class CommunityDtos {
             int likesCount,
             int commentsCount,
             OffsetDateTime createdAt,
-            CommunityProfileSummary author
+            CommunityProfileSummary author,
+            Boolean hidden,
+            Boolean reactedByViewer,
+            Boolean savedByViewer,
+            String linkDomain,
+            String linkSiteName,
+            Integer impressionsCount
     ) {
     }
 
     public record CommunityFeedResponse(
             List<CommunityPostItem> posts,
             String mode,
+            int limit
+    ) {
+    }
+
+    public record CommunitySavedPostsResponse(
+            List<CommunityPostItem> posts,
+            int limit
+    ) {
+    }
+
+    public record CommunityMyPostsResponse(
+            List<CommunityPostItem> posts,
             int limit
     ) {
     }
@@ -108,6 +126,17 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityPostHiddenRequest(
+            Boolean hidden
+    ) {
+    }
+
+    public record CommunityPostHiddenResponse(
+            UUID postId,
+            boolean hidden
+    ) {
+    }
+
     public record CommunityCommentRequest(
             UUID parentCommentId,
             String content
@@ -124,6 +153,14 @@ public final class CommunityDtos {
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt,
             CommunityProfileSummary author
+    ) {
+    }
+
+    public record CommunityCommentReactionResponse(
+            UUID commentId,
+            String reactionType,
+            boolean reacted,
+            int likesCount
     ) {
     }
 

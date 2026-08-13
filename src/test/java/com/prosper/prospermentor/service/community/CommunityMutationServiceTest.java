@@ -66,7 +66,7 @@ class CommunityMutationServiceTest {
         UUID categoryId = UUID.randomUUID();
         when(jdbc.queryForObject(anyString(), any(MapSqlParameterSource.class), eq(Boolean.class)))
                 .thenReturn(true);
-        when(jdbc.update(contains("INSERT INTO community_posts"), any(MapSqlParameterSource.class)))
+        when(jdbc.update(contains("INSERT INTO posts"), any(MapSqlParameterSource.class)))
                 .thenReturn(1);
 
         var result = service.createPost(viewerId, new CommunityPostRequest(
@@ -103,13 +103,15 @@ class CommunityMutationServiceTest {
     void reactToPostIsIdempotentAndOnlyRecordsOutboxWhenInserted() {
         UUID viewerId = UUID.randomUUID();
         UUID postId = UUID.randomUUID();
-        when(jdbc.queryForObject(anyString(), any(MapSqlParameterSource.class), eq(Boolean.class)))
+        when(jdbc.queryForObject(contains("FROM community_posts"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(false);
+        when(jdbc.queryForObject(contains("FROM posts p"), any(MapSqlParameterSource.class), eq(Boolean.class)))
                 .thenReturn(true);
-        when(jdbc.update(contains("INSERT INTO community_post_reactions"), any(MapSqlParameterSource.class)))
+        when(jdbc.update(contains("INSERT INTO post_likes"), any(MapSqlParameterSource.class)))
                 .thenReturn(1);
-        when(jdbc.update(contains("UPDATE community_posts"), any(MapSqlParameterSource.class)))
+        when(jdbc.update(contains("UPDATE posts"), any(MapSqlParameterSource.class)))
                 .thenReturn(1);
-        when(jdbc.queryForObject(contains("COUNT(*)"), any(MapSqlParameterSource.class), eq(Integer.class)))
+        when(jdbc.queryForObject(contains("FROM post_likes"), any(MapSqlParameterSource.class), eq(Integer.class)))
                 .thenReturn(4);
 
         var inserted = service.reactToPost(viewerId, postId, new CommunityReactionRequest("like"));
@@ -126,7 +128,7 @@ class CommunityMutationServiceTest {
         );
 
         reset(outboxService);
-        when(jdbc.update(contains("INSERT INTO community_post_reactions"), any(MapSqlParameterSource.class)))
+        when(jdbc.update(contains("INSERT INTO post_likes"), any(MapSqlParameterSource.class)))
                 .thenReturn(0);
 
         var duplicate = service.reactToPost(viewerId, postId, new CommunityReactionRequest("LIKE"));
@@ -140,13 +142,13 @@ class CommunityMutationServiceTest {
     void savePostIsIdempotentAndReturnsLatestCounter() {
         UUID viewerId = UUID.randomUUID();
         UUID postId = UUID.randomUUID();
-        when(jdbc.queryForObject(anyString(), any(MapSqlParameterSource.class), eq(Boolean.class)))
+        when(jdbc.queryForObject(contains("FROM community_posts"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(false);
+        when(jdbc.queryForObject(contains("FROM posts p"), any(MapSqlParameterSource.class), eq(Boolean.class)))
                 .thenReturn(true);
-        when(jdbc.update(contains("INSERT INTO community_saved_posts"), any(MapSqlParameterSource.class)))
+        when(jdbc.update(contains("INSERT INTO saved_posts"), any(MapSqlParameterSource.class)))
                 .thenReturn(1);
-        when(jdbc.update(contains("UPDATE community_posts"), any(MapSqlParameterSource.class)))
-                .thenReturn(1);
-        when(jdbc.queryForObject(contains("SELECT saves_count"), any(MapSqlParameterSource.class), eq(Integer.class)))
+        when(jdbc.queryForObject(contains("FROM saved_posts"), any(MapSqlParameterSource.class), eq(Integer.class)))
                 .thenReturn(3);
 
         var result = service.savePost(viewerId, postId);

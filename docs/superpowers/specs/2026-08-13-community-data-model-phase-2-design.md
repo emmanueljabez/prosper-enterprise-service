@@ -141,7 +141,7 @@ Rules:
 - React calls are idempotent: repeating the same reaction does not create duplicates.
 - Unreact calls are idempotent: deleting a missing reaction returns success with no counter change.
 
-### 6.4 `community_post_comments`
+### 6.4 `community_comments`
 
 Purpose: comments and replies on community posts.
 
@@ -149,7 +149,7 @@ Fields:
 - `id`
 - `post_id` references `community_posts(id)`
 - `author_profile_id` references `profiles(id)`
-- `parent_comment_id` references `community_post_comments(id)`
+- `parent_comment_id` references `community_comments(id)`
 - `content`
 - `status`
 - `created_at`

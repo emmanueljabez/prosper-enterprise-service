@@ -72,25 +72,25 @@ CREATE UNIQUE INDEX uniq_community_post_reactions_user_type
 CREATE INDEX idx_community_post_reactions_user
     ON community_post_reactions(user_profile_id, created_at DESC);
 
-CREATE TABLE community_post_comments (
+CREATE TABLE community_comments (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     post_id uuid NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
     author_profile_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    parent_comment_id uuid REFERENCES community_post_comments(id) ON DELETE CASCADE,
+    parent_comment_id uuid REFERENCES community_comments(id) ON DELETE CASCADE,
     content text NOT NULL,
     status varchar(40) NOT NULL DEFAULT 'ACTIVE',
     created_at timestamp NOT NULL DEFAULT now(),
     updated_at timestamp NOT NULL DEFAULT now(),
     deleted_at timestamp,
-    CONSTRAINT chk_community_post_comments_status CHECK (status IN ('ACTIVE', 'HIDDEN', 'DELETED')),
-    CONSTRAINT chk_community_post_comments_content_present CHECK (length(trim(content)) > 0)
+    CONSTRAINT chk_community_comments_status CHECK (status IN ('ACTIVE', 'HIDDEN', 'DELETED')),
+    CONSTRAINT chk_community_comments_content_present CHECK (length(trim(content)) > 0)
 );
 
-CREATE INDEX idx_community_post_comments_post_created
-    ON community_post_comments(post_id, created_at ASC);
+CREATE INDEX idx_community_comments_post_created
+    ON community_comments(post_id, created_at ASC);
 
-CREATE INDEX idx_community_post_comments_author
-    ON community_post_comments(author_profile_id, created_at DESC);
+CREATE INDEX idx_community_comments_author
+    ON community_comments(author_profile_id, created_at DESC);
 
 CREATE TABLE community_saved_posts (
     post_id uuid NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,

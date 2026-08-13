@@ -16,7 +16,7 @@ class CommunityMigrationSourceTest {
                 .contains("CREATE TABLE community_categories")
                 .contains("CREATE TABLE community_posts")
                 .contains("CREATE TABLE community_post_reactions")
-                .contains("CREATE TABLE community_post_comments")
+                .contains("CREATE TABLE community_comments")
                 .contains("CREATE TABLE community_saved_posts")
                 .contains("CREATE TABLE community_blocks")
                 .contains("CREATE TABLE community_reports")
@@ -29,5 +29,7 @@ class CommunityMigrationSourceTest {
                 .contains("'career-growth'")
                 .contains("'mentorship'")
                 .contains("'questions'");
+
+        assertThat(sql).doesNotContain("CREATE TABLE community_post_comments");
     }
 }

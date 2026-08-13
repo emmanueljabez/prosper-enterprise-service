@@ -46,6 +46,154 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityCategoryItem(
+            UUID id,
+            String slug,
+            String name,
+            String description,
+            int sortOrder
+    ) {
+    }
+
+    public record CommunityPostRequest(
+            UUID categoryId,
+            String content,
+            String visibility,
+            String mediaUrl,
+            String mediaType,
+            String imageUrl,
+            String linkUrl,
+            String linkTitle,
+            String linkDescription,
+            String linkImage,
+            List<String> hashtags
+    ) {
+    }
+
+    public record CommunityPostMutationResponse(
+            UUID id,
+            UUID userId,
+            UUID categoryId,
+            String content,
+            String visibility,
+            String status,
+            String moderationStatus,
+            String mediaUrl,
+            String mediaType,
+            String imageUrl,
+            String linkUrl,
+            String linkTitle,
+            String linkDescription,
+            String linkImage,
+            List<String> hashtags,
+            int likesCount,
+            int commentsCount,
+            int savesCount,
+            int reportsCount,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt
+    ) {
+    }
+
+    public record CommunityReactionRequest(
+            String reactionType
+    ) {
+    }
+
+    public record CommunityReactionResponse(
+            UUID postId,
+            String reactionType,
+            boolean reacted,
+            int likesCount
+    ) {
+    }
+
+    public record CommunityCommentRequest(
+            UUID parentCommentId,
+            String content
+    ) {
+    }
+
+    public record CommunityCommentItem(
+            UUID id,
+            UUID postId,
+            UUID authorProfileId,
+            UUID parentCommentId,
+            String content,
+            String status,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt,
+            CommunityProfileSummary author
+    ) {
+    }
+
+    public record CommunitySavedPostResponse(
+            UUID postId,
+            boolean saved,
+            int savesCount
+    ) {
+    }
+
+    public record CommunityBlockRequest(
+            UUID blockedProfileId,
+            String reason
+    ) {
+    }
+
+    public record CommunityBlockResponse(
+            UUID blockedProfileId,
+            boolean blocked
+    ) {
+    }
+
+    public record CommunityReportRequest(
+            String targetType,
+            UUID targetId,
+            String reasonCode,
+            String reasonDetail
+    ) {
+    }
+
+    public record CommunityReportResponse(
+            UUID id,
+            String targetType,
+            UUID targetId,
+            String status
+    ) {
+    }
+
+    public record CommunityNotificationPreferencesRequest(
+            Boolean inAppEnabled,
+            Boolean emailEnabled,
+            Boolean whatsappEnabled,
+            Boolean mentionsEnabled,
+            Boolean commentsEnabled,
+            Boolean reactionsEnabled,
+            Boolean connectionsEnabled,
+            Boolean recommendationsEnabled,
+            String digestFrequency,
+            String quietHoursStart,
+            String quietHoursEnd
+    ) {
+    }
+
+    public record CommunityNotificationPreferencesDto(
+            UUID profileId,
+            boolean inAppEnabled,
+            boolean emailEnabled,
+            boolean whatsappEnabled,
+            boolean mentionsEnabled,
+            boolean commentsEnabled,
+            boolean reactionsEnabled,
+            boolean connectionsEnabled,
+            boolean recommendationsEnabled,
+            String digestFrequency,
+            String quietHoursStart,
+            String quietHoursEnd,
+            OffsetDateTime updatedAt
+    ) {
+    }
+
     public record RecommendationReason(
             String code,
             String label

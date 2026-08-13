@@ -1,0 +1,1279 @@
+package com.prosper.prospermentor.service.community;
+
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityBlockRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityBlockResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCategoryItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesDto;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostMutationResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReportRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReportResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySavedPostResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.Array;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class CommunityMutationService {
+    private static final String DEFAULT_REACTION_TYPE = "LIKE";
+    private static final String DEFAULT_VISIBILITY = "PUBLIC";
+    private static final String DEFAULT_DIGEST_FREQUENCY = "DAILY";
+
+    private final NamedParameterJdbcTemplate jdbc;
+    private final CommunityEventOutboxService outboxService;
+
+    @Transactional(readOnly = true)
+    public List<CommunityCategoryItem> getCategories() {
+        return jdbc.query("""
+                SELECT id, slug, name, description, sort_order
+                FROM community_categories
+                WHERE is_active = true
+                ORDER BY sort_order ASC, name ASC
+                """, new MapSqlParameterSource(), categoryMapper());
+    }
+
+    @Transactional
+    public CommunityPostMutationResponse createPost(UUID viewerId, CommunityPostRequest request) {
+        requireViewer(viewerId);
+        if (request == null) {
+            throw new IllegalArgumentException("Post request is required");
+        }
+
+        String content = requireText(request.content(), "Post content is required");
+        String visibility = normalizeVisibility(request.visibility());
+        UUID categoryId = request.categoryId();
+        ensureCategoryIsActive(categoryId);
+
+        UUID postId = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now();
+        List<String> hashtags = normalizeHashtags(request.hashtags());
+
+        jdbc.update("""
+                INSERT INTO community_posts (
+                    id,
+                    author_profile_id,
+                    category_id,
+                    content,
+                    visibility,
+                    status,
+                    moderation_status,
+                    media_url,
+                    media_type,
+                    image_url,
+                    link_url,
+                    link_title,
+                    link_description,
+                    link_image,
+                    hashtags,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :id,
+                    :authorProfileId,
+                    :categoryId,
+                    :content,
+                    :visibility,
+                    'ACTIVE',
+                    'APPROVED',
+                    :mediaUrl,
+                    :mediaType,
+                    :imageUrl,
+                    :linkUrl,
+                    :linkTitle,
+                    :linkDescription,
+                    :linkImage,
+                    CAST(:hashtags AS text[]),
+                    now(),
+                    now()
+                )
+                """, new MapSqlParameterSource()
+                .addValue("id", postId)
+                .addValue("authorProfileId", viewerId)
+                .addValue("categoryId", categoryId)
+                .addValue("content", content)
+                .addValue("visibility", visibility)
+                .addValue("mediaUrl", trimmed(request.mediaUrl()))
+                .addValue("mediaType", trimmed(request.mediaType()))
+                .addValue("imageUrl", trimmed(request.imageUrl()))
+                .addValue("linkUrl", trimmed(request.linkUrl()))
+                .addValue("linkTitle", trimmed(request.linkTitle()))
+                .addValue("linkDescription", trimmed(request.linkDescription()))
+                .addValue("linkImage", trimmed(request.linkImage()))
+                .addValue("hashtags", hashtags.toArray(String[]::new)));
+
+        outboxService.recordEvent(
+                "COMMUNITY_POST_CREATED",
+                "POST",
+                postId,
+                viewerId,
+                null,
+                Map.of("postId", postId, "visibility", visibility)
+        );
+
+        return new CommunityPostMutationResponse(
+                postId,
+                viewerId,
+                categoryId,
+                content,
+                visibility,
+                "ACTIVE",
+                "APPROVED",
+                trimmed(request.mediaUrl()),
+                trimmed(request.mediaType()),
+                trimmed(request.imageUrl()),
+                trimmed(request.linkUrl()),
+                trimmed(request.linkTitle()),
+                trimmed(request.linkDescription()),
+                trimmed(request.linkImage()),
+                hashtags,
+                0,
+                0,
+                0,
+                0,
+                now,
+                now
+        );
+    }
+
+    @Transactional
+    public CommunityPostMutationResponse updatePost(UUID viewerId, UUID postId, CommunityPostRequest request) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        if (request == null) {
+            throw new IllegalArgumentException("Post request is required");
+        }
+        ensurePostOwner(viewerId, postId);
+
+        String content = requireText(request.content(), "Post content is required");
+        String visibility = normalizeVisibility(request.visibility());
+        UUID categoryId = request.categoryId();
+        ensureCategoryIsActive(categoryId);
+        List<String> hashtags = normalizeHashtags(request.hashtags());
+
+        jdbc.update("""
+                UPDATE community_posts
+                SET category_id = :categoryId,
+                    content = :content,
+                    visibility = :visibility,
+                    media_url = :mediaUrl,
+                    media_type = :mediaType,
+                    image_url = :imageUrl,
+                    link_url = :linkUrl,
+                    link_title = :linkTitle,
+                    link_description = :linkDescription,
+                    link_image = :linkImage,
+                    hashtags = CAST(:hashtags AS text[]),
+                    updated_at = now()
+                WHERE id = :postId
+                  AND author_profile_id = :viewerId
+                  AND status <> 'DELETED'
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId)
+                .addValue("categoryId", categoryId)
+                .addValue("content", content)
+                .addValue("visibility", visibility)
+                .addValue("mediaUrl", trimmed(request.mediaUrl()))
+                .addValue("mediaType", trimmed(request.mediaType()))
+                .addValue("imageUrl", trimmed(request.imageUrl()))
+                .addValue("linkUrl", trimmed(request.linkUrl()))
+                .addValue("linkTitle", trimmed(request.linkTitle()))
+                .addValue("linkDescription", trimmed(request.linkDescription()))
+                .addValue("linkImage", trimmed(request.linkImage()))
+                .addValue("hashtags", hashtags.toArray(String[]::new)));
+
+        outboxService.recordEvent(
+                "COMMUNITY_POST_UPDATED",
+                "POST",
+                postId,
+                viewerId,
+                null,
+                Map.of("postId", postId, "visibility", visibility)
+        );
+
+        return loadPost(postId);
+    }
+
+    @Transactional
+    public Map<String, Object> deletePost(UUID viewerId, UUID postId) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        ensurePostOwner(viewerId, postId);
+
+        jdbc.update("""
+                UPDATE community_posts
+                SET status = 'DELETED',
+                    deleted_at = COALESCE(deleted_at, now()),
+                    updated_at = now()
+                WHERE id = :postId
+                  AND author_profile_id = :viewerId
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId));
+
+        outboxService.recordEvent(
+                "COMMUNITY_POST_DELETED",
+                "POST",
+                postId,
+                viewerId,
+                null,
+                Map.of("postId", postId)
+        );
+
+        return Map.of("postId", postId, "deleted", true);
+    }
+
+    @Transactional
+    public CommunityReactionResponse reactToPost(UUID viewerId, UUID postId, CommunityReactionRequest request) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        ensurePostVisibleForViewer(viewerId, postId);
+        String reactionType = normalizeReactionType(request == null ? null : request.reactionType());
+
+        int inserted = jdbc.update("""
+                INSERT INTO community_post_reactions (
+                    id,
+                    post_id,
+                    user_profile_id,
+                    reaction_type,
+                    created_at
+                )
+                VALUES (:id, :postId, :viewerId, :reactionType, now())
+                ON CONFLICT (post_id, user_profile_id, reaction_type) DO NOTHING
+                """, new MapSqlParameterSource()
+                .addValue("id", UUID.randomUUID())
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId)
+                .addValue("reactionType", reactionType));
+
+        if (inserted > 0) {
+            jdbc.update("""
+                    UPDATE community_posts
+                    SET likes_count = likes_count + 1,
+                        updated_at = now()
+                    WHERE id = :postId
+                    """, new MapSqlParameterSource("postId", postId));
+            outboxService.recordEvent(
+                    "COMMUNITY_POST_REACTED",
+                    "POST",
+                    postId,
+                    viewerId,
+                    null,
+                    Map.of("postId", postId, "reactionType", reactionType)
+            );
+        }
+
+        return new CommunityReactionResponse(postId, reactionType, true, countPostReactions(postId, reactionType));
+    }
+
+    @Transactional
+    public CommunityReactionResponse removeReaction(UUID viewerId, UUID postId, String reactionTypeInput) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        String reactionType = normalizeReactionType(reactionTypeInput);
+
+        int deleted = jdbc.update("""
+                DELETE FROM community_post_reactions
+                WHERE post_id = :postId
+                  AND user_profile_id = :viewerId
+                  AND reaction_type = :reactionType
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId)
+                .addValue("reactionType", reactionType));
+
+        if (deleted > 0) {
+            jdbc.update("""
+                    UPDATE community_posts
+                    SET likes_count = GREATEST(likes_count - 1, 0),
+                        updated_at = now()
+                    WHERE id = :postId
+                    """, new MapSqlParameterSource("postId", postId));
+            outboxService.recordEvent(
+                    "COMMUNITY_POST_UNREACTED",
+                    "POST",
+                    postId,
+                    viewerId,
+                    null,
+                    Map.of("postId", postId, "reactionType", reactionType)
+            );
+        }
+
+        return new CommunityReactionResponse(postId, reactionType, false, countPostReactions(postId, reactionType));
+    }
+
+    @Transactional(readOnly = true)
+    public List<CommunityCommentItem> getComments(UUID viewerId, UUID postId) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        ensurePostVisibleForViewer(viewerId, postId);
+
+        return jdbc.query("""
+                SELECT
+                    c.id,
+                    c.post_id,
+                    c.author_profile_id,
+                    c.parent_comment_id,
+                    c.content,
+                    c.status,
+                    c.created_at,
+                    c.updated_at,
+                    author.id AS profile_id,
+                    author.first_name,
+                    author.last_name,
+                    author.avatar_url,
+                    author.role::text AS role,
+                    COALESCE(author.bio, '') AS headline,
+                    author.industry,
+                    author.country,
+                    COALESCE(author.is_verified, false) AS is_verified
+                FROM community_post_comments c
+                JOIN profiles author ON author.id = c.author_profile_id
+                WHERE c.post_id = :postId
+                  AND c.status = 'ACTIVE'
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = c.author_profile_id)
+                       OR (b.blocker_profile_id = c.author_profile_id AND b.blocked_profile_id = :viewerId)
+                  )
+                ORDER BY c.created_at ASC
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), commentMapper());
+    }
+
+    @Transactional
+    public CommunityCommentItem createComment(UUID viewerId, UUID postId, CommunityCommentRequest request) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        ensurePostVisibleForViewer(viewerId, postId);
+        if (request == null) {
+            throw new IllegalArgumentException("Comment request is required");
+        }
+        String content = requireText(request.content(), "Comment content is required");
+        UUID parentCommentId = request.parentCommentId();
+        if (parentCommentId != null) {
+            ensureReplyTarget(postId, parentCommentId);
+        }
+
+        UUID commentId = UUID.randomUUID();
+        OffsetDateTime now = OffsetDateTime.now();
+        jdbc.update("""
+                INSERT INTO community_post_comments (
+                    id,
+                    post_id,
+                    author_profile_id,
+                    parent_comment_id,
+                    content,
+                    status,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :id,
+                    :postId,
+                    :viewerId,
+                    :parentCommentId,
+                    :content,
+                    'ACTIVE',
+                    now(),
+                    now()
+                )
+                """, new MapSqlParameterSource()
+                .addValue("id", commentId)
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId)
+                .addValue("parentCommentId", parentCommentId)
+                .addValue("content", content));
+
+        jdbc.update("""
+                UPDATE community_posts
+                SET comments_count = comments_count + 1,
+                    updated_at = now()
+                WHERE id = :postId
+                """, new MapSqlParameterSource("postId", postId));
+
+        outboxService.recordEvent(
+                "COMMUNITY_COMMENT_CREATED",
+                "COMMENT",
+                commentId,
+                viewerId,
+                null,
+                Map.of("postId", postId, "commentId", commentId)
+        );
+
+        return new CommunityCommentItem(commentId, postId, viewerId, parentCommentId, content, "ACTIVE", now, now, null);
+    }
+
+    @Transactional
+    public Map<String, Object> deleteComment(UUID viewerId, UUID commentId) {
+        requireViewer(viewerId);
+        requireId(commentId, "commentId is required");
+        UUID postId = requireCommentOwnerAndPost(viewerId, commentId);
+
+        jdbc.update("""
+                UPDATE community_post_comments
+                SET status = 'DELETED',
+                    deleted_at = COALESCE(deleted_at, now()),
+                    updated_at = now()
+                WHERE id = :commentId
+                  AND author_profile_id = :viewerId
+                """, new MapSqlParameterSource()
+                .addValue("commentId", commentId)
+                .addValue("viewerId", viewerId));
+
+        jdbc.update("""
+                UPDATE community_posts
+                SET comments_count = GREATEST(comments_count - 1, 0),
+                    updated_at = now()
+                WHERE id = :postId
+                """, new MapSqlParameterSource("postId", postId));
+
+        outboxService.recordEvent(
+                "COMMUNITY_COMMENT_DELETED",
+                "COMMENT",
+                commentId,
+                viewerId,
+                null,
+                Map.of("postId", postId, "commentId", commentId)
+        );
+
+        return Map.of("commentId", commentId, "deleted", true);
+    }
+
+    @Transactional
+    public CommunitySavedPostResponse savePost(UUID viewerId, UUID postId) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        ensurePostVisibleForViewer(viewerId, postId);
+
+        int inserted = jdbc.update("""
+                INSERT INTO community_saved_posts (
+                    post_id,
+                    user_profile_id,
+                    created_at
+                )
+                VALUES (:postId, :viewerId, now())
+                ON CONFLICT (post_id, user_profile_id) DO NOTHING
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId));
+
+        if (inserted > 0) {
+            jdbc.update("""
+                    UPDATE community_posts
+                    SET saves_count = saves_count + 1,
+                        updated_at = now()
+                    WHERE id = :postId
+                    """, new MapSqlParameterSource("postId", postId));
+            outboxService.recordEvent(
+                    "COMMUNITY_POST_SAVED",
+                    "POST",
+                    postId,
+                    viewerId,
+                    null,
+                    Map.of("postId", postId)
+            );
+        }
+
+        return new CommunitySavedPostResponse(postId, true, getPostCounter(postId, "saves_count"));
+    }
+
+    @Transactional
+    public CommunitySavedPostResponse unsavePost(UUID viewerId, UUID postId) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+
+        int deleted = jdbc.update("""
+                DELETE FROM community_saved_posts
+                WHERE post_id = :postId
+                  AND user_profile_id = :viewerId
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId));
+
+        if (deleted > 0) {
+            jdbc.update("""
+                    UPDATE community_posts
+                    SET saves_count = GREATEST(saves_count - 1, 0),
+                        updated_at = now()
+                    WHERE id = :postId
+                    """, new MapSqlParameterSource("postId", postId));
+            outboxService.recordEvent(
+                    "COMMUNITY_POST_UNSAVED",
+                    "POST",
+                    postId,
+                    viewerId,
+                    null,
+                    Map.of("postId", postId)
+            );
+        }
+
+        return new CommunitySavedPostResponse(postId, false, getPostCounter(postId, "saves_count"));
+    }
+
+    @Transactional
+    public CommunityBlockResponse blockUser(UUID viewerId, CommunityBlockRequest request) {
+        requireViewer(viewerId);
+        if (request == null || request.blockedProfileId() == null) {
+            throw new IllegalArgumentException("blockedProfileId is required");
+        }
+        UUID blockedProfileId = request.blockedProfileId();
+        if (viewerId.equals(blockedProfileId)) {
+            throw new IllegalArgumentException("You cannot block yourself");
+        }
+
+        int inserted = jdbc.update("""
+                INSERT INTO community_blocks (
+                    id,
+                    blocker_profile_id,
+                    blocked_profile_id,
+                    reason,
+                    created_at
+                )
+                VALUES (:id, :viewerId, :blockedProfileId, :reason, now())
+                ON CONFLICT (blocker_profile_id, blocked_profile_id) DO NOTHING
+                """, new MapSqlParameterSource()
+                .addValue("id", UUID.randomUUID())
+                .addValue("viewerId", viewerId)
+                .addValue("blockedProfileId", blockedProfileId)
+                .addValue("reason", trimmed(request.reason())));
+
+        if (inserted > 0) {
+            outboxService.recordEvent(
+                    "COMMUNITY_USER_BLOCKED",
+                    "PROFILE",
+                    blockedProfileId,
+                    viewerId,
+                    viewerId,
+                    Map.of("blockedProfileId", blockedProfileId)
+            );
+        }
+
+        return new CommunityBlockResponse(blockedProfileId, true);
+    }
+
+    @Transactional
+    public CommunityBlockResponse unblockUser(UUID viewerId, UUID blockedProfileId) {
+        requireViewer(viewerId);
+        requireId(blockedProfileId, "blockedProfileId is required");
+
+        int deleted = jdbc.update("""
+                DELETE FROM community_blocks
+                WHERE blocker_profile_id = :viewerId
+                  AND blocked_profile_id = :blockedProfileId
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("blockedProfileId", blockedProfileId));
+
+        if (deleted > 0) {
+            outboxService.recordEvent(
+                    "COMMUNITY_USER_UNBLOCKED",
+                    "PROFILE",
+                    blockedProfileId,
+                    viewerId,
+                    viewerId,
+                    Map.of("blockedProfileId", blockedProfileId)
+            );
+        }
+
+        return new CommunityBlockResponse(blockedProfileId, false);
+    }
+
+    @Transactional
+    public CommunityReportResponse reportContent(UUID viewerId, CommunityReportRequest request) {
+        requireViewer(viewerId);
+        if (request == null) {
+            throw new IllegalArgumentException("Report request is required");
+        }
+        String targetType = normalizeTargetType(request.targetType());
+        UUID targetId = requireId(request.targetId(), "targetId is required");
+        String reasonCode = requireText(request.reasonCode(), "reasonCode is required");
+        ensureReportTargetExists(targetType, targetId);
+
+        MapSqlParameterSource parameters = new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("targetType", targetType)
+                .addValue("targetId", targetId);
+        List<CommunityReportResponse> existing = jdbc.query("""
+                SELECT id, target_type, target_id, status
+                FROM community_reports
+                WHERE reporter_profile_id = :viewerId
+                  AND target_type = :targetType
+                  AND target_id = :targetId
+                  AND status = 'OPEN'
+                LIMIT 1
+                """, parameters, reportMapper());
+        if (!existing.isEmpty()) {
+            return existing.get(0);
+        }
+
+        UUID reportId = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO community_reports (
+                    id,
+                    reporter_profile_id,
+                    target_type,
+                    target_id,
+                    reason_code,
+                    reason_detail,
+                    status,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :id,
+                    :viewerId,
+                    :targetType,
+                    :targetId,
+                    :reasonCode,
+                    :reasonDetail,
+                    'OPEN',
+                    now(),
+                    now()
+                )
+                """, new MapSqlParameterSource()
+                .addValue("id", reportId)
+                .addValue("viewerId", viewerId)
+                .addValue("targetType", targetType)
+                .addValue("targetId", targetId)
+                .addValue("reasonCode", reasonCode)
+                .addValue("reasonDetail", trimmed(request.reasonDetail())));
+
+        if ("POST".equals(targetType)) {
+            jdbc.update("""
+                    UPDATE community_posts
+                    SET reports_count = reports_count + 1,
+                        updated_at = now()
+                    WHERE id = :targetId
+                    """, new MapSqlParameterSource("targetId", targetId));
+        }
+
+        outboxService.recordEvent(
+                "COMMUNITY_CONTENT_REPORTED",
+                targetType,
+                targetId,
+                viewerId,
+                null,
+                Map.of("reportId", reportId, "targetType", targetType, "targetId", targetId)
+        );
+
+        return new CommunityReportResponse(reportId, targetType, targetId, "OPEN");
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityNotificationPreferencesDto getNotificationPreferences(UUID viewerId) {
+        requireViewer(viewerId);
+        List<CommunityNotificationPreferencesDto> rows = jdbc.query("""
+                SELECT
+                    profile_id,
+                    in_app_enabled,
+                    email_enabled,
+                    whatsapp_enabled,
+                    mentions_enabled,
+                    comments_enabled,
+                    reactions_enabled,
+                    connections_enabled,
+                    recommendations_enabled,
+                    digest_frequency,
+                    quiet_hours_start,
+                    quiet_hours_end,
+                    updated_at
+                FROM community_notification_preferences
+                WHERE profile_id = :viewerId
+                """, new MapSqlParameterSource("viewerId", viewerId), notificationPreferencesMapper());
+
+        if (rows.isEmpty()) {
+            return defaultNotificationPreferences(viewerId);
+        }
+        return rows.get(0);
+    }
+
+    @Transactional
+    public CommunityNotificationPreferencesDto updateNotificationPreferences(
+            UUID viewerId,
+            CommunityNotificationPreferencesRequest request
+    ) {
+        requireViewer(viewerId);
+        if (request == null) {
+            throw new IllegalArgumentException("Notification preferences request is required");
+        }
+
+        String digestFrequency = normalizeDigestFrequency(request.digestFrequency());
+        LocalTime quietHoursStart = parseQuietHour(request.quietHoursStart(), "quietHoursStart");
+        LocalTime quietHoursEnd = parseQuietHour(request.quietHoursEnd(), "quietHoursEnd");
+        boolean inAppEnabled = defaultTrue(request.inAppEnabled());
+        boolean emailEnabled = defaultTrue(request.emailEnabled());
+        boolean whatsappEnabled = Boolean.TRUE.equals(request.whatsappEnabled());
+        boolean mentionsEnabled = defaultTrue(request.mentionsEnabled());
+        boolean commentsEnabled = defaultTrue(request.commentsEnabled());
+        boolean reactionsEnabled = defaultTrue(request.reactionsEnabled());
+        boolean connectionsEnabled = defaultTrue(request.connectionsEnabled());
+        boolean recommendationsEnabled = defaultTrue(request.recommendationsEnabled());
+
+        jdbc.update("""
+                INSERT INTO community_notification_preferences (
+                    profile_id,
+                    in_app_enabled,
+                    email_enabled,
+                    whatsapp_enabled,
+                    mentions_enabled,
+                    comments_enabled,
+                    reactions_enabled,
+                    connections_enabled,
+                    recommendations_enabled,
+                    digest_frequency,
+                    quiet_hours_start,
+                    quiet_hours_end,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :viewerId,
+                    :inAppEnabled,
+                    :emailEnabled,
+                    :whatsappEnabled,
+                    :mentionsEnabled,
+                    :commentsEnabled,
+                    :reactionsEnabled,
+                    :connectionsEnabled,
+                    :recommendationsEnabled,
+                    :digestFrequency,
+                    :quietHoursStart,
+                    :quietHoursEnd,
+                    now(),
+                    now()
+                )
+                ON CONFLICT (profile_id) DO UPDATE SET
+                    in_app_enabled = EXCLUDED.in_app_enabled,
+                    email_enabled = EXCLUDED.email_enabled,
+                    whatsapp_enabled = EXCLUDED.whatsapp_enabled,
+                    mentions_enabled = EXCLUDED.mentions_enabled,
+                    comments_enabled = EXCLUDED.comments_enabled,
+                    reactions_enabled = EXCLUDED.reactions_enabled,
+                    connections_enabled = EXCLUDED.connections_enabled,
+                    recommendations_enabled = EXCLUDED.recommendations_enabled,
+                    digest_frequency = EXCLUDED.digest_frequency,
+                    quiet_hours_start = EXCLUDED.quiet_hours_start,
+                    quiet_hours_end = EXCLUDED.quiet_hours_end,
+                    updated_at = now()
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("inAppEnabled", inAppEnabled)
+                .addValue("emailEnabled", emailEnabled)
+                .addValue("whatsappEnabled", whatsappEnabled)
+                .addValue("mentionsEnabled", mentionsEnabled)
+                .addValue("commentsEnabled", commentsEnabled)
+                .addValue("reactionsEnabled", reactionsEnabled)
+                .addValue("connectionsEnabled", connectionsEnabled)
+                .addValue("recommendationsEnabled", recommendationsEnabled)
+                .addValue("digestFrequency", digestFrequency)
+                .addValue("quietHoursStart", quietHoursStart == null ? null : Time.valueOf(quietHoursStart))
+                .addValue("quietHoursEnd", quietHoursEnd == null ? null : Time.valueOf(quietHoursEnd)));
+
+        outboxService.recordEvent(
+                "COMMUNITY_NOTIFICATION_PREFERENCES_UPDATED",
+                "PROFILE",
+                viewerId,
+                viewerId,
+                viewerId,
+                Map.of("profileId", viewerId)
+        );
+
+        return new CommunityNotificationPreferencesDto(
+                viewerId,
+                inAppEnabled,
+                emailEnabled,
+                whatsappEnabled,
+                mentionsEnabled,
+                commentsEnabled,
+                reactionsEnabled,
+                connectionsEnabled,
+                recommendationsEnabled,
+                digestFrequency,
+                quietHoursStart == null ? null : quietHoursStart.toString(),
+                quietHoursEnd == null ? null : quietHoursEnd.toString(),
+                OffsetDateTime.now()
+        );
+    }
+
+    public String normalizeReactionType(String reactionType) {
+        String normalized = normalizeToken(reactionType, DEFAULT_REACTION_TYPE);
+        if (!DEFAULT_REACTION_TYPE.equals(normalized)) {
+            throw new IllegalArgumentException("Unsupported reactionType: " + reactionType);
+        }
+        return normalized;
+    }
+
+    private String normalizeVisibility(String visibility) {
+        String normalized = normalizeToken(visibility, DEFAULT_VISIBILITY);
+        if (!List.of("PUBLIC", "CONNECTIONS", "PRIVATE").contains(normalized)) {
+            throw new IllegalArgumentException("Unsupported visibility: " + visibility);
+        }
+        return normalized;
+    }
+
+    private String normalizeTargetType(String targetType) {
+        String normalized = normalizeToken(targetType, null);
+        if (!List.of("POST", "COMMENT", "PROFILE").contains(normalized)) {
+            throw new IllegalArgumentException("Unsupported targetType: " + targetType);
+        }
+        return normalized;
+    }
+
+    private String normalizeDigestFrequency(String digestFrequency) {
+        String normalized = normalizeToken(digestFrequency, DEFAULT_DIGEST_FREQUENCY);
+        if (!List.of("IMMEDIATE", "DAILY", "WEEKLY", "NEVER").contains(normalized)) {
+            throw new IllegalArgumentException("Unsupported digestFrequency: " + digestFrequency);
+        }
+        return normalized;
+    }
+
+    private String normalizeToken(String value, String defaultValue) {
+        if (value == null || value.trim().isEmpty()) {
+            if (defaultValue == null) {
+                throw new IllegalArgumentException("Value is required");
+            }
+            return defaultValue;
+        }
+        return value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private void ensureCategoryIsActive(UUID categoryId) {
+        if (categoryId == null) {
+            return;
+        }
+        boolean active = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM community_categories
+                    WHERE id = :categoryId
+                      AND is_active = true
+                )
+                """, new MapSqlParameterSource("categoryId", categoryId), Boolean.class));
+        if (!active) {
+            throw new IllegalArgumentException("Community category not found");
+        }
+    }
+
+    private void ensurePostVisibleForViewer(UUID viewerId, UUID postId) {
+        boolean visible = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM community_posts p
+                    WHERE p.id = :postId
+                      AND p.status = 'ACTIVE'
+                      AND p.moderation_status = 'APPROVED'
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.author_profile_id)
+                           OR (b.blocker_profile_id = p.author_profile_id AND b.blocked_profile_id = :viewerId)
+                      )
+                )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Boolean.class));
+        if (!visible) {
+            throw new NoSuchElementException("Community post not found");
+        }
+    }
+
+    private void ensurePostOwner(UUID viewerId, UUID postId) {
+        boolean owner = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM community_posts
+                    WHERE id = :postId
+                      AND author_profile_id = :viewerId
+                      AND status <> 'DELETED'
+                )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Boolean.class));
+        if (!owner) {
+            throw new SecurityException("Only the post author can modify this post");
+        }
+    }
+
+    private void ensureReplyTarget(UUID postId, UUID parentCommentId) {
+        boolean valid = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM community_post_comments
+                    WHERE id = :parentCommentId
+                      AND post_id = :postId
+                      AND parent_comment_id IS NULL
+                      AND status = 'ACTIVE'
+                )
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("parentCommentId", parentCommentId), Boolean.class));
+        if (!valid) {
+            throw new IllegalArgumentException("Parent comment not found");
+        }
+    }
+
+    private UUID requireCommentOwnerAndPost(UUID viewerId, UUID commentId) {
+        try {
+            return jdbc.queryForObject("""
+                    SELECT post_id
+                    FROM community_post_comments
+                    WHERE id = :commentId
+                      AND author_profile_id = :viewerId
+                      AND status <> 'DELETED'
+                    """, new MapSqlParameterSource()
+                    .addValue("viewerId", viewerId)
+                    .addValue("commentId", commentId), UUID.class);
+        } catch (EmptyResultDataAccessException e) {
+            throw new SecurityException("Only the comment author can delete this comment");
+        }
+    }
+
+    private void ensureReportTargetExists(String targetType, UUID targetId) {
+        String sql = switch (targetType) {
+            case "POST" -> """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM community_posts
+                        WHERE id = :targetId
+                          AND status <> 'DELETED'
+                    )
+                    """;
+            case "COMMENT" -> """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM community_post_comments
+                        WHERE id = :targetId
+                          AND status <> 'DELETED'
+                    )
+                    """;
+            case "PROFILE" -> """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM profiles
+                        WHERE id = :targetId
+                    )
+                    """;
+            default -> throw new IllegalArgumentException("Unsupported targetType: " + targetType);
+        };
+        boolean exists = Boolean.TRUE.equals(jdbc.queryForObject(
+                sql,
+                new MapSqlParameterSource("targetId", targetId),
+                Boolean.class
+        ));
+        if (!exists) {
+            throw new NoSuchElementException("Report target not found");
+        }
+    }
+
+    private CommunityPostMutationResponse loadPost(UUID postId) {
+        List<CommunityPostMutationResponse> rows = jdbc.query("""
+                SELECT
+                    id,
+                    author_profile_id,
+                    category_id,
+                    content,
+                    visibility,
+                    status,
+                    moderation_status,
+                    media_url,
+                    media_type,
+                    image_url,
+                    link_url,
+                    link_title,
+                    link_description,
+                    link_image,
+                    hashtags,
+                    likes_count,
+                    comments_count,
+                    saves_count,
+                    reports_count,
+                    created_at,
+                    updated_at
+                FROM community_posts
+                WHERE id = :postId
+                """, new MapSqlParameterSource("postId", postId), postMutationMapper());
+        if (rows.isEmpty()) {
+            throw new NoSuchElementException("Community post not found");
+        }
+        return rows.get(0);
+    }
+
+    private int countPostReactions(UUID postId, String reactionType) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM community_post_reactions
+                WHERE post_id = :postId
+                  AND reaction_type = :reactionType
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("reactionType", reactionType), Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private int getPostCounter(UUID postId, String counterColumn) {
+        if (!List.of("likes_count", "comments_count", "saves_count", "reports_count").contains(counterColumn)) {
+            throw new IllegalArgumentException("Unsupported post counter: " + counterColumn);
+        }
+        Integer count = jdbc.queryForObject(
+                "SELECT " + counterColumn + " FROM community_posts WHERE id = :postId",
+                new MapSqlParameterSource("postId", postId),
+                Integer.class
+        );
+        return count == null ? 0 : count;
+    }
+
+    private CommunityNotificationPreferencesDto defaultNotificationPreferences(UUID profileId) {
+        return new CommunityNotificationPreferencesDto(
+                profileId,
+                true,
+                true,
+                false,
+                true,
+                true,
+                true,
+                true,
+                true,
+                DEFAULT_DIGEST_FREQUENCY,
+                null,
+                null,
+                OffsetDateTime.now()
+        );
+    }
+
+    private boolean defaultTrue(Boolean value) {
+        return value == null || value;
+    }
+
+    private LocalTime parseQuietHour(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(value.trim());
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException(fieldName + " must use HH:mm format");
+        }
+    }
+
+    private String requireText(String value, String message) {
+        String trimmed = trimmed(value);
+        if (trimmed == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return trimmed;
+    }
+
+    private UUID requireId(UUID value, String message) {
+        if (value == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    private void requireViewer(UUID viewerId) {
+        if (viewerId == null) {
+            throw new IllegalArgumentException("Authenticated profile is required");
+        }
+    }
+
+    private String trimmed(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private List<String> normalizeHashtags(List<String> hashtags) {
+        if (hashtags == null) {
+            return List.of();
+        }
+        return hashtags.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .distinct()
+                .limit(20)
+                .toList();
+    }
+
+    private RowMapper<CommunityCategoryItem> categoryMapper() {
+        return (rs, rowNum) -> new CommunityCategoryItem(
+                uuid(rs, "id"),
+                rs.getString("slug"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getInt("sort_order")
+        );
+    }
+
+    private RowMapper<CommunityPostMutationResponse> postMutationMapper() {
+        return (rs, rowNum) -> new CommunityPostMutationResponse(
+                uuid(rs, "id"),
+                uuid(rs, "author_profile_id"),
+                nullableUuid(rs, "category_id"),
+                rs.getString("content"),
+                rs.getString("visibility"),
+                rs.getString("status"),
+                rs.getString("moderation_status"),
+                rs.getString("media_url"),
+                rs.getString("media_type"),
+                rs.getString("image_url"),
+                rs.getString("link_url"),
+                rs.getString("link_title"),
+                rs.getString("link_description"),
+                rs.getString("link_image"),
+                stringArray(rs, "hashtags"),
+                rs.getInt("likes_count"),
+                rs.getInt("comments_count"),
+                rs.getInt("saves_count"),
+                rs.getInt("reports_count"),
+                offsetDateTime(rs, "created_at"),
+                offsetDateTime(rs, "updated_at")
+        );
+    }
+
+    private RowMapper<CommunityCommentItem> commentMapper() {
+        return (rs, rowNum) -> new CommunityCommentItem(
+                uuid(rs, "id"),
+                uuid(rs, "post_id"),
+                uuid(rs, "author_profile_id"),
+                nullableUuid(rs, "parent_comment_id"),
+                rs.getString("content"),
+                rs.getString("status"),
+                offsetDateTime(rs, "created_at"),
+                offsetDateTime(rs, "updated_at"),
+                new CommunityProfileSummary(
+                        uuid(rs, "profile_id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getString("avatar_url"),
+                        rs.getString("role"),
+                        rs.getString("headline"),
+                        rs.getString("industry"),
+                        rs.getString("country"),
+                        rs.getBoolean("is_verified")
+                )
+        );
+    }
+
+    private RowMapper<CommunityReportResponse> reportMapper() {
+        return (rs, rowNum) -> new CommunityReportResponse(
+                uuid(rs, "id"),
+                rs.getString("target_type"),
+                uuid(rs, "target_id"),
+                rs.getString("status")
+        );
+    }
+
+    private RowMapper<CommunityNotificationPreferencesDto> notificationPreferencesMapper() {
+        return (rs, rowNum) -> new CommunityNotificationPreferencesDto(
+                uuid(rs, "profile_id"),
+                rs.getBoolean("in_app_enabled"),
+                rs.getBoolean("email_enabled"),
+                rs.getBoolean("whatsapp_enabled"),
+                rs.getBoolean("mentions_enabled"),
+                rs.getBoolean("comments_enabled"),
+                rs.getBoolean("reactions_enabled"),
+                rs.getBoolean("connections_enabled"),
+                rs.getBoolean("recommendations_enabled"),
+                rs.getString("digest_frequency"),
+                timeString(rs, "quiet_hours_start"),
+                timeString(rs, "quiet_hours_end"),
+                offsetDateTime(rs, "updated_at")
+        );
+    }
+
+    private UUID uuid(ResultSet rs, String column) throws SQLException {
+        Object value = rs.getObject(column);
+        return value instanceof UUID id ? id : UUID.fromString(String.valueOf(value));
+    }
+
+    private UUID nullableUuid(ResultSet rs, String column) throws SQLException {
+        Object value = rs.getObject(column);
+        if (value == null) {
+            return null;
+        }
+        return value instanceof UUID id ? id : UUID.fromString(String.valueOf(value));
+    }
+
+    private OffsetDateTime offsetDateTime(ResultSet rs, String column) throws SQLException {
+        Object value = rs.getObject(column);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof OffsetDateTime offsetDateTime) {
+            return offsetDateTime;
+        }
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toInstant().atOffset(ZoneOffset.UTC);
+        }
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime.atOffset(ZoneOffset.UTC);
+        }
+        return rs.getObject(column, OffsetDateTime.class);
+    }
+
+    private List<String> stringArray(ResultSet rs, String column) throws SQLException {
+        Array array = rs.getArray(column);
+        if (array == null) {
+            return List.of();
+        }
+        Object value = array.getArray();
+        if (value instanceof String[] strings) {
+            return Arrays.asList(strings);
+        }
+        if (value instanceof Object[] objects) {
+            return Arrays.stream(objects)
+                    .map(String::valueOf)
+                    .toList();
+        }
+        return List.of();
+    }
+
+    private String timeString(ResultSet rs, String column) throws SQLException {
+        Object value = rs.getObject(column);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Time time) {
+            return time.toLocalTime().toString();
+        }
+        if (value instanceof LocalTime localTime) {
+            return localTime.toString();
+        }
+        return value.toString();
+    }
+}

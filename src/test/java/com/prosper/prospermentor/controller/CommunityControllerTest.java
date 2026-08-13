@@ -4,6 +4,7 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedRespon
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendedPeopleResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
+import com.prosper.prospermentor.service.community.CommunityMutationService;
 import com.prosper.prospermentor.service.community.CommunityReadService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,8 @@ import static org.mockito.Mockito.when;
 
 class CommunityControllerTest {
     private final CommunityReadService communityReadService = mock(CommunityReadService.class);
-    private final CommunityController controller = new CommunityController(communityReadService);
+    private final CommunityMutationService communityMutationService = mock(CommunityMutationService.class);
+    private final CommunityController controller = new CommunityController(communityReadService, communityMutationService);
 
     @Test
     void feedRequiresAuthentication() {

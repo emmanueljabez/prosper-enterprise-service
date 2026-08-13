@@ -67,8 +67,14 @@ public class CommunityReadService {
                     COALESCE(author.is_verified, false) AS is_verified
                 FROM posts p
                 JOIN profiles author ON author.id = p.user_id
-                WHERE COALESCE(p.is_hidden, false) = false
-                   OR p.user_id = :viewerId
+                WHERE (COALESCE(p.is_hidden, false) = false
+                   OR p.user_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                       OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                  )
                 ORDER BY %s
                 LIMIT :limit
                 """.formatted(orderBy);
@@ -115,6 +121,12 @@ public class CommunityReadService {
                     SELECT 1 FROM follows f
                     WHERE f.follower_id = :viewerId
                       AND f.following_id = p.id
+                  )
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                       OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
                   )
                 LIMIT 100
                 """, new MapSqlParameterSource("viewerId", viewerId));
@@ -210,6 +222,12 @@ public class CommunityReadService {
                     END
                     WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
                       AND s.status = 'accepted'
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = other_profile.id)
+                           OR (b.blocker_profile_id = other_profile.id AND b.blocked_profile_id = :viewerId)
+                      )
                     ORDER BY s.updated_at DESC
                     """;
             case "followers" -> """
@@ -217,6 +235,12 @@ public class CommunityReadService {
                     FROM follows f
                     JOIN profiles p ON p.id = f.follower_id
                     WHERE f.following_id = :viewerId
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                           OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
+                      )
                     ORDER BY f.created_at DESC
                     """;
             case "following" -> """
@@ -224,6 +248,12 @@ public class CommunityReadService {
                     FROM follows f
                     JOIN profiles p ON p.id = f.following_id
                     WHERE f.follower_id = :viewerId
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                           OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
+                      )
                     ORDER BY f.created_at DESC
                     """;
             case "pendingRequests" -> """
@@ -236,6 +266,12 @@ public class CommunityReadService {
                     WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
                       AND s.status = 'pending'
                       AND s.requester_id <> :viewerId
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                           OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
+                      )
                     ORDER BY s.created_at DESC
                     """;
             case "sentRequests" -> """
@@ -247,6 +283,12 @@ public class CommunityReadService {
                     END
                     WHERE s.requester_id = :viewerId
                       AND s.status = 'pending'
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                           OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
+                      )
                     ORDER BY s.created_at DESC
                     """;
             default -> throw new IllegalArgumentException("Unsupported network view: " + view);

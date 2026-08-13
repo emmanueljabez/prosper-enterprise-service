@@ -3,6 +3,7 @@ package com.prosper.prospermentor.controller;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityBlockRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReportRequest;
@@ -105,6 +106,45 @@ public class CommunityController {
         );
     }
 
+    @GetMapping("/posts/saved")
+    public ResponseEntity<ApiResponse<?>> getSavedPosts(
+            Authentication authentication,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getSavedPosts(userId, limit),
+                "Saved community posts retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/posts/mine")
+    public ResponseEntity<ApiResponse<?>> getMyPosts(
+            Authentication authentication,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getMyPosts(userId, limit),
+                "My community posts retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/posts/{postId}")
+    public ResponseEntity<ApiResponse<?>> getPost(
+            Authentication authentication,
+            @PathVariable UUID postId
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getPost(userId, postId),
+                "Community post retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
     @PutMapping("/posts/{postId}")
     public ResponseEntity<ApiResponse<?>> updatePost(
             Authentication authentication,
@@ -115,6 +155,20 @@ public class CommunityController {
                 authentication,
                 userId -> communityMutationService.updatePost(userId, postId, request),
                 "Community post updated successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @PutMapping("/posts/{postId}/hidden")
+    public ResponseEntity<ApiResponse<?>> setPostHidden(
+            Authentication authentication,
+            @PathVariable UUID postId,
+            @RequestBody CommunityPostHiddenRequest request
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.setPostHidden(userId, postId, request),
+                "Community post hidden state updated successfully",
                 HttpStatus.OK
         );
     }
@@ -196,6 +250,34 @@ public class CommunityController {
                 authentication,
                 userId -> communityMutationService.deleteComment(userId, commentId),
                 "Community comment deleted successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/comments/{commentId}/reactions")
+    public ResponseEntity<ApiResponse<?>> reactToComment(
+            Authentication authentication,
+            @PathVariable UUID commentId,
+            @RequestBody CommunityReactionRequest request
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.reactToComment(userId, commentId, request),
+                "Community comment reaction saved successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @DeleteMapping("/comments/{commentId}/reactions/{reactionType}")
+    public ResponseEntity<ApiResponse<?>> removeCommentReaction(
+            Authentication authentication,
+            @PathVariable UUID commentId,
+            @PathVariable String reactionType
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.removeCommentReaction(userId, commentId, reactionType),
+                "Community comment reaction removed successfully",
                 HttpStatus.OK
         );
     }

@@ -4,9 +4,12 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityBlockReque
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityBlockResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCategoryItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentReactionResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesDto;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostMutationResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
@@ -47,6 +50,11 @@ public class CommunityMutationService {
     private static final String DEFAULT_VISIBILITY = "PUBLIC";
     private static final String DEFAULT_DIGEST_FREQUENCY = "DAILY";
 
+    private enum PostStorage {
+        COMMUNITY,
+        LEGACY
+    }
+
     private final NamedParameterJdbcTemplate jdbc;
     private final CommunityEventOutboxService outboxService;
 
@@ -77,33 +85,29 @@ public class CommunityMutationService {
         List<String> hashtags = normalizeHashtags(request.hashtags());
 
         jdbc.update("""
-                INSERT INTO community_posts (
+                INSERT INTO posts (
                     id,
-                    author_profile_id,
-                    category_id,
+                    user_id,
                     content,
-                    visibility,
-                    status,
-                    moderation_status,
                     media_url,
                     media_type,
                     image_url,
-                    link_url,
-                    link_title,
-                    link_description,
-                    link_image,
-                    hashtags,
+                    link_preview_url,
+                    link_preview_title,
+                    link_preview_description,
+                    link_preview_image,
+                    link_preview_domain,
+                    link_preview_site_name,
+                    likes_count,
+                    comments_count,
+                    is_hidden,
                     created_at,
                     updated_at
                 )
                 VALUES (
                     :id,
                     :authorProfileId,
-                    :categoryId,
                     :content,
-                    :visibility,
-                    'ACTIVE',
-                    'APPROVED',
                     :mediaUrl,
                     :mediaType,
                     :imageUrl,
@@ -111,24 +115,25 @@ public class CommunityMutationService {
                     :linkTitle,
                     :linkDescription,
                     :linkImage,
-                    CAST(:hashtags AS text[]),
+                    NULL,
+                    NULL,
+                    0,
+                    0,
+                    false,
                     now(),
                     now()
                 )
                 """, new MapSqlParameterSource()
                 .addValue("id", postId)
                 .addValue("authorProfileId", viewerId)
-                .addValue("categoryId", categoryId)
                 .addValue("content", content)
-                .addValue("visibility", visibility)
                 .addValue("mediaUrl", trimmed(request.mediaUrl()))
                 .addValue("mediaType", trimmed(request.mediaType()))
                 .addValue("imageUrl", trimmed(request.imageUrl()))
                 .addValue("linkUrl", trimmed(request.linkUrl()))
                 .addValue("linkTitle", trimmed(request.linkTitle()))
                 .addValue("linkDescription", trimmed(request.linkDescription()))
-                .addValue("linkImage", trimmed(request.linkImage()))
-                .addValue("hashtags", hashtags.toArray(String[]::new)));
+                .addValue("linkImage", trimmed(request.linkImage())));
 
         outboxService.recordEvent(
                 "COMMUNITY_POST_CREATED",
@@ -171,13 +176,73 @@ public class CommunityMutationService {
         if (request == null) {
             throw new IllegalArgumentException("Post request is required");
         }
-        ensurePostOwner(viewerId, postId);
 
         String content = requireText(request.content(), "Post content is required");
         String visibility = normalizeVisibility(request.visibility());
         UUID categoryId = request.categoryId();
         ensureCategoryIsActive(categoryId);
         List<String> hashtags = normalizeHashtags(request.hashtags());
+
+        PostStorage storage = resolveOwnedPostStorage(viewerId, postId);
+        if (storage == PostStorage.LEGACY) {
+            jdbc.update("""
+                    UPDATE posts
+                    SET content = :content,
+                        media_url = :mediaUrl,
+                        media_type = :mediaType,
+                        image_url = :imageUrl,
+                        link_preview_url = :linkUrl,
+                        link_preview_title = :linkTitle,
+                        link_preview_description = :linkDescription,
+                        link_preview_image = :linkImage,
+                        updated_at = now()
+                    WHERE id = :postId
+                      AND user_id = :viewerId
+                    """, new MapSqlParameterSource()
+                    .addValue("postId", postId)
+                    .addValue("viewerId", viewerId)
+                    .addValue("content", content)
+                    .addValue("mediaUrl", trimmed(request.mediaUrl()))
+                    .addValue("mediaType", trimmed(request.mediaType()))
+                    .addValue("imageUrl", trimmed(request.imageUrl()))
+                    .addValue("linkUrl", trimmed(request.linkUrl()))
+                    .addValue("linkTitle", trimmed(request.linkTitle()))
+                    .addValue("linkDescription", trimmed(request.linkDescription()))
+                    .addValue("linkImage", trimmed(request.linkImage())));
+
+            outboxService.recordEvent(
+                    "COMMUNITY_POST_UPDATED",
+                    "POST",
+                    postId,
+                    viewerId,
+                    null,
+                    Map.of("postId", postId, "visibility", visibility)
+            );
+
+            return new CommunityPostMutationResponse(
+                    postId,
+                    viewerId,
+                    categoryId,
+                    content,
+                    visibility,
+                    "ACTIVE",
+                    "APPROVED",
+                    trimmed(request.mediaUrl()),
+                    trimmed(request.mediaType()),
+                    trimmed(request.imageUrl()),
+                    trimmed(request.linkUrl()),
+                    trimmed(request.linkTitle()),
+                    trimmed(request.linkDescription()),
+                    trimmed(request.linkImage()),
+                    hashtags,
+                    0,
+                    0,
+                    0,
+                    0,
+                    OffsetDateTime.now(),
+                    OffsetDateTime.now()
+            );
+        }
 
         jdbc.update("""
                 UPDATE community_posts
@@ -227,7 +292,28 @@ public class CommunityMutationService {
     public Map<String, Object> deletePost(UUID viewerId, UUID postId) {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
-        ensurePostOwner(viewerId, postId);
+        PostStorage storage = resolveOwnedPostStorage(viewerId, postId);
+
+        if (storage == PostStorage.LEGACY) {
+            jdbc.update("""
+                    DELETE FROM posts
+                    WHERE id = :postId
+                      AND user_id = :viewerId
+                    """, new MapSqlParameterSource()
+                    .addValue("postId", postId)
+                    .addValue("viewerId", viewerId));
+
+            outboxService.recordEvent(
+                    "COMMUNITY_POST_DELETED",
+                    "POST",
+                    postId,
+                    viewerId,
+                    null,
+                    Map.of("postId", postId)
+            );
+
+            return Map.of("postId", postId, "deleted", true);
+        }
 
         jdbc.update("""
                 UPDATE community_posts
@@ -253,11 +339,76 @@ public class CommunityMutationService {
     }
 
     @Transactional
+    public CommunityPostHiddenResponse setPostHidden(UUID viewerId, UUID postId, CommunityPostHiddenRequest request) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        boolean hidden = request != null && Boolean.TRUE.equals(request.hidden());
+        ensureLegacyPostOwner(viewerId, postId);
+
+        jdbc.update("""
+                UPDATE posts
+                SET is_hidden = :hidden,
+                    updated_at = now()
+                WHERE id = :postId
+                  AND user_id = :viewerId
+                """, new MapSqlParameterSource()
+                .addValue("hidden", hidden)
+                .addValue("postId", postId)
+                .addValue("viewerId", viewerId));
+
+        outboxService.recordEvent(
+                hidden ? "COMMUNITY_POST_HIDDEN" : "COMMUNITY_POST_UNHIDDEN",
+                "POST",
+                postId,
+                viewerId,
+                null,
+                Map.of("postId", postId, "hidden", hidden)
+        );
+
+        return new CommunityPostHiddenResponse(postId, hidden);
+    }
+
+    @Transactional
     public CommunityReactionResponse reactToPost(UUID viewerId, UUID postId, CommunityReactionRequest request) {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
-        ensurePostVisibleForViewer(viewerId, postId);
+        PostStorage storage = resolveVisiblePostStorage(viewerId, postId);
         String reactionType = normalizeReactionType(request == null ? null : request.reactionType());
+
+        if (storage == PostStorage.LEGACY) {
+            int inserted = jdbc.update("""
+                    INSERT INTO post_likes (
+                        id,
+                        post_id,
+                        user_id,
+                        created_at
+                    )
+                    VALUES (:id, :postId, :viewerId, now())
+                    ON CONFLICT (post_id, user_id) DO NOTHING
+                    """, new MapSqlParameterSource()
+                    .addValue("id", UUID.randomUUID())
+                    .addValue("postId", postId)
+                    .addValue("viewerId", viewerId));
+
+            if (inserted > 0) {
+                jdbc.update("""
+                        UPDATE posts
+                        SET likes_count = COALESCE(likes_count, 0) + 1,
+                            updated_at = now()
+                        WHERE id = :postId
+                        """, new MapSqlParameterSource("postId", postId));
+                outboxService.recordEvent(
+                        "COMMUNITY_POST_REACTED",
+                        "POST",
+                        postId,
+                        viewerId,
+                        null,
+                        Map.of("postId", postId, "reactionType", reactionType)
+                );
+            }
+
+            return new CommunityReactionResponse(postId, reactionType, true, countLegacyPostLikes(postId));
+        }
 
         int inserted = jdbc.update("""
                 INSERT INTO community_post_reactions (
@@ -299,7 +450,37 @@ public class CommunityMutationService {
     public CommunityReactionResponse removeReaction(UUID viewerId, UUID postId, String reactionTypeInput) {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
+        PostStorage storage = resolveVisiblePostStorage(viewerId, postId);
         String reactionType = normalizeReactionType(reactionTypeInput);
+
+        if (storage == PostStorage.LEGACY) {
+            int deleted = jdbc.update("""
+                    DELETE FROM post_likes
+                    WHERE post_id = :postId
+                      AND user_id = :viewerId
+                    """, new MapSqlParameterSource()
+                    .addValue("postId", postId)
+                    .addValue("viewerId", viewerId));
+
+            if (deleted > 0) {
+                jdbc.update("""
+                        UPDATE posts
+                        SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0),
+                            updated_at = now()
+                        WHERE id = :postId
+                        """, new MapSqlParameterSource("postId", postId));
+                outboxService.recordEvent(
+                        "COMMUNITY_POST_UNREACTED",
+                        "POST",
+                        postId,
+                        viewerId,
+                        null,
+                        Map.of("postId", postId, "reactionType", reactionType)
+                );
+            }
+
+            return new CommunityReactionResponse(postId, reactionType, false, countLegacyPostLikes(postId));
+        }
 
         int deleted = jdbc.update("""
                 DELETE FROM community_post_reactions
@@ -335,7 +516,42 @@ public class CommunityMutationService {
     public List<CommunityCommentItem> getComments(UUID viewerId, UUID postId) {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
-        ensurePostVisibleForViewer(viewerId, postId);
+        PostStorage storage = resolveVisiblePostStorage(viewerId, postId);
+
+        if (storage == PostStorage.LEGACY) {
+            return jdbc.query("""
+                    SELECT
+                        c.id,
+                        c.post_id,
+                        c.user_id AS author_profile_id,
+                        c.parent_id AS parent_comment_id,
+                        c.content,
+                        'ACTIVE' AS status,
+                        c.created_at,
+                        c.updated_at,
+                        author.id AS profile_id,
+                        author.first_name,
+                        author.last_name,
+                        author.avatar_url,
+                        author.role::text AS role,
+                        COALESCE(author.bio, '') AS headline,
+                        author.industry,
+                        author.country,
+                        COALESCE(author.is_verified, false) AS is_verified
+                    FROM post_comments c
+                    JOIN profiles author ON author.id = c.user_id
+                    WHERE c.post_id = :postId
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = c.user_id)
+                           OR (b.blocker_profile_id = c.user_id AND b.blocked_profile_id = :viewerId)
+                      )
+                    ORDER BY c.created_at ASC
+                    """, new MapSqlParameterSource()
+                    .addValue("viewerId", viewerId)
+                    .addValue("postId", postId), commentMapper());
+        }
 
         return jdbc.query("""
                 SELECT
@@ -376,18 +592,68 @@ public class CommunityMutationService {
     public CommunityCommentItem createComment(UUID viewerId, UUID postId, CommunityCommentRequest request) {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
-        ensurePostVisibleForViewer(viewerId, postId);
+        PostStorage storage = resolveVisiblePostStorage(viewerId, postId);
         if (request == null) {
             throw new IllegalArgumentException("Comment request is required");
         }
         String content = requireText(request.content(), "Comment content is required");
         UUID parentCommentId = request.parentCommentId();
         if (parentCommentId != null) {
-            ensureReplyTarget(postId, parentCommentId);
+            if (storage == PostStorage.LEGACY) {
+                ensureLegacyReplyTarget(postId, parentCommentId);
+            } else {
+                ensureReplyTarget(postId, parentCommentId);
+            }
         }
 
         UUID commentId = UUID.randomUUID();
         OffsetDateTime now = OffsetDateTime.now();
+        if (storage == PostStorage.LEGACY) {
+            jdbc.update("""
+                    INSERT INTO post_comments (
+                        id,
+                        post_id,
+                        user_id,
+                        parent_id,
+                        content,
+                        created_at,
+                        updated_at
+                    )
+                    VALUES (
+                        :id,
+                        :postId,
+                        :viewerId,
+                        :parentCommentId,
+                        :content,
+                        now(),
+                        now()
+                    )
+                    """, new MapSqlParameterSource()
+                    .addValue("id", commentId)
+                    .addValue("postId", postId)
+                    .addValue("viewerId", viewerId)
+                    .addValue("parentCommentId", parentCommentId)
+                    .addValue("content", content));
+
+            jdbc.update("""
+                    UPDATE posts
+                    SET comments_count = COALESCE(comments_count, 0) + 1,
+                        updated_at = now()
+                    WHERE id = :postId
+                    """, new MapSqlParameterSource("postId", postId));
+
+            outboxService.recordEvent(
+                    "COMMUNITY_COMMENT_CREATED",
+                    "COMMENT",
+                    commentId,
+                    viewerId,
+                    null,
+                    Map.of("postId", postId, "commentId", commentId)
+            );
+
+            return new CommunityCommentItem(commentId, postId, viewerId, parentCommentId, content, "ACTIVE", now, now, null);
+        }
+
         jdbc.update("""
                 INSERT INTO community_comments (
                     id,
@@ -439,6 +705,35 @@ public class CommunityMutationService {
     public Map<String, Object> deleteComment(UUID viewerId, UUID commentId) {
         requireViewer(viewerId);
         requireId(commentId, "commentId is required");
+        UUID legacyPostId = legacyCommentOwnerPostId(viewerId, commentId);
+        if (legacyPostId != null) {
+            jdbc.update("""
+                    DELETE FROM post_comments
+                    WHERE id = :commentId
+                      AND user_id = :viewerId
+                    """, new MapSqlParameterSource()
+                    .addValue("commentId", commentId)
+                    .addValue("viewerId", viewerId));
+
+            jdbc.update("""
+                    UPDATE posts
+                    SET comments_count = GREATEST(COALESCE(comments_count, 0) - 1, 0),
+                        updated_at = now()
+                    WHERE id = :postId
+                    """, new MapSqlParameterSource("postId", legacyPostId));
+
+            outboxService.recordEvent(
+                    "COMMUNITY_COMMENT_DELETED",
+                    "COMMENT",
+                    commentId,
+                    viewerId,
+                    null,
+                    Map.of("postId", legacyPostId, "commentId", commentId)
+            );
+
+            return Map.of("commentId", commentId, "deleted", true);
+        }
+
         UUID postId = requireCommentOwnerAndPost(viewerId, commentId);
 
         jdbc.update("""
@@ -475,7 +770,36 @@ public class CommunityMutationService {
     public CommunitySavedPostResponse savePost(UUID viewerId, UUID postId) {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
-        ensurePostVisibleForViewer(viewerId, postId);
+        PostStorage storage = resolveVisiblePostStorage(viewerId, postId);
+
+        if (storage == PostStorage.LEGACY) {
+            int inserted = jdbc.update("""
+                    INSERT INTO saved_posts (
+                        id,
+                        post_id,
+                        user_id,
+                        created_at
+                    )
+                    VALUES (:id, :postId, :viewerId, now())
+                    ON CONFLICT (user_id, post_id) DO NOTHING
+                    """, new MapSqlParameterSource()
+                    .addValue("id", UUID.randomUUID())
+                    .addValue("postId", postId)
+                    .addValue("viewerId", viewerId));
+
+            if (inserted > 0) {
+                outboxService.recordEvent(
+                        "COMMUNITY_POST_SAVED",
+                        "POST",
+                        postId,
+                        viewerId,
+                        null,
+                        Map.of("postId", postId)
+                );
+            }
+
+            return new CommunitySavedPostResponse(postId, true, countLegacyPostSaves(postId));
+        }
 
         int inserted = jdbc.update("""
                 INSERT INTO community_saved_posts (
@@ -513,6 +837,30 @@ public class CommunityMutationService {
     public CommunitySavedPostResponse unsavePost(UUID viewerId, UUID postId) {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
+        PostStorage storage = resolveExistingPostStorage(postId);
+
+        if (storage == PostStorage.LEGACY) {
+            int deleted = jdbc.update("""
+                    DELETE FROM saved_posts
+                    WHERE post_id = :postId
+                      AND user_id = :viewerId
+                    """, new MapSqlParameterSource()
+                    .addValue("postId", postId)
+                    .addValue("viewerId", viewerId));
+
+            if (deleted > 0) {
+                outboxService.recordEvent(
+                        "COMMUNITY_POST_UNSAVED",
+                        "POST",
+                        postId,
+                        viewerId,
+                        null,
+                        Map.of("postId", postId)
+                );
+            }
+
+            return new CommunitySavedPostResponse(postId, false, countLegacyPostSaves(postId));
+        }
 
         int deleted = jdbc.update("""
                 DELETE FROM community_saved_posts
@@ -670,7 +1018,7 @@ public class CommunityMutationService {
                 .addValue("reasonCode", reasonCode)
                 .addValue("reasonDetail", trimmed(request.reasonDetail())));
 
-        if ("POST".equals(targetType)) {
+        if ("POST".equals(targetType) && isCommunityPostKnown(targetId)) {
             jdbc.update("""
                     UPDATE community_posts
                     SET reports_count = reports_count + 1,
@@ -689,6 +1037,74 @@ public class CommunityMutationService {
         );
 
         return new CommunityReportResponse(reportId, targetType, targetId, "OPEN");
+    }
+
+    @Transactional
+    public CommunityCommentReactionResponse reactToComment(
+            UUID viewerId,
+            UUID commentId,
+            CommunityReactionRequest request
+    ) {
+        requireViewer(viewerId);
+        requireId(commentId, "commentId is required");
+        String reactionType = normalizeReactionType(request == null ? null : request.reactionType());
+        ensureLegacyCommentVisibleForViewer(viewerId, commentId);
+
+        int inserted = jdbc.update("""
+                INSERT INTO comment_likes (
+                    id,
+                    comment_id,
+                    user_id,
+                    created_at
+                )
+                VALUES (:id, :commentId, :viewerId, now())
+                ON CONFLICT (comment_id, user_id) DO NOTHING
+                """, new MapSqlParameterSource()
+                .addValue("id", UUID.randomUUID())
+                .addValue("commentId", commentId)
+                .addValue("viewerId", viewerId));
+
+        if (inserted > 0) {
+            outboxService.recordEvent(
+                    "COMMUNITY_COMMENT_REACTED",
+                    "COMMENT",
+                    commentId,
+                    viewerId,
+                    null,
+                    Map.of("commentId", commentId, "reactionType", reactionType)
+            );
+        }
+
+        return new CommunityCommentReactionResponse(commentId, reactionType, true, countLegacyCommentLikes(commentId));
+    }
+
+    @Transactional
+    public CommunityCommentReactionResponse removeCommentReaction(UUID viewerId, UUID commentId, String reactionTypeInput) {
+        requireViewer(viewerId);
+        requireId(commentId, "commentId is required");
+        String reactionType = normalizeReactionType(reactionTypeInput);
+        ensureLegacyCommentVisibleForViewer(viewerId, commentId);
+
+        int deleted = jdbc.update("""
+                DELETE FROM comment_likes
+                WHERE comment_id = :commentId
+                  AND user_id = :viewerId
+                """, new MapSqlParameterSource()
+                .addValue("commentId", commentId)
+                .addValue("viewerId", viewerId));
+
+        if (deleted > 0) {
+            outboxService.recordEvent(
+                    "COMMUNITY_COMMENT_UNREACTED",
+                    "COMMENT",
+                    commentId,
+                    viewerId,
+                    null,
+                    Map.of("commentId", commentId, "reactionType", reactionType)
+            );
+        }
+
+        return new CommunityCommentReactionResponse(commentId, reactionType, false, countLegacyCommentLikes(commentId));
     }
 
     @Transactional(readOnly = true)
@@ -887,7 +1303,41 @@ public class CommunityMutationService {
     }
 
     private void ensurePostVisibleForViewer(UUID viewerId, UUID postId) {
-        boolean visible = Boolean.TRUE.equals(jdbc.queryForObject("""
+        resolveVisiblePostStorage(viewerId, postId);
+    }
+
+    private PostStorage resolveVisiblePostStorage(UUID viewerId, UUID postId) {
+        if (isCommunityPostVisibleForViewer(viewerId, postId)) {
+            return PostStorage.COMMUNITY;
+        }
+        if (isLegacyPostVisibleForViewer(viewerId, postId)) {
+            return PostStorage.LEGACY;
+        }
+        throw new NoSuchElementException("Community post not found");
+    }
+
+    private PostStorage resolveOwnedPostStorage(UUID viewerId, UUID postId) {
+        if (isCommunityPostOwner(viewerId, postId)) {
+            return PostStorage.COMMUNITY;
+        }
+        if (isLegacyPostOwner(viewerId, postId)) {
+            return PostStorage.LEGACY;
+        }
+        throw new SecurityException("Only the post author can modify this post");
+    }
+
+    private PostStorage resolveExistingPostStorage(UUID postId) {
+        if (isCommunityPostKnown(postId)) {
+            return PostStorage.COMMUNITY;
+        }
+        if (isLegacyPostKnown(postId)) {
+            return PostStorage.LEGACY;
+        }
+        return PostStorage.LEGACY;
+    }
+
+    private boolean isCommunityPostVisibleForViewer(UUID viewerId, UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
                 SELECT EXISTS (
                     SELECT 1
                     FROM community_posts p
@@ -904,13 +1354,39 @@ public class CommunityMutationService {
                 """, new MapSqlParameterSource()
                 .addValue("viewerId", viewerId)
                 .addValue("postId", postId), Boolean.class));
-        if (!visible) {
-            throw new NoSuchElementException("Community post not found");
-        }
+    }
+
+    private boolean isLegacyPostVisibleForViewer(UUID viewerId, UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM posts p
+                    WHERE p.id = :postId
+                      AND (COALESCE(p.is_hidden, false) = false OR p.user_id = :viewerId)
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                           OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                      )
+                )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Boolean.class));
     }
 
     private void ensurePostOwner(UUID viewerId, UUID postId) {
-        boolean owner = Boolean.TRUE.equals(jdbc.queryForObject("""
+        resolveOwnedPostStorage(viewerId, postId);
+    }
+
+    private void ensureLegacyPostOwner(UUID viewerId, UUID postId) {
+        if (!isLegacyPostOwner(viewerId, postId)) {
+            throw new SecurityException("Only the post author can modify this post");
+        }
+    }
+
+    private boolean isCommunityPostOwner(UUID viewerId, UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
                 SELECT EXISTS (
                     SELECT 1
                     FROM community_posts
@@ -921,9 +1397,40 @@ public class CommunityMutationService {
                 """, new MapSqlParameterSource()
                 .addValue("viewerId", viewerId)
                 .addValue("postId", postId), Boolean.class));
-        if (!owner) {
-            throw new SecurityException("Only the post author can modify this post");
-        }
+    }
+
+    private boolean isLegacyPostOwner(UUID viewerId, UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM posts
+                    WHERE id = :postId
+                      AND user_id = :viewerId
+                )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Boolean.class));
+    }
+
+    private boolean isCommunityPostKnown(UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM community_posts
+                    WHERE id = :postId
+                      AND status <> 'DELETED'
+                )
+                """, new MapSqlParameterSource("postId", postId), Boolean.class));
+    }
+
+    private boolean isLegacyPostKnown(UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM posts
+                    WHERE id = :postId
+                )
+                """, new MapSqlParameterSource("postId", postId), Boolean.class));
     }
 
     private void ensureReplyTarget(UUID postId, UUID parentCommentId) {
@@ -944,6 +1451,46 @@ public class CommunityMutationService {
         }
     }
 
+    private void ensureLegacyReplyTarget(UUID postId, UUID parentCommentId) {
+        boolean valid = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM post_comments
+                    WHERE id = :parentCommentId
+                      AND post_id = :postId
+                      AND parent_id IS NULL
+                )
+                """, new MapSqlParameterSource()
+                .addValue("postId", postId)
+                .addValue("parentCommentId", parentCommentId), Boolean.class));
+        if (!valid) {
+            throw new IllegalArgumentException("Parent comment not found");
+        }
+    }
+
+    private void ensureLegacyCommentVisibleForViewer(UUID viewerId, UUID commentId) {
+        boolean visible = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM post_comments c
+                    JOIN posts p ON p.id = c.post_id
+                    WHERE c.id = :commentId
+                      AND (COALESCE(p.is_hidden, false) = false OR p.user_id = :viewerId)
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = c.user_id)
+                           OR (b.blocker_profile_id = c.user_id AND b.blocked_profile_id = :viewerId)
+                      )
+                )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("commentId", commentId), Boolean.class));
+        if (!visible) {
+            throw new NoSuchElementException("Community comment not found");
+        }
+    }
+
     private UUID requireCommentOwnerAndPost(UUID viewerId, UUID commentId) {
         try {
             return jdbc.queryForObject("""
@@ -960,6 +1507,21 @@ public class CommunityMutationService {
         }
     }
 
+    private UUID legacyCommentOwnerPostId(UUID viewerId, UUID commentId) {
+        try {
+            return jdbc.queryForObject("""
+                    SELECT post_id
+                    FROM post_comments
+                    WHERE id = :commentId
+                      AND user_id = :viewerId
+                    """, new MapSqlParameterSource()
+                    .addValue("viewerId", viewerId)
+                    .addValue("commentId", commentId), UUID.class);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
     private void ensureReportTargetExists(String targetType, UUID targetId) {
         String sql = switch (targetType) {
             case "POST" -> """
@@ -969,6 +1531,11 @@ public class CommunityMutationService {
                         WHERE id = :targetId
                           AND status <> 'DELETED'
                     )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM posts
+                        WHERE id = :targetId
+                    )
                     """;
             case "COMMENT" -> """
                     SELECT EXISTS (
@@ -976,6 +1543,11 @@ public class CommunityMutationService {
                         FROM community_comments
                         WHERE id = :targetId
                           AND status <> 'DELETED'
+                    )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM post_comments
+                        WHERE id = :targetId
                     )
                     """;
             case "PROFILE" -> """
@@ -1039,6 +1611,33 @@ public class CommunityMutationService {
                 """, new MapSqlParameterSource()
                 .addValue("postId", postId)
                 .addValue("reactionType", reactionType), Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private int countLegacyPostLikes(UUID postId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM post_likes
+                WHERE post_id = :postId
+                """, new MapSqlParameterSource("postId", postId), Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private int countLegacyPostSaves(UUID postId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM saved_posts
+                WHERE post_id = :postId
+                """, new MapSqlParameterSource("postId", postId), Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private int countLegacyCommentLikes(UUID commentId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM comment_likes
+                WHERE comment_id = :commentId
+                """, new MapSqlParameterSource("commentId", commentId), Integer.class);
         return count == null ? 0 : count;
     }
 

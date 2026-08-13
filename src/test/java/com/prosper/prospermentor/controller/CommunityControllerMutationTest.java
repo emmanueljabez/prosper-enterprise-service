@@ -1,10 +1,17 @@
 package com.prosper.prospermentor.controller;
 
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentReactionResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesDto;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostMutationResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySavedPostsResponse;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserPrincipal;
 import com.prosper.prospermentor.service.community.CommunityMutationService;
@@ -86,6 +93,97 @@ class CommunityControllerMutationTest {
     }
 
     @Test
+    void getPostUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID postId = UUID.randomUUID();
+        CommunityPostItem response = postItem(postId, viewerId);
+        when(readService.getPost(eq(viewerId), eq(postId))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.getPost(authentication(viewerId), postId);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(readService).getPost(viewerId, postId);
+    }
+
+    @Test
+    void getSavedPostsUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        CommunitySavedPostsResponse response = new CommunitySavedPostsResponse(List.of(), 20);
+        when(readService.getSavedPosts(eq(viewerId), eq(20))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.getSavedPosts(authentication(viewerId), 20);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(readService).getSavedPosts(viewerId, 20);
+    }
+
+    @Test
+    void getMyPostsUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        CommunityMyPostsResponse response = new CommunityMyPostsResponse(List.of(), 20);
+        when(readService.getMyPosts(eq(viewerId), eq(20))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.getMyPosts(authentication(viewerId), 20);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(readService).getMyPosts(viewerId, 20);
+    }
+
+    @Test
+    void setPostHiddenUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID postId = UUID.randomUUID();
+        CommunityPostHiddenRequest request = new CommunityPostHiddenRequest(true);
+        CommunityPostHiddenResponse response = new CommunityPostHiddenResponse(postId, true);
+        when(mutationService.setPostHidden(eq(viewerId), eq(postId), eq(request))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.setPostHidden(authentication(viewerId), postId, request);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().isSuccess()).isTrue();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).setPostHidden(eq(viewerId), eq(postId), any(CommunityPostHiddenRequest.class));
+    }
+
+    @Test
+    void reactToCommentUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        CommunityReactionRequest request = new CommunityReactionRequest("like");
+        CommunityCommentReactionResponse response = new CommunityCommentReactionResponse(commentId, "LIKE", true, 2);
+        when(mutationService.reactToComment(eq(viewerId), eq(commentId), eq(request))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.reactToComment(authentication(viewerId), commentId, request);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).reactToComment(viewerId, commentId, request);
+    }
+
+    @Test
+    void removeCommentReactionUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID commentId = UUID.randomUUID();
+        CommunityCommentReactionResponse response = new CommunityCommentReactionResponse(commentId, "LIKE", false, 1);
+        when(mutationService.removeCommentReaction(eq(viewerId), eq(commentId), eq("like"))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.removeCommentReaction(authentication(viewerId), commentId, "like");
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).removeCommentReaction(viewerId, commentId, "like");
+    }
+
+    @Test
     void getNotificationPreferencesUsesAuthenticatedPrincipal() {
         UUID viewerId = UUID.randomUUID();
         CommunityNotificationPreferencesDto response = new CommunityNotificationPreferencesDto(
@@ -160,6 +258,41 @@ class CommunityControllerMutationTest {
                 null,
                 null,
                 List.of()
+        );
+    }
+
+    private CommunityPostItem postItem(UUID postId, UUID viewerId) {
+        return new CommunityPostItem(
+                postId,
+                viewerId,
+                "Community post",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                0,
+                0,
+                OffsetDateTime.now(),
+                new CommunityProfileSummary(
+                        viewerId,
+                        "Member",
+                        "One",
+                        null,
+                        "MENTEE",
+                        "",
+                        null,
+                        null,
+                        false
+                ),
+                false,
+                false,
+                false,
+                null,
+                null,
+                0
         );
     }
 }

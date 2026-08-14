@@ -53,6 +53,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -271,6 +272,8 @@ public class CompanyMentorEnrollmentService {
         invitation.setInvitationTokenHash(null);
         invitation.setInvitationTokenExpiresAt(null);
         invitationRepository.save(invitation);
+
+        notificationService.sendMentorWelcome(company, mentor, savedMembership.getVisibilityMode());
 
         return toPoolMemberDto(savedMembership);
     }
@@ -770,8 +773,7 @@ public class CompanyMentorEnrollmentService {
         if (search == null) {
             return true;
         }
-        return List.of(member.getMentorName(), member.getMentorEmail(), member.getTitle())
-                .stream()
+        return Stream.of(member.getMentorName(), member.getMentorEmail(), member.getTitle())
                 .filter(Objects::nonNull)
                 .map(value -> value.toLowerCase(Locale.ROOT))
                 .anyMatch(value -> value.contains(search));

@@ -2,6 +2,7 @@ package com.prosper.prospermentor.dto.community;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class CommunityDtos {
@@ -264,6 +265,25 @@ public final class CommunityDtos {
             List<NetworkMember> following,
             List<NetworkMember> pendingRequests,
             List<NetworkMember> sentRequests
+    ) {
+    }
+
+    public record CommunityRealtimeEventItem(
+            UUID id,
+            String type,
+            String sourceType,
+            String aggregateType,
+            UUID aggregateId,
+            UUID actorProfileId,
+            UUID recipientProfileId,
+            Map<String, Object> payload,
+            OffsetDateTime createdAt
+    ) {
+    }
+
+    public record CommunityRealtimeEventsResponse(
+            List<CommunityRealtimeEventItem> events,
+            int limit
     ) {
     }
 }

@@ -15,9 +15,18 @@ public class CommunityRealtimeBroker {
     private static final long STREAM_TIMEOUT_MILLIS = 300_000L;
 
     private final CopyOnWriteArrayList<Subscription> subscriptions = new CopyOnWriteArrayList<>();
+    private final EmitterFactory emitterFactory;
+
+    public CommunityRealtimeBroker() {
+        this(SseEmitter::new);
+    }
+
+    CommunityRealtimeBroker(EmitterFactory emitterFactory) {
+        this.emitterFactory = emitterFactory;
+    }
 
     public SseEmitter subscribe(UUID viewerId, Set<UUID> visiblePostIds) {
-        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MILLIS);
+        SseEmitter emitter = emitterFactory.create(STREAM_TIMEOUT_MILLIS);
         Subscription subscription = new Subscription(viewerId, normalize(visiblePostIds), emitter);
         subscriptions.add(subscription);
 
@@ -28,6 +37,7 @@ public class CommunityRealtimeBroker {
         });
         emitter.onError(error -> subscriptions.remove(subscription));
 
+        sendHandshake(subscription);
         return emitter;
     }
 
@@ -51,6 +61,21 @@ public class CommunityRealtimeBroker {
 
     private Set<UUID> normalize(Set<UUID> ids) {
         return ids == null || ids.isEmpty() ? Set.of() : Set.copyOf(ids);
+    }
+
+    private void sendHandshake(Subscription subscription) {
+        try {
+            subscription.emitter().send(SseEmitter.event()
+                    .name("community.stream.connected")
+                    .data(Map.of("type", "community.stream.connected")));
+        } catch (IOException | IllegalStateException e) {
+            subscriptions.remove(subscription);
+            subscription.emitter().completeWithError(e);
+        }
+    }
+
+    interface EmitterFactory {
+        SseEmitter create(Long timeoutMillis);
     }
 
     private record Subscription(UUID viewerId, Set<UUID> visiblePostIds, SseEmitter emitter) {

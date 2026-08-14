@@ -6,6 +6,7 @@ import com.prosper.prospermentor.security.SupabaseUserPrincipal;
 import com.prosper.prospermentor.service.community.CommunityRealtimeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -57,6 +58,8 @@ public class CommunityRealtimeController {
         SseEmitter emitter = realtimeService.openStream(userId, visiblePostIds);
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_EVENT_STREAM)
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-transform")
+                .header("X-Accel-Buffering", "no")
                 .body(emitter);
     }
 

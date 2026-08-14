@@ -6,6 +6,7 @@ import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
 import com.prosper.prospermentor.service.community.CommunityRealtimeService;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -82,6 +83,8 @@ class CommunityRealtimeControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(emitter);
+        assertThat(response.getHeaders().getFirst("X-Accel-Buffering")).isEqualTo("no");
+        assertThat(response.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL)).contains("no-cache");
         verify(realtimeService).openStream(viewerId, Set.of(postId));
     }
 

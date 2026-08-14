@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light">
-    <title>Mentor Invitation</title>
+    <title>Welcome Mentor</title>
     <style>
         * {
             box-sizing: border-box;
@@ -58,7 +58,7 @@
             display: inline-block;
         }
 
-        .invite-chip {
+        .welcome-chip {
             width: fit-content;
             margin: 0 auto 16px;
             padding: 8px 13px;
@@ -127,16 +127,11 @@
             height: 38px;
             border-radius: 14px;
             background: #edf7f2;
+            color: #2d6a4f;
+            font-size: 11px;
+            font-weight: 800;
             text-align: center;
             line-height: 38px;
-        }
-
-        .company-icon,
-        .time-icon {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            vertical-align: -4px;
         }
 
         .label {
@@ -237,13 +232,6 @@
             line-height: 1.5;
         }
 
-        .fallback-copy {
-            margin: 6px 0 0;
-            color: #6b8a7d;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
         .footer {
             padding: 26px 10px 0;
             color: #6b8a7d;
@@ -282,8 +270,8 @@
     </style>
 </head>
 <body>
-<div class="preheader" th:text="${company.name + ' invited you to mentor on ProsperMentor.'}">
-    Kenya Airways invited you to mentor on ProsperMentor.
+<div class="preheader" th:text="${mentorName + ', your ProsperMentor mentor profile is now connected to ' + company.name + '.'}">
+    David, your ProsperMentor mentor profile is now connected to Kenya Airways.
 </div>
 <div class="page">
     <div class="shell">
@@ -291,21 +279,19 @@
             <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
         </div>
 
-        <div class="invite-chip"><span class="spark-dot"></span>MENTOR INVITE</div>
+        <div class="welcome-chip"><span class="spark-dot"></span>WELCOME MENTOR</div>
 
-        <h1 class="headline">You&#39;re invited to<br>mentor.</h1>
+        <h1 class="headline" th:utext="|Welcome to&lt;br&gt;${company.name}.|">Welcome to<br>Kenya Airways.</h1>
 
-        <p class="subcopy" th:text="${company.name + ' invited you to join their ProsperMentor mentor pool. Complete your mentor profile to continue.'}">
-            Kenya Airways invited you to join their ProsperMentor mentor pool. Complete your mentor profile to continue.
+        <p class="subcopy" th:text="${mentorName + ', your ProsperMentor mentor profile is now connected to ' + company.name + '.'}">
+            David, your ProsperMentor mentor profile is now connected to Kenya Airways.
         </p>
 
         <div class="info-card">
             <table class="info-row" role="presentation" aria-hidden="true">
                 <tr>
                     <td class="icon-cell">
-                        <div class="icon-box">
-                            <span class="company-icon">PM</span>
-                        </div>
+                        <div class="icon-box">CO</div>
                     </td>
                     <td>
                         <span class="label">COMPANY</span>
@@ -314,50 +300,45 @@
                 </tr>
                 <tr>
                     <td class="icon-cell">
-                        <div class="icon-box">
-                            <span class="time-icon">24</span>
-                        </div>
+                        <div class="icon-box">VI</div>
                     </td>
                     <td>
-                        <span class="label">INVITE EXPIRES</span>
-                        <span class="value" th:text="${expiresAt}">2026-08-20T09:30</span>
+                        <span class="label">VISIBILITY</span>
+                        <span class="value" th:text="${visibilityLabel}">Company private</span>
                     </td>
                 </tr>
             </table>
 
             <div class="join-section">
                 <p class="join-copy">
-                    Continue through the standard Prosper Mentor signup flow to complete your mentor profile.
+                    Open your mentor dashboard to review availability, requests, and profile settings.
                 </p>
                 <a class="join-button"
-                   th:href="${invitationUrl}"
-                   href="https://www.prospermentor.com/auth?mode=signup&amp;flow=mentor">
-                    Continue mentor signup<span class="join-icon">-&gt;</span>
+                   th:href="${dashboardUrl}"
+                   href="https://www.prospermentor.com/mentor-dashboard">
+                    Open mentor dashboard<span class="join-icon">-&gt;</span>
                 </a>
             </div>
         </div>
 
         <div class="next-card">
-            <p class="section-title">WHAT HAPPENS NEXT</p>
+            <p class="section-title">NEXT STEPS</p>
             <table class="tip-row" role="presentation">
                 <tr>
                     <td class="tip-dot-cell"><span class="tip-dot"></span></td>
-                    <td class="tip-text">Create or complete your Prosper Mentor profile with your expertise, availability, and mentoring focus.</td>
+                    <td class="tip-text">Keep your availability current so company mentees can request sessions at the right time.</td>
                 </tr>
                 <tr>
                     <td class="tip-dot-cell"><span class="tip-dot"></span></td>
-                    <td class="tip-text">After onboarding, your mentor visibility follows your company configuration: company-only, public, or hybrid.</td>
+                    <td class="tip-text">Your company mentor visibility follows the configuration selected by the company admin.</td>
                 </tr>
             </table>
-            <p class="fallback-copy">
-                If the link has expired or does not work, ask your company admin to resend the invite or contact ProsperMentor support.
-            </p>
         </div>
 
         <div class="footer">
             <p>
-                You are receiving this email because <span th:text="${company.name}">your company</span>
-                invited <span th:text="${email}">mentor@example.com</span> to join ProsperMentor as a mentor.
+                You are receiving this email because your mentor profile was added to
+                <span th:text="${company.name}">your company</span> on <span th:text="${appName}">ProsperMentor</span>.
             </p>
             <p class="footer-links">
                 <a href="mailto:customersuccess@prospermentor.com">Support</a>

@@ -262,11 +262,37 @@ class CompanyMentorEnrollmentServiceTest {
     }
 
     @Test
+    void acceptInvitation_shouldSendCompanyMentorWelcomeAfterActivation() {
+        CompanyMentorInvitation invitation = invitation("mentor@example.com", "+254720482575");
+        invitation.setDefaultVisibility(CompanyMentorPoolMembership.VisibilityMode.PUBLIC_REQUESTED);
+        Profile mentor = mentorProfile();
+        MentorProfile mentorProfile = mentorDetails(true);
+
+        when(invitationRepository.findByInvitationTokenHash(anyString())).thenReturn(Optional.of(invitation));
+        when(profileRepository.findById(MENTOR_ID)).thenReturn(Optional.of(mentor));
+        when(mentorProfileRepository.findById(MENTOR_ID)).thenReturn(Optional.of(mentorProfile));
+        when(membershipRepository.findByCompany_IdAndMentorProfile_IdAndMembershipStatusIn(eq(COMPANY_ID), eq(MENTOR_ID), any()))
+                .thenReturn(Optional.empty());
+        when(membershipRepository.save(any(CompanyMentorPoolMembership.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(invitationRepository.save(any(CompanyMentorInvitation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.acceptInvitation("plain-token", MENTOR_ID);
+
+        verify(notificationService).sendMentorWelcome(
+                eq(company),
+                eq(mentor),
+                eq(CompanyMentorPoolMembership.VisibilityMode.PUBLIC_REQUESTED)
+        );
+    }
+
+    @Test
     void resendInvitation_shouldReplaceTokenAndAttemptBothChannels() {
         UUID invitationId = UUID.fromString("dddddddd-dddd-dddd-dddd-dddddddddddd");
         CompanyMentorInvitation invitation = invitation("mentor@example.com", "+254720482575");
         invitation.setId(invitationId);
         invitation.setInvitationTokenHash("old-token-hash");
+        LocalDateTime oldExpiry = LocalDateTime.now().plusDays(1);
+        invitation.setInvitationTokenExpiresAt(oldExpiry);
 
         when(invitationRepository.findById(invitationId)).thenReturn(Optional.of(invitation));
         when(invitationRepository.save(any(CompanyMentorInvitation.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -283,7 +309,21 @@ class CompanyMentorEnrollmentServiceTest {
         assertThat(result.getWhatsappDeliveryStatus()).isEqualTo(CompanyMentorInvitation.DeliveryStatus.SENT);
         assertThat(invitation.getInvitationTokenHash()).isNotEqualTo("old-token-hash");
         assertThat(invitation.getInvitationTokenHash()).hasSize(64);
+        assertThat(invitation.getInvitationTokenExpiresAt()).isAfter(oldExpiry);
         assertThat(invitation.getLastSentAt()).isNotNull();
+
+        ArgumentCaptor<String> rawTokenCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<LocalDateTime> expiresAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(notificationService).sendMentorInvitation(
+                eq(company),
+                eq("mentor@example.com"),
+                eq("+254720482575"),
+                rawTokenCaptor.capture(),
+                expiresAtCaptor.capture()
+        );
+        assertThat(rawTokenCaptor.getValue()).isNotBlank();
+        assertThat(invitation.getInvitationTokenExpiresAt()).isEqualTo(expiresAtCaptor.getValue());
+        assertThat(expiresAtCaptor.getValue()).isAfter(LocalDateTime.now().plusDays(6));
     }
 
     @Test

@@ -273,6 +273,8 @@ public class CompanyMentorEnrollmentService {
         invitation.setInvitationTokenExpiresAt(null);
         invitationRepository.save(invitation);
 
+        notificationService.sendMentorWelcome(company, mentor, savedMembership.getVisibilityMode());
+
         return toPoolMemberDto(savedMembership);
     }
 

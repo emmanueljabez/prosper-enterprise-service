@@ -74,6 +74,31 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityHashtagItem(
+            String tag,
+            int postsCount
+    ) {
+    }
+
+    public record CommunitySearchPersonItem(
+            CommunityProfileSummary profile,
+            String relationshipStatus,
+            int score,
+            List<RecommendationReason> reasons
+    ) {
+    }
+
+    public record CommunitySearchResponse(
+            String query,
+            String type,
+            int limit,
+            List<CommunityPostItem> posts,
+            List<CommunitySearchPersonItem> people,
+            List<CommunityCategoryItem> categories,
+            List<CommunityHashtagItem> hashtags
+    ) {
+    }
+
     public record CommunityPostRequest(
             UUID categoryId,
             String content,
@@ -265,6 +290,13 @@ public final class CommunityDtos {
             List<NetworkMember> following,
             List<NetworkMember> pendingRequests,
             List<NetworkMember> sentRequests
+    ) {
+    }
+
+    public record CommunityPeopleDiscoveryResponse(
+            List<RecommendedPerson> suggestedPeople,
+            List<NetworkMember> recentConnections,
+            int limit
     ) {
     }
 

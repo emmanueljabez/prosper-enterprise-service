@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -181,5 +182,78 @@ class CommunityReadServiceTest {
                 .contains("blocked_profile_id = p.id")
                 .contains("blocker_profile_id = p.id")
                 .contains("blocked_profile_id = :viewerId");
+    }
+
+    @Test
+    void normalizesSearchTypeToSupportedScopes() {
+        assertThat(service.normalizeSearchType("posts")).isEqualTo("posts");
+        assertThat(service.normalizeSearchType("people")).isEqualTo("people");
+        assertThat(service.normalizeSearchType("categories")).isEqualTo("categories");
+        assertThat(service.normalizeSearchType("hashtags")).isEqualTo("hashtags");
+        assertThat(service.normalizeSearchType("unknown")).isEqualTo("all");
+        assertThat(service.normalizeSearchType(null)).isEqualTo("all");
+    }
+
+    @Test
+    void searchRejectsBlankQuery() {
+        assertThatThrownBy(() -> service.search(UUID.randomUUID(), "   ", "all", 20))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Search query is required");
+    }
+
+    @Test
+    void searchAllQueriesPostsPeopleCategoriesAndHashtagsWithBlockFiltering() {
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        service.search(UUID.randomUUID(), "mentor", "all", 10);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc, atLeastOnce()).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getAllValues())
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM posts p")
+                        .contains("community_blocks")
+                        .contains("p.content ILIKE :searchPattern"))
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM profiles p")
+                        .contains("community_blocks")
+                        .contains("p.first_name ILIKE :searchPattern"))
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM community_categories c")
+                        .contains("c.is_active = true"))
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("regexp_matches(p.content")
+                        .contains("community_blocks"));
+    }
+
+    @Test
+    void peopleDiscoveryQueriesRecentConnectionsWithBlockFiltering() {
+        UUID viewerId = UUID.randomUUID();
+        when(jdbc.queryForMap(anyString(), any(MapSqlParameterSource.class)))
+                .thenReturn(Map.of(
+                        "id", viewerId,
+                        "role", "mentee",
+                        "industry", "Technology",
+                        "country", "Kenya",
+                        "interests", List.of("leadership")
+                ));
+        when(jdbc.queryForList(anyString(), any(MapSqlParameterSource.class)))
+                .thenReturn(List.of());
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        service.getPeopleDiscovery(viewerId, 8);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM syncs s")
+                .contains("s.status = 'accepted'")
+                .contains("community_blocks")
+                .contains("blocker_profile_id = :viewerId")
+                .contains("blocked_profile_id = other_profile.id");
     }
 }

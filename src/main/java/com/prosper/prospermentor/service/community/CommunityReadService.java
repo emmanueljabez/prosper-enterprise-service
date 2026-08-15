@@ -1,10 +1,15 @@
 package com.prosper.prospermentor.service.community;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCategoryItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHashtagItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySavedPostsResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchPersonItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkMember;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendationReason;
@@ -150,6 +155,7 @@ public class CommunityReadService {
 
     @Transactional(readOnly = true)
     public RecommendedPeopleResponse getRecommendedPeople(UUID viewerId, int requestedLimit) {
+        requireViewer(viewerId);
         int limit = clampLimit(requestedLimit);
 
         Map<String, Object> viewer = jdbc.queryForMap("""
@@ -213,6 +219,37 @@ public class CommunityReadService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public CommunitySearchResponse search(UUID viewerId, String query, String type, int requestedLimit) {
+        requireViewer(viewerId);
+        String normalizedQuery = requireSearchQuery(query);
+        String normalizedType = normalizeSearchType(type);
+        int limit = clampLimit(requestedLimit);
+
+        return new CommunitySearchResponse(
+                normalizedQuery,
+                normalizedType,
+                limit,
+                shouldSearch(normalizedType, "posts") ? searchPosts(viewerId, normalizedQuery, limit) : List.of(),
+                shouldSearch(normalizedType, "people") ? searchPeople(viewerId, normalizedQuery, limit) : List.of(),
+                shouldSearch(normalizedType, "categories") ? searchCategories(normalizedQuery, limit) : List.of(),
+                shouldSearch(normalizedType, "hashtags") ? searchHashtags(viewerId, normalizedQuery, limit) : List.of()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityPeopleDiscoveryResponse getPeopleDiscovery(UUID viewerId, int requestedLimit) {
+        requireViewer(viewerId);
+        int limit = clampLimit(requestedLimit);
+        RecommendedPeopleResponse suggested = getRecommendedPeople(viewerId, limit);
+
+        return new CommunityPeopleDiscoveryResponse(
+                suggested.people(),
+                queryRecentConnections(viewerId, limit),
+                limit
+        );
+    }
+
     public String normalizeFeedMode(String mode) {
         if ("ranked".equalsIgnoreCase(mode)) {
             return "ranked";
@@ -220,11 +257,200 @@ public class CommunityReadService {
         return "latest";
     }
 
+    public String normalizeSearchType(String type) {
+        String normalized = normalize(type);
+        return switch (normalized) {
+            case "posts", "people", "categories", "hashtags" -> normalized;
+            default -> "all";
+        };
+    }
+
     public int clampLimit(int requestedLimit) {
         if (requestedLimit <= 0) {
             return 20;
         }
         return Math.min(requestedLimit, 50);
+    }
+
+    private List<CommunityPostItem> searchPosts(UUID viewerId, String query, int limit) {
+        String sql = """
+                %s
+                FROM posts p
+                JOIN profiles author ON author.id = p.user_id
+                WHERE (p.content ILIKE :searchPattern
+                   OR COALESCE(p.link_preview_title, '') ILIKE :searchPattern
+                   OR COALESCE(p.link_preview_description, '') ILIKE :searchPattern)
+                  AND (COALESCE(p.is_hidden, false) = false
+                   OR p.user_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                       OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                  )
+                ORDER BY p.created_at DESC
+                LIMIT :limit
+                """.formatted(legacyPostSelectColumns());
+
+        return jdbc.query(sql, searchParameters(viewerId, query, limit), postRowMapper());
+    }
+
+    private List<CommunitySearchPersonItem> searchPeople(UUID viewerId, String query, int limit) {
+        String sql = """
+                SELECT
+                    p.id,
+                    p.first_name,
+                    p.last_name,
+                    p.avatar_url,
+                    p.role::text AS role,
+                    COALESCE(p.bio, '') AS headline,
+                    p.industry,
+                    p.country,
+                    COALESCE(p.is_verified, false) AS is_verified,
+                    CASE
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM syncs s
+                            WHERE ((s.mentor_id = :viewerId AND s.mentee_id = p.id)
+                                OR (s.mentor_id = p.id AND s.mentee_id = :viewerId))
+                              AND s.status = 'accepted'
+                        ) THEN 'connected'
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM syncs s
+                            WHERE ((s.mentor_id = :viewerId AND s.mentee_id = p.id)
+                                OR (s.mentor_id = p.id AND s.mentee_id = :viewerId))
+                              AND s.status = 'pending'
+                              AND s.requester_id = :viewerId
+                        ) THEN 'pending_sent'
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM syncs s
+                            WHERE ((s.mentor_id = :viewerId AND s.mentee_id = p.id)
+                                OR (s.mentor_id = p.id AND s.mentee_id = :viewerId))
+                              AND s.status = 'pending'
+                              AND s.requester_id <> :viewerId
+                        ) THEN 'pending_received'
+                        WHEN EXISTS (
+                            SELECT 1
+                            FROM follows f
+                            WHERE f.follower_id = :viewerId
+                              AND f.following_id = p.id
+                        ) THEN 'following'
+                        ELSE 'none'
+                    END AS relationship_status,
+                    (
+                        CASE WHEN CONCAT_WS(' ', p.first_name, p.last_name) ILIKE :searchPattern THEN 40 ELSE 0 END
+                        + CASE WHEN COALESCE(p.bio, '') ILIKE :searchPattern THEN 20 ELSE 0 END
+                        + CASE WHEN COALESCE(p.industry, '') ILIKE :searchPattern THEN 20 ELSE 0 END
+                        + CASE WHEN COALESCE(p.country, '') ILIKE :searchPattern THEN 10 ELSE 0 END
+                        + CASE WHEN p.role::text ILIKE :searchPattern THEN 10 ELSE 0 END
+                    ) AS search_score
+                FROM profiles p
+                WHERE p.id <> :viewerId
+                  AND (p.first_name ILIKE :searchPattern
+                   OR p.last_name ILIKE :searchPattern
+                   OR COALESCE(p.bio, '') ILIKE :searchPattern
+                   OR COALESCE(p.industry, '') ILIKE :searchPattern
+                   OR COALESCE(p.country, '') ILIKE :searchPattern
+                   OR p.role::text ILIKE :searchPattern)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                       OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
+                  )
+                ORDER BY search_score DESC, p.first_name ASC, p.last_name ASC
+                LIMIT :limit
+                """;
+
+        return jdbc.query(sql, searchParameters(viewerId, query, limit), searchPersonRowMapper(query));
+    }
+
+    private List<CommunityCategoryItem> searchCategories(String query, int limit) {
+        String sql = """
+                SELECT c.id, c.slug, c.name, c.description, c.sort_order
+                FROM community_categories c
+                WHERE c.is_active = true
+                  AND (c.name ILIKE :searchPattern
+                   OR c.slug ILIKE :searchPattern
+                   OR COALESCE(c.description, '') ILIKE :searchPattern)
+                ORDER BY c.sort_order ASC, c.name ASC
+                LIMIT :limit
+                """;
+
+        return jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("searchPattern", searchPattern(query))
+                .addValue("limit", limit), categoryRowMapper());
+    }
+
+    private List<CommunityHashtagItem> searchHashtags(UUID viewerId, String query, int limit) {
+        String hashtagQuery = query.startsWith("#") ? query.substring(1) : query;
+        String sql = """
+                SELECT LOWER(matches[1]) AS tag, COUNT(DISTINCT p.id)::int AS posts_count
+                FROM posts p
+                CROSS JOIN LATERAL regexp_matches(p.content, '#([[:alnum:]_][[:alnum:]_-]*)', 'g') AS matches
+                WHERE matches[1] ILIKE :searchPattern
+                  AND (COALESCE(p.is_hidden, false) = false
+                   OR p.user_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                       OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                  )
+                GROUP BY LOWER(matches[1])
+                ORDER BY posts_count DESC, tag ASC
+                LIMIT :limit
+                """;
+
+        return jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("searchPattern", searchPattern(hashtagQuery))
+                .addValue("limit", limit), (rs, rowNum) -> new CommunityHashtagItem(
+                rs.getString("tag"),
+                rs.getInt("posts_count")
+        ));
+    }
+
+    private List<NetworkMember> queryRecentConnections(UUID viewerId, int limit) {
+        String sql = """
+                SELECT other_profile.*, s.id AS relationship_id, s.updated_at AS connected_at, 'connected' AS relationship_status
+                FROM syncs s
+                JOIN profiles other_profile ON other_profile.id = CASE
+                    WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                    ELSE s.mentor_id
+                END
+                WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
+                  AND s.status = 'accepted'
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = other_profile.id)
+                       OR (b.blocker_profile_id = other_profile.id AND b.blocked_profile_id = :viewerId)
+                  )
+                ORDER BY s.updated_at DESC
+                LIMIT :limit
+                """;
+
+        return jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("limit", limit), networkMemberRowMapper());
+    }
+
+    private boolean shouldSearch(String normalizedType, String requestedType) {
+        return "all".equals(normalizedType) || requestedType.equals(normalizedType);
+    }
+
+    private MapSqlParameterSource searchParameters(UUID viewerId, String query, int limit) {
+        return new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("searchPattern", searchPattern(query))
+                .addValue("limit", limit);
+    }
+
+    private String searchPattern(String query) {
+        return "%" + query + "%";
     }
 
     private String legacyPostSelectColumns() {
@@ -460,6 +686,61 @@ public class CommunityReadService {
         );
     }
 
+    private RowMapper<CommunityCategoryItem> categoryRowMapper() {
+        return (rs, rowNum) -> new CommunityCategoryItem(
+                uuid(rs, "id"),
+                rs.getString("slug"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getInt("sort_order")
+        );
+    }
+
+    private RowMapper<CommunitySearchPersonItem> searchPersonRowMapper(String query) {
+        return (rs, rowNum) -> {
+            CommunityProfileSummary profile = new CommunityProfileSummary(
+                    uuid(rs, "id"),
+                    rs.getString("first_name"),
+                    rs.getString("last_name"),
+                    rs.getString("avatar_url"),
+                    rs.getString("role"),
+                    rs.getString("headline"),
+                    rs.getString("industry"),
+                    rs.getString("country"),
+                    rs.getBoolean("is_verified")
+            );
+            return new CommunitySearchPersonItem(
+                    profile,
+                    rs.getString("relationship_status"),
+                    rs.getInt("search_score"),
+                    searchReasons(profile, query)
+            );
+        };
+    }
+
+    private List<RecommendationReason> searchReasons(CommunityProfileSummary profile, String query) {
+        List<RecommendationReason> reasons = new ArrayList<>();
+        if (containsText(profile.firstName(), query) || containsText(profile.lastName(), query)) {
+            reasons.add(new RecommendationReason("name_match", "Name match"));
+        }
+        if (containsText(profile.headline(), query)) {
+            reasons.add(new RecommendationReason("headline_match", "Profile match"));
+        }
+        if (containsText(profile.industry(), query)) {
+            reasons.add(new RecommendationReason("industry_match", "Industry match"));
+        }
+        if (containsText(profile.country(), query)) {
+            reasons.add(new RecommendationReason("country_match", "Country match"));
+        }
+        if (containsText(profile.role(), query)) {
+            reasons.add(new RecommendationReason("role_match", "Role match"));
+        }
+        if (reasons.isEmpty()) {
+            reasons.add(new RecommendationReason("profile_match", "Profile match"));
+        }
+        return reasons;
+    }
+
     private CommunityProfileSummary profileFromMap(Map<String, Object> row) {
         return new CommunityProfileSummary(
                 (UUID) row.get("id"),
@@ -491,10 +772,22 @@ public class CommunityReadService {
         }
     }
 
+    private String requireSearchQuery(String query) {
+        String normalized = Objects.toString(query, "").trim();
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("Search query is required");
+        }
+        return normalized;
+    }
+
     private boolean sameText(Object left, Object right) {
         String a = normalize(left);
         String b = normalize(right);
         return !a.isBlank() && a.equals(b);
+    }
+
+    private boolean containsText(String value, String query) {
+        return normalize(value).contains(normalize(query));
     }
 
     private boolean isComplementaryRole(Object viewerRole, Object candidateRole) {

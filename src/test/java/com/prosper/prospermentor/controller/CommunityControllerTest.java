@@ -1,6 +1,8 @@
 package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendedPeopleResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
@@ -90,5 +92,55 @@ class CommunityControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(body).isNotNull();
         assertThat(data.connections()).isEmpty();
+    }
+
+    @Test
+    void searchRequiresAuthentication() {
+        var response = controller.search(null, "mentor", "all", 20);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isFalse();
+    }
+
+    @Test
+    void searchUsesAuthenticatedUserId() {
+        UUID userId = UUID.randomUUID();
+        when(communityReadService.search(eq(userId), eq("mentor"), eq("all"), eq(10)))
+                .thenReturn(new CommunitySearchResponse("mentor", "all", 10, List.of(), List.of(), List.of(), List.of()));
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                new SupabaseUserDetails(userId.toString(), "member@example.com", "MENTEE"),
+                null
+        );
+
+        var response = controller.search(auth, "mentor", "all", 10);
+        var body = response.getBody();
+        var data = (CommunitySearchResponse) body.getData();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body).isNotNull();
+        assertThat(data.query()).isEqualTo("mentor");
+        assertThat(data.type()).isEqualTo("all");
+    }
+
+    @Test
+    void peopleDiscoveryUsesAuthenticatedUserId() {
+        UUID userId = UUID.randomUUID();
+        when(communityReadService.getPeopleDiscovery(eq(userId), eq(8)))
+                .thenReturn(new CommunityPeopleDiscoveryResponse(List.of(), List.of(), 8));
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                new SupabaseUserDetails(userId.toString(), "member@example.com", "MENTEE"),
+                null
+        );
+
+        var response = controller.getPeopleDiscovery(auth, 8);
+        var body = response.getBody();
+        var data = (CommunityPeopleDiscoveryResponse) body.getData();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body).isNotNull();
+        assertThat(data.limit()).isEqualTo(8);
     }
 }

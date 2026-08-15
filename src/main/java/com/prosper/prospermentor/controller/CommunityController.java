@@ -83,6 +83,34 @@ public class CommunityController {
         ));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<?>> search(
+            Authentication authentication,
+            @RequestParam(name = "q") String query,
+            @RequestParam(defaultValue = "all") String type,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.search(userId, query, type, limit),
+                "Community search results retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/discovery/people")
+    public ResponseEntity<ApiResponse<?>> getPeopleDiscovery(
+            Authentication authentication,
+            @RequestParam(defaultValue = "12") int limit
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getPeopleDiscovery(userId, limit),
+                "Community people discovery retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/categories")
     public ResponseEntity<ApiResponse<?>> getCategories(Authentication authentication) {
         return execute(

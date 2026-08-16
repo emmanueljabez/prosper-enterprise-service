@@ -1,6 +1,9 @@
 package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentReactionResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionStatusRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFollowResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesDto;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
@@ -208,6 +211,105 @@ class CommunityControllerMutationTest {
         assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(result.getBody()).isNotNull();
         assertThat(result.getBody().getData()).isEqualTo(response);
+    }
+
+    @Test
+    void followProfileUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID targetProfileId = UUID.randomUUID();
+        CommunityFollowResponse response = new CommunityFollowResponse(targetProfileId, true);
+        when(mutationService.followProfile(eq(viewerId), eq(targetProfileId))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.followProfile(authentication(viewerId), targetProfileId);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).followProfile(viewerId, targetProfileId);
+    }
+
+    @Test
+    void unfollowProfileUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID targetProfileId = UUID.randomUUID();
+        CommunityFollowResponse response = new CommunityFollowResponse(targetProfileId, false);
+        when(mutationService.unfollowProfile(eq(viewerId), eq(targetProfileId))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.unfollowProfile(authentication(viewerId), targetProfileId);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).unfollowProfile(viewerId, targetProfileId);
+    }
+
+    @Test
+    void requestConnectionUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID targetProfileId = UUID.randomUUID();
+        UUID relationshipId = UUID.randomUUID();
+        CommunityConnectionResponse response = new CommunityConnectionResponse(
+                relationshipId,
+                targetProfileId,
+                "pending_sent"
+        );
+        when(mutationService.requestConnection(eq(viewerId), eq(targetProfileId))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.requestConnection(authentication(viewerId), targetProfileId);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).requestConnection(viewerId, targetProfileId);
+    }
+
+    @Test
+    void updateConnectionStatusUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID relationshipId = UUID.randomUUID();
+        UUID targetProfileId = UUID.randomUUID();
+        CommunityConnectionStatusRequest request = new CommunityConnectionStatusRequest("accepted");
+        CommunityConnectionResponse response = new CommunityConnectionResponse(
+                relationshipId,
+                targetProfileId,
+                "connected"
+        );
+        when(mutationService.updateConnectionStatus(eq(viewerId), eq(relationshipId), eq(request)))
+                .thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.updateConnectionStatus(
+                authentication(viewerId),
+                relationshipId,
+                request
+        );
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).updateConnectionStatus(viewerId, relationshipId, request);
+    }
+
+    @Test
+    void cancelConnectionRequestUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID relationshipId = UUID.randomUUID();
+        UUID targetProfileId = UUID.randomUUID();
+        CommunityConnectionResponse response = new CommunityConnectionResponse(
+                relationshipId,
+                targetProfileId,
+                "cancelled"
+        );
+        when(mutationService.cancelConnectionRequest(eq(viewerId), eq(relationshipId))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.cancelConnectionRequest(
+                authentication(viewerId),
+                relationshipId
+        );
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(mutationService).cancelConnectionRequest(viewerId, relationshipId);
     }
 
     @Test

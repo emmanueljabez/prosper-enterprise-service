@@ -6,6 +6,9 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCategoryIt
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentReactionResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionStatusRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFollowResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesDto;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
@@ -53,6 +56,15 @@ public class CommunityMutationService {
     private enum PostStorage {
         COMMUNITY,
         LEGACY
+    }
+
+    private record ConnectionRow(
+            UUID id,
+            UUID mentorId,
+            UUID menteeId,
+            UUID requesterId,
+            String status
+    ) {
     }
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -959,6 +971,198 @@ public class CommunityMutationService {
     }
 
     @Transactional
+    public CommunityFollowResponse followProfile(UUID viewerId, UUID targetProfileId) {
+        requireProfileRelationship(viewerId, targetProfileId);
+
+        int inserted = jdbc.update("""
+                INSERT INTO follows (
+                    id,
+                    follower_id,
+                    following_id,
+                    created_at
+                )
+                VALUES (:id, :viewerId, :targetProfileId, now())
+                ON CONFLICT (follower_id, following_id) DO NOTHING
+                """, new MapSqlParameterSource()
+                .addValue("id", UUID.randomUUID())
+                .addValue("viewerId", viewerId)
+                .addValue("targetProfileId", targetProfileId));
+
+        if (inserted > 0) {
+            outboxService.recordEvent(
+                    "COMMUNITY_PROFILE_FOLLOWED",
+                    "PROFILE",
+                    targetProfileId,
+                    viewerId,
+                    targetProfileId,
+                    Map.of("targetProfileId", targetProfileId)
+            );
+        }
+
+        return new CommunityFollowResponse(targetProfileId, true);
+    }
+
+    @Transactional
+    public CommunityFollowResponse unfollowProfile(UUID viewerId, UUID targetProfileId) {
+        requireViewer(viewerId);
+        requireId(targetProfileId, "targetProfileId is required");
+
+        int deleted = jdbc.update("""
+                DELETE FROM follows
+                WHERE follower_id = :viewerId
+                  AND following_id = :targetProfileId
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("targetProfileId", targetProfileId));
+
+        if (deleted > 0) {
+            outboxService.recordEvent(
+                    "COMMUNITY_PROFILE_UNFOLLOWED",
+                    "PROFILE",
+                    targetProfileId,
+                    viewerId,
+                    targetProfileId,
+                    Map.of("targetProfileId", targetProfileId)
+            );
+        }
+
+        return new CommunityFollowResponse(targetProfileId, false);
+    }
+
+    @Transactional
+    public CommunityConnectionResponse requestConnection(UUID viewerId, UUID targetProfileId) {
+        requireProfileRelationship(viewerId, targetProfileId);
+
+        ConnectionRow existing = findConnectionBetween(viewerId, targetProfileId);
+        if (existing != null) {
+            return toConnectionResponse(viewerId, existing);
+        }
+
+        UUID relationshipId = UUID.randomUUID();
+        UUID mentorId = canonicalFirst(viewerId, targetProfileId);
+        UUID menteeId = viewerId.equals(mentorId) ? targetProfileId : viewerId;
+        int inserted = jdbc.update("""
+                INSERT INTO syncs (
+                    id,
+                    mentor_id,
+                    mentee_id,
+                    requester_id,
+                    status,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    :id,
+                    :mentorId,
+                    :menteeId,
+                    :requesterId,
+                    'pending',
+                    now(),
+                    now()
+                )
+                ON CONFLICT DO NOTHING
+                """, new MapSqlParameterSource()
+                .addValue("id", relationshipId)
+                .addValue("mentorId", mentorId)
+                .addValue("menteeId", menteeId)
+                .addValue("requesterId", viewerId));
+        if (inserted == 0) {
+            ConnectionRow racedConnection = findConnectionBetween(viewerId, targetProfileId);
+            if (racedConnection != null) {
+                return toConnectionResponse(viewerId, racedConnection);
+            }
+            throw new IllegalStateException("Community connection request could not be created");
+        }
+
+        outboxService.recordEvent(
+                "COMMUNITY_CONNECTION_REQUESTED",
+                "SYNC",
+                relationshipId,
+                viewerId,
+                targetProfileId,
+                Map.of("relationshipId", relationshipId, "targetProfileId", targetProfileId)
+        );
+
+        return new CommunityConnectionResponse(relationshipId, targetProfileId, "pending_sent");
+    }
+
+    @Transactional
+    public CommunityConnectionResponse updateConnectionStatus(
+            UUID viewerId,
+            UUID relationshipId,
+            CommunityConnectionStatusRequest request
+    ) {
+        requireViewer(viewerId);
+        requireId(relationshipId, "relationshipId is required");
+        String status = normalizeConnectionDecision(request == null ? null : request.status());
+        ConnectionRow connection = requireConnectionForParticipant(viewerId, relationshipId);
+        if (!"pending".equalsIgnoreCase(connection.status())) {
+            throw new IllegalArgumentException("Only pending connection requests can be updated");
+        }
+        if (viewerId.equals(connection.requesterId())) {
+            throw new SecurityException("Connection request requester cannot accept or reject their own request");
+        }
+
+        jdbc.update("""
+                UPDATE syncs
+                SET status = :status,
+                    updated_at = now()
+                WHERE id = :relationshipId
+                """, new MapSqlParameterSource()
+                .addValue("relationshipId", relationshipId)
+                .addValue("status", status));
+
+        UUID targetProfileId = otherParticipantId(viewerId, connection);
+        String eventType = "accepted".equals(status)
+                ? "COMMUNITY_CONNECTION_ACCEPTED"
+                : "COMMUNITY_CONNECTION_REJECTED";
+        outboxService.recordEvent(
+                eventType,
+                "SYNC",
+                relationshipId,
+                viewerId,
+                targetProfileId,
+                Map.of("relationshipId", relationshipId, "targetProfileId", targetProfileId, "status", status)
+        );
+
+        return new CommunityConnectionResponse(
+                relationshipId,
+                targetProfileId,
+                "accepted".equals(status) ? "connected" : "rejected"
+        );
+    }
+
+    @Transactional
+    public CommunityConnectionResponse cancelConnectionRequest(UUID viewerId, UUID relationshipId) {
+        requireViewer(viewerId);
+        requireId(relationshipId, "relationshipId is required");
+        ConnectionRow connection = requireConnectionForParticipant(viewerId, relationshipId);
+        if (!"pending".equalsIgnoreCase(connection.status())) {
+            throw new IllegalArgumentException("Only pending connection requests can be cancelled");
+        }
+        if (!viewerId.equals(connection.requesterId())) {
+            throw new SecurityException("Only the requester can cancel this connection request");
+        }
+
+        jdbc.update("""
+                DELETE FROM syncs
+                WHERE id = :relationshipId
+                """, new MapSqlParameterSource("relationshipId", relationshipId));
+
+        UUID targetProfileId = otherParticipantId(viewerId, connection);
+        outboxService.recordEvent(
+                "COMMUNITY_CONNECTION_CANCELLED",
+                "SYNC",
+                relationshipId,
+                viewerId,
+                targetProfileId,
+                Map.of("relationshipId", relationshipId, "targetProfileId", targetProfileId)
+        );
+
+        return new CommunityConnectionResponse(relationshipId, targetProfileId, "cancelled");
+    }
+
+    @Transactional
     public CommunityReportResponse reportContent(UUID viewerId, CommunityReportRequest request) {
         requireViewer(viewerId);
         if (request == null) {
@@ -1247,6 +1451,137 @@ public class CommunityMutationService {
         String normalized = normalizeToken(reactionType, DEFAULT_REACTION_TYPE);
         if (!DEFAULT_REACTION_TYPE.equals(normalized)) {
             throw new IllegalArgumentException("Unsupported reactionType: " + reactionType);
+        }
+        return normalized;
+    }
+
+    private void requireProfileRelationship(UUID viewerId, UUID targetProfileId) {
+        requireViewer(viewerId);
+        requireId(targetProfileId, "targetProfileId is required");
+        if (viewerId.equals(targetProfileId)) {
+            throw new IllegalArgumentException("You cannot connect with yourself");
+        }
+        ensureProfileExists(targetProfileId);
+        ensureProfilesCanInteract(viewerId, targetProfileId);
+    }
+
+    private void ensureProfileExists(UUID targetProfileId) {
+        boolean exists = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM profiles
+                    WHERE id = :targetProfileId
+                )
+                """, new MapSqlParameterSource("targetProfileId", targetProfileId), Boolean.class));
+        if (!exists) {
+            throw new NoSuchElementException("Community profile not found");
+        }
+    }
+
+    private void ensureProfilesCanInteract(UUID viewerId, UUID targetProfileId) {
+        boolean blocked = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = :targetProfileId)
+                       OR (b.blocker_profile_id = :targetProfileId AND b.blocked_profile_id = :viewerId)
+                )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("targetProfileId", targetProfileId), Boolean.class));
+        if (blocked) {
+            throw new SecurityException("Community profiles cannot interact");
+        }
+    }
+
+    private ConnectionRow findConnectionBetween(UUID viewerId, UUID targetProfileId) {
+        List<ConnectionRow> rows = jdbc.query("""
+                SELECT id, mentor_id, mentee_id, requester_id, status
+                FROM syncs
+                WHERE (mentor_id = :viewerId AND mentee_id = :targetProfileId)
+                   OR (mentor_id = :targetProfileId AND mentee_id = :viewerId)
+                ORDER BY created_at DESC
+                LIMIT 1
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("targetProfileId", targetProfileId), connectionRowMapper());
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
+    private ConnectionRow requireConnectionForParticipant(UUID viewerId, UUID relationshipId) {
+        try {
+            Map<String, Object> row = jdbc.queryForMap("""
+                    SELECT id, mentor_id, mentee_id, requester_id, status
+                    FROM syncs
+                    WHERE id = :relationshipId
+                      AND (mentor_id = :viewerId OR mentee_id = :viewerId)
+                    """, new MapSqlParameterSource()
+                    .addValue("viewerId", viewerId)
+                    .addValue("relationshipId", relationshipId));
+            return connectionRowFromMap(row);
+        } catch (EmptyResultDataAccessException e) {
+            throw new NoSuchElementException("Community connection request not found");
+        }
+    }
+
+    private RowMapper<ConnectionRow> connectionRowMapper() {
+        return (rs, rowNum) -> new ConnectionRow(
+                rs.getObject("id", UUID.class),
+                rs.getObject("mentor_id", UUID.class),
+                rs.getObject("mentee_id", UUID.class),
+                rs.getObject("requester_id", UUID.class),
+                rs.getString("status")
+        );
+    }
+
+    private ConnectionRow connectionRowFromMap(Map<String, Object> row) {
+        return new ConnectionRow(
+                asUuid(row.get("id")),
+                asUuid(row.get("mentor_id")),
+                asUuid(row.get("mentee_id")),
+                asUuid(row.get("requester_id")),
+                Objects.toString(row.get("status"), "")
+        );
+    }
+
+    private UUID asUuid(Object value) {
+        if (value instanceof UUID uuid) {
+            return uuid;
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            return UUID.fromString(text);
+        }
+        return null;
+    }
+
+    private UUID canonicalFirst(UUID firstProfileId, UUID secondProfileId) {
+        return firstProfileId.toString().compareTo(secondProfileId.toString()) <= 0
+                ? firstProfileId
+                : secondProfileId;
+    }
+
+    private UUID otherParticipantId(UUID viewerId, ConnectionRow connection) {
+        if (viewerId.equals(connection.mentorId())) {
+            return connection.menteeId();
+        }
+        return connection.mentorId();
+    }
+
+    private CommunityConnectionResponse toConnectionResponse(UUID viewerId, ConnectionRow connection) {
+        UUID targetProfileId = otherParticipantId(viewerId, connection);
+        String relationshipStatus = switch (Objects.toString(connection.status(), "").toLowerCase(Locale.ROOT)) {
+            case "accepted" -> "connected";
+            case "pending" -> viewerId.equals(connection.requesterId()) ? "pending_sent" : "pending_received";
+            case "rejected" -> "rejected";
+            default -> Objects.toString(connection.status(), "none");
+        };
+        return new CommunityConnectionResponse(connection.id(), targetProfileId, relationshipStatus);
+    }
+
+    private String normalizeConnectionDecision(String status) {
+        String normalized = normalizeToken(status, null).toLowerCase(Locale.ROOT);
+        if (!List.of("accepted", "rejected").contains(normalized)) {
+            throw new IllegalArgumentException("Unsupported connection status: " + status);
         }
         return normalized;
     }

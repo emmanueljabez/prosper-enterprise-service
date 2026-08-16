@@ -2,6 +2,7 @@ package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityBlockRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCommentRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionStatusRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
@@ -358,6 +359,72 @@ public class CommunityController {
                 authentication,
                 userId -> communityMutationService.unblockUser(userId, blockedProfileId),
                 "Community user unblocked successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/follows/{targetProfileId}")
+    public ResponseEntity<ApiResponse<?>> followProfile(
+            Authentication authentication,
+            @PathVariable UUID targetProfileId
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.followProfile(userId, targetProfileId),
+                "Community profile followed successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @DeleteMapping("/follows/{targetProfileId}")
+    public ResponseEntity<ApiResponse<?>> unfollowProfile(
+            Authentication authentication,
+            @PathVariable UUID targetProfileId
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.unfollowProfile(userId, targetProfileId),
+                "Community profile unfollowed successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/connections/{targetProfileId}/request")
+    public ResponseEntity<ApiResponse<?>> requestConnection(
+            Authentication authentication,
+            @PathVariable UUID targetProfileId
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.requestConnection(userId, targetProfileId),
+                "Community connection request sent successfully",
+                HttpStatus.CREATED
+        );
+    }
+
+    @PutMapping("/connections/{relationshipId}/status")
+    public ResponseEntity<ApiResponse<?>> updateConnectionStatus(
+            Authentication authentication,
+            @PathVariable UUID relationshipId,
+            @RequestBody CommunityConnectionStatusRequest request
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.updateConnectionStatus(userId, relationshipId, request),
+                "Community connection request updated successfully",
+                HttpStatus.OK
+        );
+    }
+
+    @DeleteMapping("/connections/{relationshipId}")
+    public ResponseEntity<ApiResponse<?>> cancelConnectionRequest(
+            Authentication authentication,
+            @PathVariable UUID relationshipId
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.cancelConnectionRequest(userId, relationshipId),
+                "Community connection request cancelled successfully",
                 HttpStatus.OK
         );
     }

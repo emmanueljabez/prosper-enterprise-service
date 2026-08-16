@@ -293,6 +293,24 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityFollowResponse(
+            UUID targetProfileId,
+            boolean following
+    ) {
+    }
+
+    public record CommunityConnectionStatusRequest(
+            String status
+    ) {
+    }
+
+    public record CommunityConnectionResponse(
+            UUID relationshipId,
+            UUID targetProfileId,
+            String relationshipStatus
+    ) {
+    }
+
     public record CommunityPeopleDiscoveryResponse(
             List<RecommendedPerson> suggestedPeople,
             List<NetworkMember> recentConnections,

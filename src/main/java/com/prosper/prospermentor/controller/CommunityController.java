@@ -97,6 +97,16 @@ public class CommunityController {
         );
     }
 
+    @GetMapping("/connections/requests")
+    public ResponseEntity<ApiResponse<?>> getConnectionRequests(Authentication authentication) {
+        return execute(
+                authentication,
+                communityReadService::getConnectionRequests,
+                "Community connection requests retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<?>> search(
             Authentication authentication,

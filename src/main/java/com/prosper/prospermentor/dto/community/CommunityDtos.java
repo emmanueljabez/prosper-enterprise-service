@@ -321,6 +321,41 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityConnectionProfile(
+            UUID id,
+            String firstName,
+            String lastName,
+            String avatarUrl,
+            String email,
+            String role,
+            String headline,
+            String industry,
+            String country,
+            Boolean verified
+    ) {
+    }
+
+    public record CommunityConnectionRequestItem(
+            UUID relationshipId,
+            UUID mentorId,
+            UUID menteeId,
+            UUID requesterId,
+            String status,
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt,
+            CommunityConnectionProfile mentorProfile,
+            CommunityConnectionProfile menteeProfile
+    ) {
+    }
+
+    public record CommunityConnectionRequestsResponse(
+            List<CommunityConnectionRequestItem> incoming,
+            List<CommunityConnectionRequestItem> outgoing,
+            List<CommunityConnectionRequestItem> accepted,
+            List<CommunityConnectionRequestItem> rejected
+    ) {
+    }
+
     public record CommunityPeopleDiscoveryResponse(
             List<RecommendedPerson> suggestedPeople,
             List<NetworkMember> recentConnections,

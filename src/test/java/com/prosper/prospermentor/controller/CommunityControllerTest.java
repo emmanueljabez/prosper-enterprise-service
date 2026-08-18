@@ -1,6 +1,7 @@
 package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionRequestsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
@@ -123,6 +124,32 @@ class CommunityControllerTest {
         assertThat(body).isNotNull();
         assertThat(data.profileId()).isEqualTo(profileId);
         verify(communityReadService).getProfileNetwork(viewerId, profileId);
+    }
+
+    @Test
+    void connectionRequestsUseAuthenticatedUserId() {
+        UUID userId = UUID.randomUUID();
+        when(communityReadService.getConnectionRequests(eq(userId)))
+                .thenReturn(new CommunityConnectionRequestsResponse(
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of()
+                ));
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                new SupabaseUserDetails(userId.toString(), "member@example.com", "MENTEE"),
+                null
+        );
+
+        var response = controller.getConnectionRequests(auth);
+        var body = response.getBody();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body).isNotNull();
+        var data = (CommunityConnectionRequestsResponse) body.getData();
+        assertThat(data.incoming()).isEmpty();
+        verify(communityReadService).getConnectionRequests(userId);
     }
 
     @Test

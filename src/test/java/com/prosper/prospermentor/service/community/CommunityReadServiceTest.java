@@ -1,5 +1,7 @@
 package com.prosper.prospermentor.service.community;
 
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionProfile;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionRequestItem;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.jdbc.core.RowMapper;
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -295,5 +298,78 @@ class CommunityReadServiceTest {
                         .contains("FROM follows f")
                         .contains("f.follower_id = :subjectId")
                         .contains("blocker_profile_id = :viewerId"));
+    }
+
+    @Test
+    void connectionRequestsCategorizeRowsAndFilterBlocksForViewer() {
+        UUID viewerId = UUID.randomUUID();
+        UUID incomingRequester = UUID.randomUUID();
+        UUID outgoingTarget = UUID.randomUUID();
+        UUID acceptedTarget = UUID.randomUUID();
+        UUID rejectedTarget = UUID.randomUUID();
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of(
+                        connectionRequest(viewerId, incomingRequester, incomingRequester, "pending"),
+                        connectionRequest(viewerId, outgoingTarget, viewerId, "pending"),
+                        connectionRequest(viewerId, acceptedTarget, acceptedTarget, "accepted"),
+                        connectionRequest(viewerId, rejectedTarget, viewerId, "rejected")
+                ));
+
+        var response = service.getConnectionRequests(viewerId);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<MapSqlParameterSource> paramsCaptor = ArgumentCaptor.forClass(MapSqlParameterSource.class);
+        verify(jdbc).query(sqlCaptor.capture(), paramsCaptor.capture(), any(RowMapper.class));
+
+        assertThat(response.incoming()).hasSize(1);
+        assertThat(response.outgoing()).hasSize(1);
+        assertThat(response.accepted()).hasSize(1);
+        assertThat(response.rejected()).hasSize(1);
+        assertThat(response.incoming().get(0).requesterId()).isEqualTo(incomingRequester);
+        assertThat(response.outgoing().get(0).requesterId()).isEqualTo(viewerId);
+        assertThat(paramsCaptor.getValue().getValue("viewerId")).isEqualTo(viewerId);
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM syncs s")
+                .contains("s.status IN ('pending', 'accepted', 'rejected')")
+                .contains("s.mentor_id = :viewerId")
+                .contains("s.mentee_id = :viewerId")
+                .contains("community_blocks")
+                .contains("blocker_profile_id = :viewerId");
+    }
+
+    private CommunityConnectionRequestItem connectionRequest(
+            UUID viewerId,
+            UUID otherProfileId,
+            UUID requesterId,
+            String status
+    ) {
+        UUID mentorId = viewerId;
+        UUID menteeId = otherProfileId;
+        return new CommunityConnectionRequestItem(
+                UUID.randomUUID(),
+                mentorId,
+                menteeId,
+                requesterId,
+                status,
+                OffsetDateTime.now(),
+                OffsetDateTime.now(),
+                connectionProfile(mentorId),
+                connectionProfile(menteeId)
+        );
+    }
+
+    private CommunityConnectionProfile connectionProfile(UUID profileId) {
+        return new CommunityConnectionProfile(
+                profileId,
+                "First",
+                "Last",
+                null,
+                "member@example.com",
+                "MENTEE",
+                "Profile headline",
+                "Technology",
+                "Kenya",
+                true
+        );
     }
 }

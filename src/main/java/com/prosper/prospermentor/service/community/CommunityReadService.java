@@ -2,6 +2,9 @@ package com.prosper.prospermentor.service.community;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCategoryItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionProfile;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionRequestItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionRequestsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHashtagItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
@@ -238,6 +241,30 @@ public class CommunityReadService {
                 following,
                 reciprocalFollows,
                 uniqueNetworkCount(connections, followers, following)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityConnectionRequestsResponse getConnectionRequests(UUID viewerId) {
+        requireViewer(viewerId);
+
+        List<CommunityConnectionRequestItem> requests = queryConnectionRequests(viewerId);
+
+        return new CommunityConnectionRequestsResponse(
+                requests.stream()
+                        .filter(request -> "pending".equalsIgnoreCase(request.status()))
+                        .filter(request -> !viewerId.equals(request.requesterId()))
+                        .toList(),
+                requests.stream()
+                        .filter(request -> "pending".equalsIgnoreCase(request.status()))
+                        .filter(request -> viewerId.equals(request.requesterId()))
+                        .toList(),
+                requests.stream()
+                        .filter(request -> "accepted".equalsIgnoreCase(request.status()))
+                        .toList(),
+                requests.stream()
+                        .filter(request -> "rejected".equalsIgnoreCase(request.status()))
+                        .toList()
         );
     }
 
@@ -568,6 +595,69 @@ public class CommunityReadService {
         return new RecommendedPerson(profileFromMap(candidate), score, reasons);
     }
 
+    private List<CommunityConnectionRequestItem> queryConnectionRequests(UUID viewerId) {
+        String sql = """
+                SELECT
+                    s.id AS relationship_id,
+                    s.mentor_id,
+                    s.mentee_id,
+                    s.requester_id,
+                    s.status::text AS status,
+                    s.created_at,
+                    s.updated_at,
+                    mentor.id AS mentor_profile_id,
+                    mentor.first_name AS mentor_first_name,
+                    mentor.last_name AS mentor_last_name,
+                    mentor.avatar_url AS mentor_avatar_url,
+                    mentor.email AS mentor_email,
+                    mentor.role::text AS mentor_role,
+                    COALESCE(mentor.bio, '') AS mentor_headline,
+                    mentor.industry AS mentor_industry,
+                    mentor.country AS mentor_country,
+                    COALESCE(mentor.is_verified, false) AS mentor_is_verified,
+                    mentee.id AS mentee_profile_id,
+                    mentee.first_name AS mentee_first_name,
+                    mentee.last_name AS mentee_last_name,
+                    mentee.avatar_url AS mentee_avatar_url,
+                    mentee.email AS mentee_email,
+                    mentee.role::text AS mentee_role,
+                    COALESCE(mentee.bio, '') AS mentee_headline,
+                    mentee.industry AS mentee_industry,
+                    mentee.country AS mentee_country,
+                    COALESCE(mentee.is_verified, false) AS mentee_is_verified
+                FROM syncs s
+                JOIN profiles mentor ON mentor.id = s.mentor_id
+                JOIN profiles mentee ON mentee.id = s.mentee_id
+                WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
+                  AND s.status IN ('pending', 'accepted', 'rejected')
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (
+                        b.blocker_profile_id = :viewerId
+                        AND b.blocked_profile_id = CASE
+                            WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                            ELSE s.mentor_id
+                        END
+                    )
+                    OR (
+                        b.blocker_profile_id = CASE
+                            WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                            ELSE s.mentor_id
+                        END
+                        AND b.blocked_profile_id = :viewerId
+                    )
+                  )
+                ORDER BY s.created_at DESC
+                """;
+
+        return jdbc.query(
+                sql,
+                new MapSqlParameterSource("viewerId", viewerId),
+                connectionRequestRowMapper()
+        );
+    }
+
     private List<NetworkMember> queryNetworkMembers(UUID viewerId, String view) {
         return queryNetworkMembers(viewerId, viewerId, view);
     }
@@ -741,6 +831,35 @@ public class CommunityReadService {
                 ),
                 rs.getString("relationship_status"),
                 rs.getObject("connected_at", OffsetDateTime.class)
+        );
+    }
+
+    private RowMapper<CommunityConnectionRequestItem> connectionRequestRowMapper() {
+        return (rs, rowNum) -> new CommunityConnectionRequestItem(
+                uuid(rs, "relationship_id"),
+                uuid(rs, "mentor_id"),
+                uuid(rs, "mentee_id"),
+                uuid(rs, "requester_id"),
+                rs.getString("status"),
+                rs.getObject("created_at", OffsetDateTime.class),
+                rs.getObject("updated_at", OffsetDateTime.class),
+                connectionProfile(rs, "mentor"),
+                connectionProfile(rs, "mentee")
+        );
+    }
+
+    private CommunityConnectionProfile connectionProfile(ResultSet rs, String prefix) throws SQLException {
+        return new CommunityConnectionProfile(
+                uuid(rs, prefix + "_profile_id"),
+                rs.getString(prefix + "_first_name"),
+                rs.getString(prefix + "_last_name"),
+                rs.getString(prefix + "_avatar_url"),
+                rs.getString(prefix + "_email"),
+                rs.getString(prefix + "_role"),
+                rs.getString(prefix + "_headline"),
+                rs.getString(prefix + "_industry"),
+                rs.getString(prefix + "_country"),
+                rs.getBoolean(prefix + "_is_verified")
         );
     }
 

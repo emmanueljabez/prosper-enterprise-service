@@ -6,6 +6,7 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHashtagIte
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySavedPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchPersonItem;
@@ -210,12 +211,33 @@ public class CommunityReadService {
 
     @Transactional(readOnly = true)
     public NetworkOverviewResponse getNetworkOverview(UUID viewerId) {
+        requireViewer(viewerId);
         return new NetworkOverviewResponse(
                 queryNetworkMembers(viewerId, "connections"),
                 queryNetworkMembers(viewerId, "followers"),
                 queryNetworkMembers(viewerId, "following"),
                 queryNetworkMembers(viewerId, "pendingRequests"),
                 queryNetworkMembers(viewerId, "sentRequests")
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityProfileNetworkResponse getProfileNetwork(UUID viewerId, UUID profileId) {
+        requireViewer(viewerId);
+        requireId(profileId, "profileId is required");
+
+        List<NetworkMember> connections = queryNetworkMembers(viewerId, profileId, "connections");
+        List<NetworkMember> followers = queryNetworkMembers(viewerId, profileId, "followers");
+        List<NetworkMember> following = queryNetworkMembers(viewerId, profileId, "following");
+        List<NetworkMember> reciprocalFollows = reciprocalFollows(followers, following);
+
+        return new CommunityProfileNetworkResponse(
+                profileId,
+                connections,
+                followers,
+                following,
+                reciprocalFollows,
+                uniqueNetworkCount(connections, followers, following)
         );
     }
 
@@ -547,15 +569,19 @@ public class CommunityReadService {
     }
 
     private List<NetworkMember> queryNetworkMembers(UUID viewerId, String view) {
+        return queryNetworkMembers(viewerId, viewerId, view);
+    }
+
+    private List<NetworkMember> queryNetworkMembers(UUID viewerId, UUID subjectId, String view) {
         String sql = switch (view) {
             case "connections" -> """
                     SELECT other_profile.*, s.id AS relationship_id, s.updated_at AS connected_at, 'connected' AS relationship_status
                     FROM syncs s
                     JOIN profiles other_profile ON other_profile.id = CASE
-                        WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                        WHEN s.mentor_id = :subjectId THEN s.mentee_id
                         ELSE s.mentor_id
                     END
-                    WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
+                    WHERE (s.mentor_id = :subjectId OR s.mentee_id = :subjectId)
                       AND s.status = 'accepted'
                       AND NOT EXISTS (
                         SELECT 1
@@ -569,7 +595,7 @@ public class CommunityReadService {
                     SELECT p.*, f.id AS relationship_id, f.created_at AS connected_at, 'follower' AS relationship_status
                     FROM follows f
                     JOIN profiles p ON p.id = f.follower_id
-                    WHERE f.following_id = :viewerId
+                    WHERE f.following_id = :subjectId
                       AND NOT EXISTS (
                         SELECT 1
                         FROM community_blocks b
@@ -582,7 +608,7 @@ public class CommunityReadService {
                     SELECT p.*, f.id AS relationship_id, f.created_at AS connected_at, 'following' AS relationship_status
                     FROM follows f
                     JOIN profiles p ON p.id = f.following_id
-                    WHERE f.follower_id = :viewerId
+                    WHERE f.follower_id = :subjectId
                       AND NOT EXISTS (
                         SELECT 1
                         FROM community_blocks b
@@ -595,12 +621,12 @@ public class CommunityReadService {
                     SELECT p.*, s.id AS relationship_id, s.created_at AS connected_at, 'pending_received' AS relationship_status
                     FROM syncs s
                     JOIN profiles p ON p.id = CASE
-                        WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                        WHEN s.mentor_id = :subjectId THEN s.mentee_id
                         ELSE s.mentor_id
                     END
-                    WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
+                    WHERE (s.mentor_id = :subjectId OR s.mentee_id = :subjectId)
                       AND s.status = 'pending'
-                      AND s.requester_id <> :viewerId
+                      AND s.requester_id <> :subjectId
                       AND NOT EXISTS (
                         SELECT 1
                         FROM community_blocks b
@@ -613,10 +639,10 @@ public class CommunityReadService {
                     SELECT p.*, s.id AS relationship_id, s.created_at AS connected_at, 'pending_sent' AS relationship_status
                     FROM syncs s
                     JOIN profiles p ON p.id = CASE
-                        WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                        WHEN s.mentor_id = :subjectId THEN s.mentee_id
                         ELSE s.mentor_id
                     END
-                    WHERE s.requester_id = :viewerId
+                    WHERE s.requester_id = :subjectId
                       AND s.status = 'pending'
                       AND NOT EXISTS (
                         SELECT 1
@@ -629,7 +655,39 @@ public class CommunityReadService {
             default -> throw new IllegalArgumentException("Unsupported network view: " + view);
         };
 
-        return jdbc.query(sql, new MapSqlParameterSource("viewerId", viewerId), networkMemberRowMapper());
+        return jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("subjectId", subjectId), networkMemberRowMapper());
+    }
+
+    private List<NetworkMember> reciprocalFollows(List<NetworkMember> followers, List<NetworkMember> following) {
+        List<UUID> followerIds = followers.stream()
+                .map(member -> member.profile().id())
+                .toList();
+
+        return following.stream()
+                .filter(member -> followerIds.contains(member.profile().id()))
+                .map(member -> new NetworkMember(
+                        member.relationshipId(),
+                        member.profile(),
+                        "mutual",
+                        member.connectedAt()
+                ))
+                .toList();
+    }
+
+    @SafeVarargs
+    private final int uniqueNetworkCount(List<NetworkMember>... memberGroups) {
+        List<UUID> profileIds = new ArrayList<>();
+        for (List<NetworkMember> members : memberGroups) {
+            for (NetworkMember member : members) {
+                UUID profileId = member.profile().id();
+                if (!profileIds.contains(profileId)) {
+                    profileIds.add(profileId);
+                }
+            }
+        }
+        return profileIds.size();
     }
 
     private RowMapper<CommunityPostItem> postRowMapper() {

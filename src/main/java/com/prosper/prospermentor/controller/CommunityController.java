@@ -84,6 +84,19 @@ public class CommunityController {
         ));
     }
 
+    @GetMapping("/profiles/{profileId}/network")
+    public ResponseEntity<ApiResponse<?>> getProfileNetwork(
+            Authentication authentication,
+            @PathVariable UUID profileId
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getProfileNetwork(userId, profileId),
+                "Community profile network retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<?>> search(
             Authentication authentication,

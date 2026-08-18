@@ -256,4 +256,44 @@ class CommunityReadServiceTest {
                 .contains("blocker_profile_id = :viewerId")
                 .contains("blocked_profile_id = other_profile.id");
     }
+
+    @Test
+    void profileNetworkUsesPathProfileAsSubjectAndViewerForBlockFiltering() {
+        UUID viewerId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        var response = service.getProfileNetwork(viewerId, profileId);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<MapSqlParameterSource> paramsCaptor = ArgumentCaptor.forClass(MapSqlParameterSource.class);
+        verify(jdbc, atLeastOnce()).query(
+                sqlCaptor.capture(),
+                paramsCaptor.capture(),
+                any(RowMapper.class)
+        );
+
+        assertThat(response.profileId()).isEqualTo(profileId);
+        assertThat(response.totalCount()).isZero();
+        assertThat(paramsCaptor.getAllValues())
+                .allSatisfy(params -> {
+                    assertThat(params.getValue("viewerId")).isEqualTo(viewerId);
+                    assertThat(params.getValue("subjectId")).isEqualTo(profileId);
+                });
+        assertThat(sqlCaptor.getAllValues())
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM syncs s")
+                        .contains("s.mentor_id = :subjectId")
+                        .contains("s.mentee_id = :subjectId")
+                        .contains("blocker_profile_id = :viewerId"))
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM follows f")
+                        .contains("f.following_id = :subjectId")
+                        .contains("blocker_profile_id = :viewerId"))
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM follows f")
+                        .contains("f.follower_id = :subjectId")
+                        .contains("blocker_profile_id = :viewerId"));
+    }
 }

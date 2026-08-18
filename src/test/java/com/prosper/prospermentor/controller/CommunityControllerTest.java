@@ -2,6 +2,7 @@ package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendedPeopleResponse;
@@ -18,6 +19,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class CommunityControllerTest {
@@ -92,6 +94,35 @@ class CommunityControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(body).isNotNull();
         assertThat(data.connections()).isEmpty();
+    }
+
+    @Test
+    void profileNetworkUsesAuthenticatedViewerAndPathProfile() {
+        UUID viewerId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
+        when(communityReadService.getProfileNetwork(eq(viewerId), eq(profileId)))
+                .thenReturn(new CommunityProfileNetworkResponse(
+                        profileId,
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        0
+                ));
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                new SupabaseUserDetails(viewerId.toString(), "member@example.com", "MENTEE"),
+                null
+        );
+
+        var response = controller.getProfileNetwork(auth, profileId);
+        var body = response.getBody();
+        var data = (CommunityProfileNetworkResponse) body.getData();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body).isNotNull();
+        assertThat(data.profileId()).isEqualTo(profileId);
+        verify(communityReadService).getProfileNetwork(viewerId, profileId);
     }
 
     @Test

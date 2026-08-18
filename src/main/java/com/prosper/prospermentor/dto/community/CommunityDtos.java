@@ -293,6 +293,16 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityProfileNetworkResponse(
+            UUID profileId,
+            List<NetworkMember> connections,
+            List<NetworkMember> followers,
+            List<NetworkMember> following,
+            List<NetworkMember> reciprocalFollows,
+            int totalCount
+    ) {
+    }
+
     public record CommunityFollowResponse(
             UUID targetProfileId,
             boolean following

@@ -9,8 +9,10 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHashtagIte
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileAnalyticsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySavedPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchPersonItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
@@ -30,6 +32,8 @@ import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -241,6 +245,51 @@ public class CommunityReadService {
                 following,
                 reciprocalFollows,
                 uniqueNetworkCount(connections, followers, following)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityProfileAnalyticsResponse getProfileAnalytics(UUID viewerId, UUID profileId, int requestedLimit) {
+        requireViewer(viewerId);
+        requireId(profileId, "profileId is required");
+        if (!viewerId.equals(profileId)) {
+            throw new SecurityException("Profile analytics are only available to the profile owner");
+        }
+
+        int limit = clampLimit(requestedLimit);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime oneWeekAgo = now.minusDays(7);
+        OffsetDateTime previousWeekStart = oneWeekAgo.minusDays(7);
+        OffsetDateTime oneMonthAgo = now.minusDays(30);
+        OffsetDateTime previousMonthStart = oneMonthAgo.minusDays(30);
+        OffsetDateTime startThisMonth = now.withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS);
+
+        List<CommunityProfileViewItem> views = queryProfileViews(viewerId, profileId, limit);
+        Map<String, Object> viewStats = queryProfileViewStats(
+                viewerId,
+                profileId,
+                oneWeekAgo,
+                previousWeekStart,
+                startThisMonth,
+                oneMonthAgo,
+                previousMonthStart
+        );
+        int postImpressionsThisMonth = queryPostImpressionsThisMonth(profileId, startThisMonth);
+        CommunityConnectionRequestsResponse connectionRequests = getConnectionRequests(profileId);
+        int pendingRequests = connectionRequests.incoming().size() + connectionRequests.outgoing().size();
+        int viewsThisWeek = intValue(viewStats, "views_this_week");
+        int viewsThisMonth = intValue(viewStats, "views_this_month");
+
+        return new CommunityProfileAnalyticsResponse(
+                profileId,
+                views,
+                intValue(viewStats, "total_views"),
+                viewsThisWeek,
+                viewsThisMonth,
+                postImpressionsThisMonth,
+                pendingRequests,
+                growthPercentage(viewsThisWeek, intValue(viewStats, "views_previous_week")),
+                growthPercentage(viewsThisMonth, intValue(viewStats, "views_previous_month"))
         );
     }
 
@@ -595,6 +644,111 @@ public class CommunityReadService {
         return new RecommendedPerson(profileFromMap(candidate), score, reasons);
     }
 
+    private List<CommunityProfileViewItem> queryProfileViews(UUID viewerId, UUID profileId, int limit) {
+        String sql = """
+                SELECT
+                    pv.id,
+                    pv.viewer_id,
+                    COALESCE(pv.viewed_at, pv.created_at) AS viewed_at,
+                    viewer.id AS viewer_profile_id,
+                    viewer.first_name AS viewer_first_name,
+                    viewer.last_name AS viewer_last_name,
+                    viewer.avatar_url AS viewer_avatar_url,
+                    viewer.role::text AS viewer_role,
+                    COALESCE(viewer.bio, '') AS viewer_headline,
+                    viewer.industry AS viewer_industry,
+                    viewer.country AS viewer_country,
+                    COALESCE(viewer.is_verified, false) AS viewer_is_verified
+                FROM profile_views pv
+                LEFT JOIN profiles viewer ON viewer.id = pv.viewer_id
+                WHERE pv.viewed_profile_id = :profileId
+                  AND pv.viewer_id IS DISTINCT FROM :profileId
+                  AND (
+                    pv.viewer_id IS NULL
+                    OR NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = pv.viewer_id)
+                           OR (b.blocker_profile_id = pv.viewer_id AND b.blocked_profile_id = :viewerId)
+                    )
+                  )
+                ORDER BY COALESCE(pv.viewed_at, pv.created_at) DESC
+                LIMIT :limit
+                """;
+
+        return jdbc.query(sql, profileAnalyticsParameters(viewerId, profileId)
+                .addValue("limit", limit), profileViewRowMapper());
+    }
+
+    private Map<String, Object> queryProfileViewStats(
+            UUID viewerId,
+            UUID profileId,
+            OffsetDateTime oneWeekAgo,
+            OffsetDateTime previousWeekStart,
+            OffsetDateTime startThisMonth,
+            OffsetDateTime oneMonthAgo,
+            OffsetDateTime previousMonthStart
+    ) {
+        String sql = """
+                SELECT
+                    COUNT(*)::int AS total_views,
+                    COUNT(*) FILTER (
+                        WHERE COALESCE(pv.viewed_at, pv.created_at) >= :oneWeekAgo
+                    )::int AS views_this_week,
+                    COUNT(*) FILTER (
+                        WHERE COALESCE(pv.viewed_at, pv.created_at) >= :startThisMonth
+                    )::int AS views_this_month,
+                    COUNT(*) FILTER (
+                        WHERE COALESCE(pv.viewed_at, pv.created_at) >= :previousWeekStart
+                          AND COALESCE(pv.viewed_at, pv.created_at) < :oneWeekAgo
+                    )::int AS views_previous_week,
+                    COUNT(*) FILTER (
+                        WHERE COALESCE(pv.viewed_at, pv.created_at) >= :previousMonthStart
+                          AND COALESCE(pv.viewed_at, pv.created_at) < :oneMonthAgo
+                    )::int AS views_previous_month
+                FROM profile_views pv
+                WHERE pv.viewed_profile_id = :profileId
+                  AND pv.viewer_id IS DISTINCT FROM :profileId
+                  AND (
+                    pv.viewer_id IS NULL
+                    OR NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = pv.viewer_id)
+                           OR (b.blocker_profile_id = pv.viewer_id AND b.blocked_profile_id = :viewerId)
+                    )
+                  )
+                """;
+
+        return jdbc.queryForMap(sql, profileAnalyticsParameters(viewerId, profileId)
+                .addValue("oneWeekAgo", oneWeekAgo)
+                .addValue("previousWeekStart", previousWeekStart)
+                .addValue("startThisMonth", startThisMonth)
+                .addValue("oneMonthAgo", oneMonthAgo)
+                .addValue("previousMonthStart", previousMonthStart));
+    }
+
+    private int queryPostImpressionsThisMonth(UUID profileId, OffsetDateTime startThisMonth) {
+        String sql = """
+                SELECT COUNT(*)::int
+                FROM post_impressions pi
+                JOIN posts p ON p.id = pi.post_id
+                WHERE p.user_id = :profileId
+                  AND COALESCE(pi.created_at, pi.viewed_at) >= :startThisMonth
+                """;
+
+        Integer count = jdbc.queryForObject(sql, new MapSqlParameterSource()
+                .addValue("profileId", profileId)
+                .addValue("startThisMonth", startThisMonth), Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private MapSqlParameterSource profileAnalyticsParameters(UUID viewerId, UUID profileId) {
+        return new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("profileId", profileId);
+    }
+
     private List<CommunityConnectionRequestItem> queryConnectionRequests(UUID viewerId) {
         String sql = """
                 SELECT
@@ -848,6 +1002,30 @@ public class CommunityReadService {
         );
     }
 
+    private RowMapper<CommunityProfileViewItem> profileViewRowMapper() {
+        return (rs, rowNum) -> {
+            UUID viewerProfileId = uuidOrNull(rs, "viewer_profile_id");
+            CommunityProfileSummary viewer = viewerProfileId == null ? null : new CommunityProfileSummary(
+                    viewerProfileId,
+                    rs.getString("viewer_first_name"),
+                    rs.getString("viewer_last_name"),
+                    rs.getString("viewer_avatar_url"),
+                    rs.getString("viewer_role"),
+                    rs.getString("viewer_headline"),
+                    rs.getString("viewer_industry"),
+                    rs.getString("viewer_country"),
+                    rs.getBoolean("viewer_is_verified")
+            );
+
+            return new CommunityProfileViewItem(
+                    uuid(rs, "id"),
+                    uuidOrNull(rs, "viewer_id"),
+                    rs.getObject("viewed_at", OffsetDateTime.class),
+                    viewer
+            );
+        };
+    }
+
     private CommunityConnectionProfile connectionProfile(ResultSet rs, String prefix) throws SQLException {
         return new CommunityConnectionProfile(
                 uuid(rs, prefix + "_profile_id"),
@@ -935,6 +1113,29 @@ public class CommunityReadService {
     private UUID uuid(ResultSet rs, String column) throws SQLException {
         Object value = rs.getObject(column);
         return value instanceof UUID id ? id : UUID.fromString(String.valueOf(value));
+    }
+
+    private UUID uuidOrNull(ResultSet rs, String column) throws SQLException {
+        Object value = rs.getObject(column);
+        if (value == null) {
+            return null;
+        }
+        return value instanceof UUID id ? id : UUID.fromString(String.valueOf(value));
+    }
+
+    private int intValue(Map<String, Object> row, String column) {
+        Object value = row.get(column);
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return value == null ? 0 : Integer.parseInt(String.valueOf(value));
+    }
+
+    private double growthPercentage(int current, int previous) {
+        if (previous > 0) {
+            return ((current - previous) / (double) previous) * 100.0;
+        }
+        return current > 0 ? 100.0 : 0.0;
     }
 
     private void requireViewer(UUID viewerId) {

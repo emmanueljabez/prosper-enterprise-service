@@ -303,6 +303,27 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityProfileViewItem(
+            UUID id,
+            UUID viewerId,
+            OffsetDateTime viewedAt,
+            CommunityProfileSummary viewer
+    ) {
+    }
+
+    public record CommunityProfileAnalyticsResponse(
+            UUID profileId,
+            List<CommunityProfileViewItem> views,
+            int totalViews,
+            int viewsThisWeek,
+            int viewsThisMonth,
+            int postImpressionsThisMonth,
+            int connectionRequests,
+            double weeklyGrowth,
+            double monthlyGrowth
+    ) {
+    }
+
     public record CommunityFollowResponse(
             UUID targetProfileId,
             boolean following

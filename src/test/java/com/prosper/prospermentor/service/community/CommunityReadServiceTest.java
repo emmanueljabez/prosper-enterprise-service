@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -335,6 +336,77 @@ class CommunityReadServiceTest {
                 .contains("s.mentee_id = :viewerId")
                 .contains("community_blocks")
                 .contains("blocker_profile_id = :viewerId");
+    }
+
+    @Test
+    void profileAnalyticsRequiresProfileOwner() {
+        UUID viewerId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> service.getProfileAnalytics(viewerId, profileId, 50))
+                .isInstanceOf(SecurityException.class)
+                .hasMessage("Profile analytics are only available to the profile owner");
+    }
+
+    @Test
+    void profileAnalyticsQueriesProfileViewsAndPostImpressionsForOwner() {
+        UUID profileId = UUID.randomUUID();
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+        when(jdbc.queryForMap(anyString(), any(MapSqlParameterSource.class)))
+                .thenReturn(Map.of(
+                        "total_views", 4L,
+                        "views_this_week", 2L,
+                        "views_this_month", 3L,
+                        "views_previous_week", 1L,
+                        "views_previous_month", 6L
+                ));
+        when(jdbc.queryForObject(anyString(), any(MapSqlParameterSource.class), eq(Integer.class)))
+                .thenReturn(9);
+
+        var response = service.getProfileAnalytics(profileId, profileId, 50);
+
+        ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> mapQueryCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> objectQueryCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<MapSqlParameterSource> paramsCaptor = ArgumentCaptor.forClass(MapSqlParameterSource.class);
+        verify(jdbc, atLeastOnce()).query(queryCaptor.capture(), paramsCaptor.capture(), any(RowMapper.class));
+        verify(jdbc).queryForMap(mapQueryCaptor.capture(), any(MapSqlParameterSource.class));
+        verify(jdbc).queryForObject(objectQueryCaptor.capture(), any(MapSqlParameterSource.class), eq(Integer.class));
+
+        assertThat(response.profileId()).isEqualTo(profileId);
+        assertThat(response.totalViews()).isEqualTo(4);
+        assertThat(response.viewsThisWeek()).isEqualTo(2);
+        assertThat(response.viewsThisMonth()).isEqualTo(3);
+        assertThat(response.postImpressionsThisMonth()).isEqualTo(9);
+        assertThat(response.connectionRequests()).isZero();
+        assertThat(response.weeklyGrowth()).isEqualTo(100.0);
+        assertThat(response.monthlyGrowth()).isEqualTo(-50.0);
+        assertThat(queryCaptor.getAllValues())
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM profile_views pv")
+                        .contains("LEFT JOIN profiles viewer ON viewer.id = pv.viewer_id")
+                        .contains("pv.viewed_profile_id = :profileId")
+                        .contains("pv.viewer_id IS DISTINCT FROM :profileId")
+                        .contains("community_blocks"))
+                .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM syncs s")
+                        .contains("s.status IN ('pending', 'accepted', 'rejected')"));
+        assertThat(mapQueryCaptor.getValue())
+                .contains("FROM profile_views pv")
+                .contains("COUNT(*) FILTER")
+                .contains("pv.viewed_profile_id = :profileId")
+                .contains("pv.viewer_id IS DISTINCT FROM :profileId");
+        assertThat(objectQueryCaptor.getValue())
+                .contains("FROM post_impressions pi")
+                .contains("JOIN posts p ON p.id = pi.post_id")
+                .contains("p.user_id = :profileId")
+                .contains("COALESCE(pi.created_at, pi.viewed_at) >= :startThisMonth");
+        assertThat(paramsCaptor.getAllValues())
+                .anySatisfy(params -> {
+                    assertThat(params.getValue("viewerId")).isEqualTo(profileId);
+                    assertThat(params.getValue("profileId")).isEqualTo(profileId);
+                });
     }
 
     private CommunityConnectionRequestItem connectionRequest(

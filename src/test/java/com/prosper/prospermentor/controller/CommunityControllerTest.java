@@ -3,6 +3,7 @@ package com.prosper.prospermentor.controller;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionRequestsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileAnalyticsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
@@ -124,6 +125,38 @@ class CommunityControllerTest {
         assertThat(body).isNotNull();
         assertThat(data.profileId()).isEqualTo(profileId);
         verify(communityReadService).getProfileNetwork(viewerId, profileId);
+    }
+
+    @Test
+    void profileAnalyticsUsesAuthenticatedViewerAndPathProfile() {
+        UUID viewerId = UUID.randomUUID();
+        UUID profileId = viewerId;
+        when(communityReadService.getProfileAnalytics(eq(viewerId), eq(profileId), eq(50)))
+                .thenReturn(new CommunityProfileAnalyticsResponse(
+                        profileId,
+                        List.of(),
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0
+                ));
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                new SupabaseUserDetails(viewerId.toString(), "member@example.com", "MENTEE"),
+                null
+        );
+
+        var response = controller.getProfileAnalytics(auth, profileId, 50);
+        var body = response.getBody();
+        var data = (CommunityProfileAnalyticsResponse) body.getData();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body).isNotNull();
+        assertThat(data.profileId()).isEqualTo(profileId);
+        verify(communityReadService).getProfileAnalytics(viewerId, profileId, 50);
     }
 
     @Test

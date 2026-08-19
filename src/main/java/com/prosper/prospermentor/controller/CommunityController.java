@@ -97,6 +97,20 @@ public class CommunityController {
         );
     }
 
+    @GetMapping("/profiles/{profileId}/analytics")
+    public ResponseEntity<ApiResponse<?>> getProfileAnalytics(
+            Authentication authentication,
+            @PathVariable UUID profileId,
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getProfileAnalytics(userId, profileId, limit),
+                "Community profile analytics retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/connections/requests")
     public ResponseEntity<ApiResponse<?>> getConnectionRequests(Authentication authentication) {
         return execute(

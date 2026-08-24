@@ -1,8 +1,10 @@
 package com.prosper.prospermentor.service;
 
+import com.prosper.prospermentor.dto.AddCohortRosterParticipantsRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
 import com.prosper.prospermentor.dto.CohortPlenaryAttendanceDto;
+import com.prosper.prospermentor.dto.CohortRosterParticipantRequest;
 import com.prosper.prospermentor.dto.CompanyProgramCohortJoinRequestDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.dto.PlenaryAttendanceImportRow;
@@ -30,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -96,6 +99,46 @@ public class CompanyProgramCohortIntakeService {
         return cohortParticipantRepository.findByCohort_Id(cohortId).stream()
                 .map(this::toParticipantDto)
                 .toList();
+    }
+
+    public List<CompanyProgramCohortParticipantDto> addRosterParticipants(UUID cohortId,
+                                                                          AddCohortRosterParticipantsRequest request,
+                                                                          UUID adminUserId) {
+        CompanyProgramCohort cohort = cohortRepository.findById(cohortId)
+                .orElseThrow(() -> new NoSuchElementException("Company program cohort not found"));
+        List<CohortRosterParticipantRequest> rows = request != null && request.getParticipants() != null
+                ? request.getParticipants().stream().filter(Objects::nonNull).toList()
+                : List.of();
+
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("At least one roster participant is required");
+        }
+
+        List<CompanyProgramCohortParticipantDto> participants = new ArrayList<>();
+        for (CohortRosterParticipantRequest row : rows) {
+            Profile profile = resolveRosterProfile(cohort, row);
+            CompanyProgramCohortParticipant participant = cohortParticipantRepository
+                    .findByCohort_IdAndProfile_Id(cohortId, profile.getId())
+                    .orElseGet(CompanyProgramCohortParticipant::new);
+
+            participant.setCohort(cohort);
+            participant.setProfile(profile);
+            if (participant.getId() == null
+                    || participant.getStatus() == CompanyProgramCohortParticipant.CohortParticipantStatus.REJECTED
+                    || participant.getStatus() == CompanyProgramCohortParticipant.CohortParticipantStatus.WITHDRAWN) {
+                participant.setSource(CompanyProgramCohortParticipant.ParticipantSource.ROSTER_UPLOAD);
+                participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PENDING);
+                participant.setDuplicateStatus(CompanyProgramCohortParticipant.DuplicateStatus.CLEAR);
+                participant.setConfirmedByUserId(null);
+                participant.setConfirmedAt(null);
+            }
+            applySnapshots(participant, profile, row.getChapter(), row.getRegion(), row.getInterestTags());
+
+            participants.add(toParticipantDto(cohortParticipantRepository.save(participant)));
+        }
+
+        log.info("Added {} roster participant rows to cohort {} by admin {}", participants.size(), cohortId, adminUserId);
+        return participants;
     }
 
     @Transactional(readOnly = true)
@@ -387,6 +430,127 @@ public class CompanyProgramCohortIntakeService {
                     participant.setEnrolledAt(LocalDateTime.now());
                     return programParticipantRepository.save(participant);
                 });
+    }
+
+    private Profile resolveRosterProfile(CompanyProgramCohort cohort, CohortRosterParticipantRequest row) {
+        Company company = cohortCompany(cohort);
+        if (row.getProfileId() != null) {
+            Profile profile = profileRepository.findById(row.getProfileId())
+                    .orElseThrow(() -> new NoSuchElementException("Roster participant profile not found"));
+            return ensureRosterProfileCompany(profile, company);
+        }
+
+        String email = normalizeEmail(row.getEmail());
+        String phone = row.getPhone() != null ? row.getPhone().trim() : null;
+        String normalizedPhone = normalizePhone(phone);
+
+        Optional<Profile> profile = !email.isBlank()
+                ? profileRepository.findByEmailIgnoreCase(email)
+                : Optional.empty();
+        if (profile.isEmpty() && !normalizedPhone.isBlank()) {
+            profile = profileRepository.findByPhoneNormalized(normalizedPhone);
+        }
+
+        if (profile.isPresent()) {
+            Profile existing = profile.get();
+            boolean changed = applyMissingRosterProfileFields(existing, row, company, email, phone);
+            return changed ? profileRepository.save(existing) : ensureRosterProfileCompany(existing, company);
+        }
+
+        if (email.isBlank()) {
+            throw new IllegalArgumentException("Roster participant email is required when no existing profile matches the phone number");
+        }
+
+        Profile created = new Profile();
+        created.setId(UUID.randomUUID());
+        created.setCompany(company);
+        created.setEmail(email);
+        created.setUsername(buildRosterUsername(row, email));
+        created.setFirstName(trimToNull(row.getFirstName()));
+        created.setLastName(trimToNull(row.getLastName()));
+        created.setPhone(phone);
+        created.setRole("mentee");
+        created.setIsVerified(false);
+        return profileRepository.save(created);
+    }
+
+    private Profile ensureRosterProfileCompany(Profile profile, Company company) {
+        Company currentCompany = profile.getCompany();
+        if (currentCompany != null && currentCompany.getId() != null
+                && company != null && company.getId() != null
+                && !company.getId().equals(currentCompany.getId())) {
+            throw new IllegalArgumentException("Roster participant profile belongs to another company");
+        }
+        if (currentCompany == null || currentCompany.getId() == null) {
+            profile.setCompany(company);
+            return profileRepository.save(profile);
+        }
+        return profile;
+    }
+
+    private boolean applyMissingRosterProfileFields(Profile profile,
+                                                    CohortRosterParticipantRequest row,
+                                                    Company company,
+                                                    String normalizedEmail,
+                                                    String phone) {
+        Profile companyProfile = ensureRosterProfileCompany(profile, company);
+        boolean changed = companyProfile != profile;
+        if ((profile.getFirstName() == null || profile.getFirstName().isBlank()) && trimToNull(row.getFirstName()) != null) {
+            profile.setFirstName(trimToNull(row.getFirstName()));
+            changed = true;
+        }
+        if ((profile.getLastName() == null || profile.getLastName().isBlank()) && trimToNull(row.getLastName()) != null) {
+            profile.setLastName(trimToNull(row.getLastName()));
+            changed = true;
+        }
+        if ((profile.getEmail() == null || profile.getEmail().isBlank()) && !normalizedEmail.isBlank()) {
+            profile.setEmail(normalizedEmail);
+            changed = true;
+        }
+        if ((profile.getPhone() == null || profile.getPhone().isBlank()) && phone != null && !phone.isBlank()) {
+            profile.setPhone(phone);
+            changed = true;
+        }
+        if ((profile.getRole() == null || profile.getRole().isBlank())) {
+            profile.setRole("mentee");
+            changed = true;
+        }
+        return changed;
+    }
+
+    private Company cohortCompany(CompanyProgramCohort cohort) {
+        CompanyProgram companyProgram = cohort != null ? cohort.getCompanyProgram() : null;
+        Company company = companyProgram != null ? companyProgram.getCompany() : null;
+        if (company == null || company.getId() == null) {
+            throw new NoSuchElementException("Company context not found for cohort");
+        }
+        return company;
+    }
+
+    private String buildRosterUsername(CohortRosterParticipantRequest row, String normalizedEmail) {
+        String rawBase = !normalizedEmail.isBlank()
+                ? normalizedEmail.split("@", 2)[0]
+                : Stream.of(row.getFirstName(), row.getLastName())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .reduce((first, second) -> first + "." + second)
+                .orElse("mentee");
+        String base = rawBase.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9._-]", "")
+                .replaceAll("^[._-]+|[._-]+$", "");
+        if (base.isBlank()) {
+            base = "mentee";
+        }
+        return base + "-" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isBlank() ? null : trimmed;
     }
 
     private void applySnapshots(CompanyProgramCohortParticipant participant,

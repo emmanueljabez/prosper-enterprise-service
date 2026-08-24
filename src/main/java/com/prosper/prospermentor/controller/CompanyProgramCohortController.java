@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.controller;
 
+import com.prosper.prospermentor.dto.AddCohortRosterParticipantsRequest;
 import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortWorkspaceDto;
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
@@ -229,6 +230,40 @@ public class CompanyProgramCohortController {
             log.error("Error getting cohort participants {}: {}", cohortId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to get cohort participants: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohorts/{cohortId}/participants")
+    @Operation(summary = "Add roster participants to a cohort")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> addRosterParticipants(
+            @PathVariable UUID cohortId,
+            @Valid @RequestBody AddCohortRosterParticipantsRequest request,
+            Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            List<CompanyProgramCohortParticipantDto> participants = intakeService.addRosterParticipants(
+                    cohortId,
+                    request,
+                    userDetails.getUserIdAsUuid()
+            );
+
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohortId", cohortId);
+            data.put("participants", participants);
+            data.put("count", participants.size());
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Cohort roster participants added successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error adding cohort roster participants {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to add cohort roster participants: " + e.getMessage()));
         }
     }
 

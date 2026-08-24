@@ -1,11 +1,17 @@
 package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
+import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
+import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
+import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
+import com.prosper.prospermentor.dto.ConfirmCohortJoinRequest;
 import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
+import com.prosper.prospermentor.dto.ResolveCohortDuplicateRequest;
 import com.prosper.prospermentor.dto.UpdateCompanyProgramCohortRequest;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
+import com.prosper.prospermentor.service.CompanyProgramCohortIntakeService;
 import com.prosper.prospermentor.service.CompanyProgramCohortService;
 import com.prosper.prospermentor.service.CompanyProgramService;
 import com.prosper.prospermentor.service.ProfileService;
@@ -33,6 +39,7 @@ import java.util.UUID;
 public class CompanyProgramCohortController {
 
     private final CompanyProgramCohortService cohortService;
+    private final CompanyProgramCohortIntakeService intakeService;
     private final CompanyProgramService companyProgramService;
     private final ProfileService profileService;
 
@@ -149,6 +156,169 @@ public class CompanyProgramCohortController {
         return runCohortAction(cohortId, authentication, false);
     }
 
+    @GetMapping("/company-program-cohorts/join/{joinCode}")
+    @Operation(summary = "Preview a cohort self-join code")
+    public ResponseEntity<ApiResponse<CohortSelfJoinResponseDto>> getJoinPreview(@PathVariable String joinCode) {
+        try {
+            CohortSelfJoinResponseDto preview = intakeService.getSelfJoinPreview(joinCode);
+            return ResponseEntity.ok(ApiResponse.success("Cohort join preview retrieved successfully", preview));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error previewing cohort join code: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to preview cohort join code: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohorts/join/{joinCode}")
+    @Operation(summary = "Submit a cohort self-join request")
+    public ResponseEntity<ApiResponse<CohortSelfJoinResponseDto>> submitSelfJoin(@PathVariable String joinCode,
+                                                                                 @Valid @RequestBody CohortSelfJoinRequest request) {
+        try {
+            CohortSelfJoinResponseDto response = intakeService.submitSelfJoin(joinCode, request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Cohort join request submitted successfully", response));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error submitting cohort join request: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to submit cohort join request: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/company-program-cohorts/{cohortId}/participants")
+    @Operation(summary = "Get cohort participants")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getCohortParticipants(@PathVariable UUID cohortId,
+                                                                                  Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            List<CompanyProgramCohortParticipantDto> participants = intakeService.getParticipants(cohortId);
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohortId", cohortId);
+            data.put("participants", participants);
+            data.put("count", participants.size());
+            return ResponseEntity.ok(ApiResponse.success("Cohort participants retrieved successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting cohort participants {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get cohort participants: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohort-join-requests/{joinRequestId}/confirm")
+    @Operation(summary = "Confirm a cohort join request")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> confirmJoinRequest(
+            @PathVariable UUID joinRequestId,
+            @Valid @RequestBody ConfirmCohortJoinRequest request,
+            Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CompanyProgramCohortParticipantDto participant = intakeService.confirmJoinRequest(
+                    joinRequestId,
+                    request.getProfileId(),
+                    userDetails.getUserIdAsUuid()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Cohort join request confirmed successfully", participant));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error confirming cohort join request {}: {}", joinRequestId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to confirm cohort join request: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohort-join-requests/{joinRequestId}/reject")
+    @Operation(summary = "Reject a cohort join request")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> rejectJoinRequest(@PathVariable UUID joinRequestId,
+                                                                                             Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CompanyProgramCohortParticipantDto participant = intakeService.rejectJoinRequest(joinRequestId, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Cohort join request rejected successfully", participant));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error rejecting cohort join request {}: {}", joinRequestId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to reject cohort join request: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohort-participants/{participantId}/confirm")
+    @Operation(summary = "Confirm a cohort participant")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> confirmParticipant(@PathVariable UUID participantId,
+                                                                                              Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CompanyProgramCohortParticipantDto participant = intakeService.confirmParticipant(participantId, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Cohort participant confirmed successfully", participant));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error confirming cohort participant {}: {}", participantId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to confirm cohort participant: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohort-participants/{participantId}/reject")
+    @Operation(summary = "Reject a cohort participant")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> rejectParticipant(@PathVariable UUID participantId,
+                                                                                             Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CompanyProgramCohortParticipantDto participant = intakeService.rejectParticipant(participantId, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Cohort participant rejected successfully", participant));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error rejecting cohort participant {}: {}", participantId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to reject cohort participant: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohort-participants/{participantId}/resolve-duplicate")
+    @Operation(summary = "Resolve a cohort participant duplicate")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> resolveDuplicate(
+            @PathVariable UUID participantId,
+            @Valid @RequestBody ResolveCohortDuplicateRequest request,
+            Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CompanyProgramCohortParticipantDto participant = intakeService.resolveDuplicate(participantId, request, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Cohort participant duplicate resolved successfully", participant));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error resolving cohort duplicate {}: {}", participantId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to resolve cohort duplicate: " + e.getMessage()));
+        }
+    }
+
     private ResponseEntity<ApiResponse<CompanyProgramCohortDto>> runCohortAction(UUID cohortId,
                                                                                  Authentication authentication,
                                                                                  boolean open) {
@@ -205,6 +375,14 @@ public class CompanyProgramCohortController {
             throw new SecurityException("Not authorized to access this company");
         }
 
+        return userDetails;
+    }
+
+    private SupabaseUserDetails authorizeCohortOperatorRole(Authentication authentication) {
+        SupabaseUserDetails userDetails = requireAuthenticatedUser(authentication);
+        if (!userDetails.isAdmin() && !userDetails.isCompanyAdmin()) {
+            throw new SecurityException("Company admin access is required");
+        }
         return userDetails;
     }
 }

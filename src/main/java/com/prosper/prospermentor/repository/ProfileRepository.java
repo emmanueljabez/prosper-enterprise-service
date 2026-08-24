@@ -38,6 +38,14 @@ public interface ProfileRepository extends JpaRepository<Profile, UUID>, JpaSpec
      */
     Optional<Profile> findByEmailIgnoreCase(String email);
 
+    @Query("""
+            SELECT p
+            FROM Profile p
+            WHERE p.phone IS NOT NULL
+              AND REPLACE(REPLACE(REPLACE(p.phone, ' ', ''), '+', ''), '-', '') = :normalizedPhone
+            """)
+    Optional<Profile> findByPhoneNormalized(@Param("normalizedPhone") String normalizedPhone);
+
     /**
      * Find profile by ID with company eagerly fetched
      */

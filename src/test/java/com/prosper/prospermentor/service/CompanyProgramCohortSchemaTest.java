@@ -67,4 +67,21 @@ class CompanyProgramCohortSchemaTest {
         );
         assertThat(circleRepository).contains("findByCohort_IdOrderByCreatedAtAsc");
     }
+
+    @Test
+    void controller_shouldExposeCohortIntakeEndpoints() throws Exception {
+        String controller = Files.readString(Path.of(
+                "src/main/java/com/prosper/prospermentor/controller/CompanyProgramCohortController.java"
+        ));
+
+        assertThat(controller).contains(
+                "/company-program-cohorts/join/{joinCode}",
+                "/company-program-cohorts/{cohortId}/participants",
+                "/company-program-cohort-join-requests/{joinRequestId}/confirm",
+                "/company-program-cohort-join-requests/{joinRequestId}/reject",
+                "/company-program-cohort-participants/{participantId}/confirm",
+                "/company-program-cohort-participants/{participantId}/reject",
+                "/company-program-cohort-participants/{participantId}/resolve-duplicate"
+        );
+    }
 }

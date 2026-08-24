@@ -1,6 +1,7 @@
 package com.prosper.prospermentor.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -116,14 +117,18 @@ public class Profile {
     /**
      * Areas of expertise - stored as array in PostgreSQL
      */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "expertise", columnDefinition = "text[]")
-    private List<String> expertise;
+    private String[] expertise;
 
     /**
      * User interests - stored as array in PostgreSQL
      */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "interests", columnDefinition = "text[]")
-    private List<String> interests;
+    private String[] interests;
 
     /**
      * Date of birth
@@ -188,6 +193,30 @@ public class Profile {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = ZonedDateTime.now();
+    }
+
+    public List<String> getExpertise() {
+        return TextArrayMapping.toList(expertise);
+    }
+
+    public void setExpertise(List<String> expertise) {
+        this.expertise = TextArrayMapping.fromList(expertise);
+    }
+
+    public void setExpertise(String[] expertise) {
+        this.expertise = expertise;
+    }
+
+    public List<String> getInterests() {
+        return TextArrayMapping.toList(interests);
+    }
+
+    public void setInterests(List<String> interests) {
+        this.interests = TextArrayMapping.fromList(interests);
+    }
+
+    public void setInterests(String[] interests) {
+        this.interests = interests;
     }
 
     /**

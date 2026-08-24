@@ -1,6 +1,7 @@
 package com.prosper.prospermentor.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -47,15 +48,19 @@ public class MenteeProfile {
      * List of goals the mentee wants to achieve
      * Stored as text array in PostgreSQL
      */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "goals", columnDefinition = "text[]")
-    private List<String> goals;
+    private String[] goals;
 
     /**
      * List of interests the mentee has
      * Stored as text array in PostgreSQL
      */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "interests", columnDefinition = "text[]")
-    private List<String> interests;
+    private String[] interests;
 
     /**
      * Preferred learning style
@@ -107,5 +112,29 @@ public class MenteeProfile {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public List<String> getGoals() {
+        return TextArrayMapping.toList(goals);
+    }
+
+    public void setGoals(List<String> goals) {
+        this.goals = TextArrayMapping.fromList(goals);
+    }
+
+    public void setGoals(String[] goals) {
+        this.goals = goals;
+    }
+
+    public List<String> getInterests() {
+        return TextArrayMapping.toList(interests);
+    }
+
+    public void setInterests(List<String> interests) {
+        this.interests = TextArrayMapping.fromList(interests);
+    }
+
+    public void setInterests(String[] interests) {
+        this.interests = interests;
     }
 }

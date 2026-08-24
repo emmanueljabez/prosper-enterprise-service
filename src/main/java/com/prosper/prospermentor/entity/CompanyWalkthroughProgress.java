@@ -11,6 +11,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,11 +57,15 @@ public class CompanyWalkthroughProgress {
     @Column(name = "intro_dismissed", nullable = false)
     private boolean introDismissed = false;
 
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "completed_task_ids", nullable = false, columnDefinition = "text[]")
-    private List<String> completedTaskIds = new ArrayList<>();
+    private String[] completedTaskIds = new String[0];
 
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "completed_tour_ids", nullable = false, columnDefinition = "text[]")
-    private List<String> completedTourIds = new ArrayList<>();
+    private String[] completedTourIds = new String[0];
 
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
@@ -81,5 +86,29 @@ public class CompanyWalkthroughProgress {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public List<String> getCompletedTaskIds() {
+        return TextArrayMapping.toListOrEmpty(completedTaskIds);
+    }
+
+    public void setCompletedTaskIds(List<String> completedTaskIds) {
+        this.completedTaskIds = TextArrayMapping.fromListOrEmpty(completedTaskIds);
+    }
+
+    public void setCompletedTaskIds(String[] completedTaskIds) {
+        this.completedTaskIds = completedTaskIds == null ? new String[0] : completedTaskIds;
+    }
+
+    public List<String> getCompletedTourIds() {
+        return TextArrayMapping.toListOrEmpty(completedTourIds);
+    }
+
+    public void setCompletedTourIds(List<String> completedTourIds) {
+        this.completedTourIds = TextArrayMapping.fromListOrEmpty(completedTourIds);
+    }
+
+    public void setCompletedTourIds(String[] completedTourIds) {
+        this.completedTourIds = completedTourIds == null ? new String[0] : completedTourIds;
     }
 }

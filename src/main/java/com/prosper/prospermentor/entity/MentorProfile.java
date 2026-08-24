@@ -1,6 +1,7 @@
 package com.prosper.prospermentor.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -60,15 +61,19 @@ public class MentorProfile {
      * List of specializations
      * Stored as text array in PostgreSQL
      */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "specializations", columnDefinition = "text[]")
-    private List<String> specializations;
+    private String[] specializations;
 
     /**
      * List of languages spoken
      * Stored as text array in PostgreSQL
      */
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "languages", columnDefinition = "text[]")
-    private List<String> languages;
+    private String[] languages;
 
     /**
      * Timezone
@@ -137,5 +142,29 @@ public class MentorProfile {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public List<String> getSpecializations() {
+        return TextArrayMapping.toList(specializations);
+    }
+
+    public void setSpecializations(List<String> specializations) {
+        this.specializations = TextArrayMapping.fromList(specializations);
+    }
+
+    public void setSpecializations(String[] specializations) {
+        this.specializations = specializations;
+    }
+
+    public List<String> getLanguages() {
+        return TextArrayMapping.toList(languages);
+    }
+
+    public void setLanguages(List<String> languages) {
+        this.languages = TextArrayMapping.fromList(languages);
+    }
+
+    public void setLanguages(String[] languages) {
+        this.languages = languages;
     }
 }

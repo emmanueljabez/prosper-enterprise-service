@@ -4,17 +4,24 @@ import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
 import com.prosper.prospermentor.dto.CohortPlenaryAttendanceDto;
+import com.prosper.prospermentor.dto.CircleSuggestionResultDto;
+import com.prosper.prospermentor.dto.CommonInterestCircleDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.dto.ConfirmCohortJoinRequest;
+import com.prosper.prospermentor.dto.CreateCommonInterestCircleRequest;
 import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
+import com.prosper.prospermentor.dto.MoveCircleMembershipRequest;
 import com.prosper.prospermentor.dto.PlenaryAttendanceImportRow;
+import com.prosper.prospermentor.dto.PlaceCircleParticipantRequest;
 import com.prosper.prospermentor.dto.RecordPlenaryAttendanceRequest;
 import com.prosper.prospermentor.dto.ResolveCohortDuplicateRequest;
+import com.prosper.prospermentor.dto.UpdateCommonInterestCircleRequest;
 import com.prosper.prospermentor.dto.UpdateCompanyProgramCohortRequest;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
+import com.prosper.prospermentor.service.CommonInterestCircleService;
 import com.prosper.prospermentor.service.CompanyProgramCohortIntakeService;
 import com.prosper.prospermentor.service.CompanyProgramCohortService;
 import com.prosper.prospermentor.service.CompanyProgramService;
@@ -44,6 +51,7 @@ public class CompanyProgramCohortController {
 
     private final CompanyProgramCohortService cohortService;
     private final CompanyProgramCohortIntakeService intakeService;
+    private final CommonInterestCircleService circleService;
     private final CompanyProgramService companyProgramService;
     private final ProfileService profileService;
 
@@ -331,6 +339,203 @@ public class CompanyProgramCohortController {
             log.error("Error recording plenary attendance for cohort participant {}: {}", participantId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to record cohort participant plenary attendance: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/company-program-cohorts/{cohortId}/circles")
+    @Operation(summary = "Get cohort common interest circles")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getCircles(@PathVariable UUID cohortId,
+                                                                       Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            List<CommonInterestCircleDto> circles = circleService.getCircles(cohortId);
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohortId", cohortId);
+            data.put("circles", circles);
+            data.put("count", circles.size());
+            return ResponseEntity.ok(ApiResponse.success("Cohort circles retrieved successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting cohort circles {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get cohort circles: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohorts/{cohortId}/circles")
+    @Operation(summary = "Create cohort common interest circle")
+    public ResponseEntity<ApiResponse<CommonInterestCircleDto>> createCircle(@PathVariable UUID cohortId,
+                                                                            @Valid @RequestBody CreateCommonInterestCircleRequest request,
+                                                                            Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            CommonInterestCircleDto circle = circleService.createCircle(cohortId, request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("Cohort circle created successfully", circle));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error creating cohort circle for cohort {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to create cohort circle: " + e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/common-interest-circles/{circleId}")
+    @Operation(summary = "Update common interest circle")
+    public ResponseEntity<ApiResponse<CommonInterestCircleDto>> updateCircle(@PathVariable UUID circleId,
+                                                                            @RequestBody UpdateCommonInterestCircleRequest request,
+                                                                            Authentication authentication) {
+        try {
+            authorizeCohortOperatorRole(authentication);
+            CommonInterestCircleDto circle = circleService.updateCircle(circleId, request);
+            return ResponseEntity.ok(ApiResponse.success("Common interest circle updated successfully", circle));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error updating common interest circle {}: {}", circleId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to update common interest circle: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohorts/{cohortId}/circle-suggestions")
+    @Operation(summary = "Suggest cohort common interest circles")
+    public ResponseEntity<ApiResponse<CircleSuggestionResultDto>> suggestCircles(@PathVariable UUID cohortId,
+                                                                                Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            CircleSuggestionResultDto result = circleService.suggestCircles(cohortId);
+            return ResponseEntity.ok(ApiResponse.success("Cohort circle suggestions generated successfully", result));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error suggesting circles for cohort {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to suggest cohort circles: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/common-interest-circles/{circleId}/members")
+    @Operation(summary = "Place participant in common interest circle")
+    public ResponseEntity<ApiResponse<CommonInterestCircleDto>> placeParticipant(@PathVariable UUID circleId,
+                                                                                @RequestBody PlaceCircleParticipantRequest request,
+                                                                                Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CommonInterestCircleDto circle = circleService.placeParticipant(
+                    circleId,
+                    request.getCohortParticipantId(),
+                    request.getPlacementSource(),
+                    userDetails.getUserIdAsUuid()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Participant placed in circle successfully", circle));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error placing participant in circle {}: {}", circleId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to place participant in circle: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/common-interest-circle-memberships/{membershipId}")
+    @Operation(summary = "Remove common interest circle membership")
+    public ResponseEntity<ApiResponse<CommonInterestCircleDto>> removeMembership(@PathVariable UUID membershipId,
+                                                                                Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CommonInterestCircleDto circle = circleService.removeMembership(membershipId, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Circle membership removed successfully", circle));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error removing circle membership {}: {}", membershipId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to remove circle membership: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/common-interest-circle-memberships/{membershipId}/move")
+    @Operation(summary = "Move common interest circle membership")
+    public ResponseEntity<ApiResponse<CommonInterestCircleDto>> moveMembership(@PathVariable UUID membershipId,
+                                                                              @RequestBody MoveCircleMembershipRequest request,
+                                                                              Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CommonInterestCircleDto circle = circleService.moveMembership(
+                    membershipId,
+                    request.getTargetCircleId(),
+                    userDetails.getUserIdAsUuid()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Circle membership moved successfully", circle));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error moving circle membership {}: {}", membershipId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to move circle membership: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohorts/{cohortId}/circles/finalize")
+    @Operation(summary = "Finalize cohort common interest circles")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> finalizeCircles(@PathVariable UUID cohortId,
+                                                                           Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            List<CommonInterestCircleDto> circles = circleService.finalizeCircles(cohortId, userDetails.getUserIdAsUuid());
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohortId", cohortId);
+            data.put("circles", circles);
+            data.put("count", circles.size());
+            return ResponseEntity.ok(ApiResponse.success("Cohort circles finalized successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error finalizing circles for cohort {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to finalize cohort circles: " + e.getMessage()));
         }
     }
 

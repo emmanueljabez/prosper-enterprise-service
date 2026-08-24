@@ -85,7 +85,14 @@ class CompanyProgramCohortSchemaTest {
                 "/company-program-cohorts/{cohortId}/plenary",
                 "/company-program-cohorts/{cohortId}/plenary/link-event",
                 "/company-program-cohorts/{cohortId}/plenary/attendance/import",
-                "/company-program-cohort-participants/{participantId}/plenary-attendance"
+                "/company-program-cohort-participants/{participantId}/plenary-attendance",
+                "/company-program-cohorts/{cohortId}/circles",
+                "/company-program-cohorts/{cohortId}/circle-suggestions",
+                "/common-interest-circles/{circleId}",
+                "/common-interest-circles/{circleId}/members",
+                "/common-interest-circle-memberships/{membershipId}",
+                "/common-interest-circle-memberships/{membershipId}/move",
+                "/company-program-cohorts/{cohortId}/circles/finalize"
         );
     }
 }

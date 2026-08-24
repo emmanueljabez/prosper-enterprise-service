@@ -12,7 +12,7 @@ class CompanyProgramCohortSchemaTest {
     @Test
     void migration_shouldCreateCohortCircleTablesAndConstraints() throws Exception {
         String migration = Files.readString(Path.of(
-                "src/main/resources/db/migration/V77__Create_company_program_cohorts_and_circles.sql"
+                "src/main/resources/db/migration/V80__Create_company_program_cohorts_and_circles.sql"
         ));
 
         assertThat(migration).contains("CREATE TABLE IF NOT EXISTS company_program_cohorts");

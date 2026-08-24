@@ -1,0 +1,70 @@
+package com.prosper.prospermentor.service;
+
+import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
+import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
+import com.prosper.prospermentor.entity.CompanyProgram;
+import com.prosper.prospermentor.entity.CompanyProgramCohort;
+import com.prosper.prospermentor.repository.CommonInterestCircleRepository;
+import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepository;
+import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
+import com.prosper.prospermentor.repository.CompanyProgramRepository;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class CompanyProgramCohortServiceTest {
+
+    @Mock
+    private CompanyProgramRepository companyProgramRepository;
+    @Mock
+    private CompanyProgramCohortRepository cohortRepository;
+    @Mock
+    private CompanyProgramCohortParticipantRepository cohortParticipantRepository;
+    @Mock
+    private CommonInterestCircleRepository circleRepository;
+
+    @InjectMocks
+    private CompanyProgramCohortService service;
+
+    @Test
+    void createCohort_shouldDefaultCircleSizeAndDraftStatus() {
+        UUID programId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        CompanyProgram program = new CompanyProgram();
+        program.setId(programId);
+        program.setName("G4G Mentorship");
+
+        when(companyProgramRepository.findById(programId)).thenReturn(Optional.of(program));
+        when(cohortRepository.save(any(CompanyProgramCohort.class))).thenAnswer(invocation -> {
+            CompanyProgramCohort cohort = invocation.getArgument(0);
+            cohort.setId(UUID.fromString("55555555-5555-5555-5555-555555555555"));
+            return cohort;
+        });
+
+        CreateCompanyProgramCohortRequest request = CreateCompanyProgramCohortRequest.builder()
+                .name("G4G Nairobi - Q3 2026")
+                .code("G4G-NBO-Q3-2026")
+                .region("Nairobi")
+                .chapter("Nairobi")
+                .selfJoinEnabled(true)
+                .build();
+
+        CompanyProgramCohortDto dto = service.createCohort(programId, request, userId);
+
+        assertThat(dto.getCompanyProgramId()).isEqualTo(programId);
+        assertThat(dto.getStatus()).isEqualTo(CompanyProgramCohort.CohortStatus.DRAFT);
+        assertThat(dto.getCircleMinSize()).isEqualTo(5);
+        assertThat(dto.getCircleMaxSize()).isEqualTo(10);
+        assertThat(dto.isSelfJoinEnabled()).isTrue();
+    }
+}

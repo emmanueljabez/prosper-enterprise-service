@@ -2,7 +2,10 @@ package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortWorkspaceDto;
+import com.prosper.prospermentor.dto.CohortGateStatusDto;
+import com.prosper.prospermentor.dto.CommonInterestCircleDto;
 import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
+import com.prosper.prospermentor.dto.EmployeeCompanyProgramCohortDto;
 import com.prosper.prospermentor.dto.UpdateCompanyProgramCohortRequest;
 import com.prosper.prospermentor.entity.CommonInterestCircle;
 import com.prosper.prospermentor.entity.CommonInterestCircleMembership;
@@ -11,6 +14,7 @@ import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramCohort;
 import com.prosper.prospermentor.entity.CompanyProgramCohortParticipant;
 import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
+import com.prosper.prospermentor.entity.CompanyProgramParticipant;
 import com.prosper.prospermentor.repository.CommonInterestCircleMembershipRepository;
 import com.prosper.prospermentor.repository.CommonInterestCircleRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepository;
@@ -41,6 +45,7 @@ public class CompanyProgramCohortService {
     private final CompanyProgramCohortPlenaryAttendanceRepository attendanceRepository;
     private final CommonInterestCircleRepository circleRepository;
     private final CommonInterestCircleMembershipRepository membershipRepository;
+    private final CompanyProgramCohortGateService cohortGateService;
 
     @Transactional(readOnly = true)
     public List<CompanyProgramCohortDto> getCohorts(UUID companyProgramId) {
@@ -260,6 +265,48 @@ public class CompanyProgramCohortService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public List<EmployeeCompanyProgramCohortDto> getEmployeeCohorts(UUID profileId) {
+        return cohortParticipantRepository.findByProfile_Id(profileId).stream()
+                .map(this::toEmployeeCohortDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public EmployeeCompanyProgramCohortDto getEmployeeCohort(UUID cohortId, UUID profileId) {
+        CompanyProgramCohortParticipant participant = cohortParticipantRepository.findByCohort_IdAndProfile_Id(cohortId, profileId)
+                .orElseThrow(() -> new NoSuchElementException("Company program cohort membership not found"));
+        return toEmployeeCohortDto(participant);
+    }
+
+    public EmployeeCompanyProgramCohortDto requestEmployeeCircle(UUID cohortId, UUID profileId, UUID circleId) {
+        CompanyProgramCohortParticipant participant = cohortParticipantRepository.findByCohort_IdAndProfile_Id(cohortId, profileId)
+                .orElseThrow(() -> new NoSuchElementException("Company program cohort membership not found"));
+        CommonInterestCircle circle = circleRepository.findByIdAndCohort_Id(circleId, cohortId)
+                .orElseThrow(() -> new NoSuchElementException("Common interest circle not found"));
+
+        if (membershipRepository.findByCohortParticipant_IdAndStatus(
+                participant.getId(),
+                CommonInterestCircleMembership.MembershipStatus.PLACED
+        ).isPresent()) {
+            throw new IllegalStateException("Participant is already placed in a circle");
+        }
+        if (membershipRepository.findByCohortParticipant_IdAndStatus(
+                participant.getId(),
+                CommonInterestCircleMembership.MembershipStatus.PENDING_REQUEST
+        ).isPresent()) {
+            throw new IllegalStateException("A circle request is already pending");
+        }
+
+        CommonInterestCircleMembership request = new CommonInterestCircleMembership();
+        request.setCircle(circle);
+        request.setCohortParticipant(participant);
+        request.setPlacementSource(CommonInterestCircleMembership.PlacementSource.MENTEE_REQUESTED);
+        request.setStatus(CommonInterestCircleMembership.MembershipStatus.PENDING_REQUEST);
+        membershipRepository.save(request);
+        return toEmployeeCohortDto(participant);
+    }
+
     public CompanyProgramCohortDto toDto(CompanyProgramCohort cohort) {
         if (cohort == null) {
             return null;
@@ -318,6 +365,84 @@ public class CompanyProgramCohortService {
                 .version(cohort.getVersion())
                 .createdAt(cohort.getCreatedAt())
                 .updatedAt(cohort.getUpdatedAt())
+                .build();
+    }
+
+    private EmployeeCompanyProgramCohortDto toEmployeeCohortDto(CompanyProgramCohortParticipant participant) {
+        CompanyProgramCohort cohort = participant.getCohort();
+        CompanyProgram companyProgram = cohort != null ? cohort.getCompanyProgram() : null;
+        Company company = companyProgram != null ? companyProgram.getCompany() : null;
+        CohortGateStatusDto gateStatus = cohortGateService.resolveGateStatusForCohortParticipant(participant.getId());
+        CommonInterestCircleDto circle = membershipRepository.findByCohortParticipant_IdAndStatus(
+                        participant.getId(),
+                        CommonInterestCircleMembership.MembershipStatus.PLACED
+                )
+                .map(CommonInterestCircleMembership::getCircle)
+                .map(this::toEmployeeCircleDto)
+                .orElse(null);
+        CompanyProgramParticipant programParticipant = participant.getCompanyProgramParticipant();
+
+        return EmployeeCompanyProgramCohortDto.builder()
+                .cohortId(cohort != null ? cohort.getId() : null)
+                .companyProgramId(companyProgram != null ? companyProgram.getId() : null)
+                .cohortParticipantId(participant.getId())
+                .companyProgramParticipantId(programParticipant != null ? programParticipant.getId() : null)
+                .cohortName(cohort != null ? cohort.getName() : null)
+                .companyProgramName(companyProgram != null ? companyProgram.getName() : null)
+                .companyName(company != null ? company.getName() : null)
+                .chapter(cohort != null ? cohort.getChapter() : participant.getChapter())
+                .region(cohort != null ? cohort.getRegion() : participant.getRegion())
+                .cohortStatus(cohort != null ? cohort.getStatus() : null)
+                .participantStatus(participant.getStatus())
+                .stages(toStageSummary(gateStatus))
+                .circle(circle)
+                .mentorAssignment(null)
+                .build();
+    }
+
+    private CommonInterestCircleDto toEmployeeCircleDto(CommonInterestCircle circle) {
+        if (circle == null) {
+            return null;
+        }
+        return CommonInterestCircleDto.builder()
+                .id(circle.getId())
+                .cohortId(circle.getCohort() != null ? circle.getCohort().getId() : null)
+                .name(circle.getName())
+                .theme(circle.getTheme())
+                .interestTags(circle.getInterestTags() != null ? circle.getInterestTags() : List.of())
+                .facilitatorProfileId(circle.getFacilitatorProfile() != null ? circle.getFacilitatorProfile().getId() : null)
+                .minSize(circle.getMinSize())
+                .maxSize(circle.getMaxSize())
+                .status(circle.getStatus())
+                .nextSessionAt(circle.getNextSessionAt())
+                .memberCount(0)
+                .members(List.of())
+                .version(circle.getVersion())
+                .createdAt(circle.getCreatedAt())
+                .updatedAt(circle.getUpdatedAt())
+                .build();
+    }
+
+    private EmployeeCompanyProgramCohortDto.StageSummaryDto toStageSummary(CohortGateStatusDto gateStatus) {
+        return EmployeeCompanyProgramCohortDto.StageSummaryDto.builder()
+                .plenary(EmployeeCompanyProgramCohortDto.StageDto.builder()
+                        .status(gateStatus != null && gateStatus.isPlenaryAttended()
+                                ? "ATTENDED"
+                                : gateStatus != null && gateStatus.isConfirmed() ? "READY" : "PENDING_CONFIRMATION")
+                        .blockedReason(null)
+                        .build())
+                .circle(EmployeeCompanyProgramCohortDto.StageDto.builder()
+                        .status(gateStatus != null && gateStatus.isPlacedInCircle()
+                                ? "ACTIVE"
+                                : gateStatus != null && gateStatus.isPlenaryAttended() ? "READY_TO_JOIN" : "LOCKED")
+                        .blockedReason(gateStatus != null && !gateStatus.isPlacedInCircle() ? gateStatus.getBlockedReason() : null)
+                        .build())
+                .oneToOne(EmployeeCompanyProgramCohortDto.StageDto.builder()
+                        .status(gateStatus != null && gateStatus.isEligibleForMatching()
+                                ? "READY_FOR_MATCHING"
+                                : "BLOCKED")
+                        .blockedReason(gateStatus != null && !gateStatus.isEligibleForMatching() ? gateStatus.getBlockedReason() : null)
+                        .build())
                 .build();
     }
 

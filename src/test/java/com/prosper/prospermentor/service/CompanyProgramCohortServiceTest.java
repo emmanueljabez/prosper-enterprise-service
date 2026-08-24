@@ -1,14 +1,19 @@
 package com.prosper.prospermentor.service;
 
+import com.prosper.prospermentor.dto.CohortGateStatusDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortWorkspaceDto;
 import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
+import com.prosper.prospermentor.dto.EmployeeCompanyProgramCohortDto;
 import com.prosper.prospermentor.entity.CommonInterestCircle;
 import com.prosper.prospermentor.entity.CommonInterestCircleMembership;
+import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramCohort;
 import com.prosper.prospermentor.entity.CompanyProgramCohortParticipant;
 import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
+import com.prosper.prospermentor.entity.CompanyProgramParticipant;
+import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.repository.CommonInterestCircleMembershipRepository;
 import com.prosper.prospermentor.repository.CommonInterestCircleRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortJoinRequestRepository;
@@ -47,6 +52,8 @@ class CompanyProgramCohortServiceTest {
     private CommonInterestCircleRepository circleRepository;
     @Mock
     private CommonInterestCircleMembershipRepository membershipRepository;
+    @Mock
+    private CompanyProgramCohortGateService cohortGateService;
 
     @InjectMocks
     private CompanyProgramCohortService service;
@@ -123,6 +130,29 @@ class CompanyProgramCohortServiceTest {
         assertThat(dashboard.getMatchCompletionRate()).isEqualTo(25.0);
     }
 
+    @Test
+    void getEmployeeCohorts_shouldReturnStageStatusForProfile() {
+        UUID profileId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        CompanyProgramCohortParticipant participant = cohortParticipant(profileId);
+        when(cohortParticipantRepository.findByProfile_Id(profileId)).thenReturn(List.of(participant));
+        when(cohortGateService.resolveGateStatusForCohortParticipant(participant.getId())).thenReturn(
+                CohortGateStatusDto.builder()
+                        .cohortParticipantId(participant.getId())
+                        .confirmed(true)
+                        .plenaryAttended(true)
+                        .placedInCircle(true)
+                        .eligibleForMatching(true)
+                        .build()
+        );
+
+        List<EmployeeCompanyProgramCohortDto> cohorts = service.getEmployeeCohorts(profileId);
+
+        assertThat(cohorts).hasSize(1);
+        assertThat(cohorts.get(0).getStages().getPlenary().getStatus()).isEqualTo("ATTENDED");
+        assertThat(cohorts.get(0).getStages().getCircle().getStatus()).isEqualTo("ACTIVE");
+        assertThat(cohorts.get(0).getStages().getOneToOne().getStatus()).isEqualTo("READY_FOR_MATCHING");
+    }
+
     private CompanyProgramCohortParticipant participant(CompanyProgramCohortParticipant.ParticipantSource source,
                                                        CompanyProgramCohortParticipant.CohortParticipantStatus status,
                                                        CompanyProgramCohortParticipant.DuplicateStatus duplicateStatus) {
@@ -146,5 +176,41 @@ class CompanyProgramCohortServiceTest {
         membership.setCohortParticipant(participant);
         membership.setStatus(CommonInterestCircleMembership.MembershipStatus.PLACED);
         return membership;
+    }
+
+    private CompanyProgramCohortParticipant cohortParticipant(UUID profileId) {
+        Company company = new Company();
+        company.setId(UUID.fromString("99999999-9999-9999-9999-999999999999"));
+        company.setName("Girls 4 Girls");
+
+        CompanyProgram companyProgram = new CompanyProgram();
+        companyProgram.setId(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+        companyProgram.setName("G4G Mentorship");
+        companyProgram.setCompany(company);
+
+        CompanyProgramCohort cohort = new CompanyProgramCohort();
+        cohort.setId(UUID.fromString("55555555-5555-5555-5555-555555555555"));
+        cohort.setName("G4G Nairobi - Q3 2026");
+        cohort.setChapter("Nairobi");
+        cohort.setRegion("Kenya");
+        cohort.setStatus(CompanyProgramCohort.CohortStatus.CIRCLES_FINALIZED);
+        cohort.setCompanyProgram(companyProgram);
+
+        Profile profile = new Profile();
+        profile.setId(profileId);
+        profile.setEmail("amina@example.com");
+
+        CompanyProgramParticipant companyProgramParticipant = new CompanyProgramParticipant();
+        companyProgramParticipant.setId(UUID.fromString("77777777-7777-7777-7777-777777777777"));
+        companyProgramParticipant.setCompanyProgram(companyProgram);
+        companyProgramParticipant.setProfile(profile);
+
+        CompanyProgramCohortParticipant participant = new CompanyProgramCohortParticipant();
+        participant.setId(UUID.fromString("66666666-6666-6666-6666-666666666666"));
+        participant.setCohort(cohort);
+        participant.setProfile(profile);
+        participant.setCompanyProgramParticipant(companyProgramParticipant);
+        participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PLACED_IN_CIRCLE);
+        return participant;
     }
 }

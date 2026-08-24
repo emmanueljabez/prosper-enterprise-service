@@ -11,6 +11,8 @@ import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.dto.ConfirmCohortJoinRequest;
 import com.prosper.prospermentor.dto.CreateCommonInterestCircleRequest;
 import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
+import com.prosper.prospermentor.dto.EmployeeCircleRequestRequest;
+import com.prosper.prospermentor.dto.EmployeeCompanyProgramCohortDto;
 import com.prosper.prospermentor.dto.MoveCircleMembershipRequest;
 import com.prosper.prospermentor.dto.PlenaryAttendanceImportRow;
 import com.prosper.prospermentor.dto.PlaceCircleParticipantRequest;
@@ -559,6 +561,100 @@ public class CompanyProgramCohortController {
             log.error("Error getting cohort dashboard {}: {}", cohortId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to get cohort dashboard: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me/company-program-cohorts")
+    @Operation(summary = "Get my company program cohorts")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyCompanyProgramCohorts(Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = requireAuthenticatedUser(authentication);
+            List<EmployeeCompanyProgramCohortDto> cohorts = cohortService.getEmployeeCohorts(userDetails.getUserIdAsUuid());
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohorts", cohorts);
+            data.put("count", cohorts.size());
+            return ResponseEntity.ok(ApiResponse.success("Employee company program cohorts retrieved successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting employee company program cohorts: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get employee company program cohorts: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me/company-program-cohorts/{cohortId}")
+    @Operation(summary = "Get my company program cohort")
+    public ResponseEntity<ApiResponse<EmployeeCompanyProgramCohortDto>> getMyCompanyProgramCohort(
+            @PathVariable UUID cohortId,
+            Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = requireAuthenticatedUser(authentication);
+            EmployeeCompanyProgramCohortDto cohort = cohortService.getEmployeeCohort(cohortId, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Employee company program cohort retrieved successfully", cohort));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting employee company program cohort {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get employee company program cohort: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/me/company-program-cohorts/{cohortId}/circles")
+    @Operation(summary = "Get my cohort circles")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyCompanyProgramCohortCircles(
+            @PathVariable UUID cohortId,
+            Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = requireAuthenticatedUser(authentication);
+            cohortService.getEmployeeCohort(cohortId, userDetails.getUserIdAsUuid());
+            List<CommonInterestCircleDto> circles = circleService.getCircles(cohortId);
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohortId", cohortId);
+            data.put("circles", circles);
+            data.put("count", circles.size());
+            return ResponseEntity.ok(ApiResponse.success("Employee cohort circles retrieved successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting employee cohort circles {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get employee cohort circles: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/me/company-program-cohorts/{cohortId}/circle-requests")
+    @Operation(summary = "Request a cohort circle")
+    public ResponseEntity<ApiResponse<EmployeeCompanyProgramCohortDto>> requestMyCompanyProgramCohortCircle(
+            @PathVariable UUID cohortId,
+            @RequestBody EmployeeCircleRequestRequest request,
+            Authentication authentication) {
+        try {
+            if (request == null || request.getCircleId() == null) {
+                throw new IllegalArgumentException("circleId is required");
+            }
+            SupabaseUserDetails userDetails = requireAuthenticatedUser(authentication);
+            EmployeeCompanyProgramCohortDto cohort = cohortService.requestEmployeeCircle(
+                    cohortId,
+                    userDetails.getUserIdAsUuid(),
+                    request.getCircleId()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Employee cohort circle request submitted successfully", cohort));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error requesting employee cohort circle {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to request employee cohort circle: " + e.getMessage()));
         }
     }
 

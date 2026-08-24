@@ -81,7 +81,11 @@ class CompanyProgramCohortSchemaTest {
                 "/company-program-cohort-join-requests/{joinRequestId}/reject",
                 "/company-program-cohort-participants/{participantId}/confirm",
                 "/company-program-cohort-participants/{participantId}/reject",
-                "/company-program-cohort-participants/{participantId}/resolve-duplicate"
+                "/company-program-cohort-participants/{participantId}/resolve-duplicate",
+                "/company-program-cohorts/{cohortId}/plenary",
+                "/company-program-cohorts/{cohortId}/plenary/link-event",
+                "/company-program-cohorts/{cohortId}/plenary/attendance/import",
+                "/company-program-cohort-participants/{participantId}/plenary-attendance"
         );
     }
 }

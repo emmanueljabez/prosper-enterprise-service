@@ -2,17 +2,21 @@ package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
+import com.prosper.prospermentor.dto.CohortPlenaryAttendanceDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
+import com.prosper.prospermentor.dto.PlenaryAttendanceImportRow;
 import com.prosper.prospermentor.dto.ResolveCohortDuplicateRequest;
 import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramCohort;
 import com.prosper.prospermentor.entity.CompanyProgramCohortJoinRequest;
 import com.prosper.prospermentor.entity.CompanyProgramCohortParticipant;
+import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
 import com.prosper.prospermentor.entity.CompanyProgramParticipant;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.repository.CompanyProgramCohortJoinRequestRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepository;
+import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanceRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.CompanyProgramParticipantRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
@@ -32,6 +36,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +46,7 @@ public class CompanyProgramCohortIntakeService {
 
     private final CompanyProgramCohortRepository cohortRepository;
     private final CompanyProgramCohortParticipantRepository cohortParticipantRepository;
+    private final CompanyProgramCohortPlenaryAttendanceRepository attendanceRepository;
     private final CompanyProgramCohortJoinRequestRepository joinRequestRepository;
     private final CompanyProgramParticipantRepository programParticipantRepository;
     private final ProfileRepository profileRepository;
@@ -86,6 +92,13 @@ public class CompanyProgramCohortIntakeService {
     public List<CompanyProgramCohortParticipantDto> getParticipants(UUID cohortId) {
         return cohortParticipantRepository.findByCohort_Id(cohortId).stream()
                 .map(this::toParticipantDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CohortPlenaryAttendanceDto> getPlenaryAttendance(UUID cohortId) {
+        return attendanceRepository.findByCohort_Id(cohortId).stream()
+                .map(this::toAttendanceDto)
                 .toList();
     }
 
@@ -162,6 +175,66 @@ public class CompanyProgramCohortIntakeService {
         return toParticipantDto(cohortParticipantRepository.save(participant));
     }
 
+    public CompanyProgramCohortParticipantDto recordPlenaryAttendance(UUID cohortParticipantId,
+                                                                      CompanyProgramCohortPlenaryAttendance.AttendanceStatus status,
+                                                                      CompanyProgramCohortPlenaryAttendance.AttendanceSource source,
+                                                                      UUID recordedByUserId) {
+        CompanyProgramCohortParticipant participant = cohortParticipantRepository.findById(cohortParticipantId)
+                .orElseThrow(() -> new NoSuchElementException("Cohort participant not found"));
+        CompanyProgramCohortPlenaryAttendance attendance = attendanceRepository.findByCohortParticipant_Id(cohortParticipantId)
+                .orElseGet(CompanyProgramCohortPlenaryAttendance::new);
+
+        CompanyProgramCohortPlenaryAttendance.AttendanceStatus resolvedStatus = status != null
+                ? status
+                : CompanyProgramCohortPlenaryAttendance.AttendanceStatus.ATTENDED;
+        attendance.setCohort(participant.getCohort());
+        attendance.setCohortParticipant(participant);
+        attendance.setStatus(resolvedStatus);
+        attendance.setAttendanceSource(source != null
+                ? source
+                : CompanyProgramCohortPlenaryAttendance.AttendanceSource.ADMIN_OVERRIDE);
+        attendance.setRecordedByUserId(recordedByUserId);
+        attendance.setAttendedAt(resolvedStatus == CompanyProgramCohortPlenaryAttendance.AttendanceStatus.ATTENDED
+                ? LocalDateTime.now()
+                : null);
+        attendanceRepository.save(attendance);
+
+        if (resolvedStatus == CompanyProgramCohortPlenaryAttendance.AttendanceStatus.ATTENDED
+                && participant.getStatus() == CompanyProgramCohortParticipant.CohortParticipantStatus.CONFIRMED) {
+            participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PLENARY_ATTENDED);
+            participant = cohortParticipantRepository.save(participant);
+        }
+
+        return toParticipantDto(participant);
+    }
+
+    public List<CompanyProgramCohortParticipantDto> importPlenaryAttendance(UUID cohortId,
+                                                                            List<PlenaryAttendanceImportRow> rows,
+                                                                            UUID recordedByUserId) {
+        if (!cohortRepository.existsById(cohortId)) {
+            throw new NoSuchElementException("Company program cohort not found");
+        }
+        if (rows == null || rows.isEmpty()) {
+            return List.of();
+        }
+
+        List<CompanyProgramCohortParticipant> participants = cohortParticipantRepository.findByCohort_Id(cohortId);
+        return rows.stream()
+                .filter(Objects::nonNull)
+                .map(row -> resolveImportParticipant(participants, row)
+                        .map(participant -> recordPlenaryAttendance(
+                                participant.getId(),
+                                row.getStatus(),
+                                row.getAttendanceSource() != null
+                                        ? row.getAttendanceSource()
+                                        : CompanyProgramCohortPlenaryAttendance.AttendanceSource.IMPORT,
+                                recordedByUserId
+                        )))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+    }
+
     public CompanyProgramCohortParticipantDto toParticipantDto(CompanyProgramCohortParticipant participant) {
         if (participant == null) {
             return null;
@@ -194,6 +267,51 @@ public class CompanyProgramCohortIntakeService {
                 .createdAt(participant.getCreatedAt())
                 .updatedAt(participant.getUpdatedAt())
                 .build();
+    }
+
+    public CohortPlenaryAttendanceDto toAttendanceDto(CompanyProgramCohortPlenaryAttendance attendance) {
+        if (attendance == null) {
+            return null;
+        }
+        CompanyProgramCohortParticipant participant = attendance.getCohortParticipant();
+        Profile profile = participant != null ? participant.getProfile() : null;
+        return CohortPlenaryAttendanceDto.builder()
+                .id(attendance.getId())
+                .cohortId(attendance.getCohort() != null ? attendance.getCohort().getId() : null)
+                .cohortParticipantId(participant != null ? participant.getId() : null)
+                .profileId(profile != null ? profile.getId() : null)
+                .profileName(participant != null ? buildProfileName(profile, participant) : null)
+                .profileEmail(profile != null ? profile.getEmail() : participant != null ? participant.getEmailSnapshot() : null)
+                .attendanceSource(attendance.getAttendanceSource())
+                .status(attendance.getStatus())
+                .attendedAt(attendance.getAttendedAt())
+                .recordedByUserId(attendance.getRecordedByUserId())
+                .createdAt(attendance.getCreatedAt())
+                .updatedAt(attendance.getUpdatedAt())
+                .build();
+    }
+
+    private Optional<CompanyProgramCohortParticipant> resolveImportParticipant(List<CompanyProgramCohortParticipant> participants,
+                                                                               PlenaryAttendanceImportRow row) {
+        if (row == null) {
+            return Optional.empty();
+        }
+        if (row.getCohortParticipantId() != null) {
+            return participants.stream()
+                    .filter(participant -> row.getCohortParticipantId().equals(participant.getId()))
+                    .findFirst();
+        }
+        String email = normalizeEmail(row.getEmail());
+        if (email.isBlank()) {
+            return Optional.empty();
+        }
+        return participants.stream()
+                .filter(participant -> {
+                    Profile profile = participant.getProfile();
+                    String participantEmail = profile != null ? profile.getEmail() : participant.getEmailSnapshot();
+                    return email.equals(normalizeEmail(participantEmail));
+                })
+                .findFirst();
     }
 
     private CompanyProgramParticipant resolveProgramParticipant(CompanyProgramCohort cohort,
@@ -333,7 +451,7 @@ public class CompanyProgramCohortIntakeService {
             }
             return profile.getEmail();
         }
-        return List.of(participant.getFirstNameSnapshot(), participant.getLastNameSnapshot()).stream()
+        return Stream.of(participant.getFirstNameSnapshot(), participant.getLastNameSnapshot())
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(value -> !value.isBlank())

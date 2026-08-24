@@ -3,12 +3,16 @@ package com.prosper.prospermentor.controller;
 import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
+import com.prosper.prospermentor.dto.CohortPlenaryAttendanceDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.dto.ConfirmCohortJoinRequest;
 import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
+import com.prosper.prospermentor.dto.PlenaryAttendanceImportRow;
+import com.prosper.prospermentor.dto.RecordPlenaryAttendanceRequest;
 import com.prosper.prospermentor.dto.ResolveCohortDuplicateRequest;
 import com.prosper.prospermentor.dto.UpdateCompanyProgramCohortRequest;
 import com.prosper.prospermentor.entity.CompanyProgram;
+import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
 import com.prosper.prospermentor.service.CompanyProgramCohortIntakeService;
@@ -213,6 +217,120 @@ public class CompanyProgramCohortController {
             log.error("Error getting cohort participants {}: {}", cohortId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to get cohort participants: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/company-program-cohorts/{cohortId}/plenary")
+    @Operation(summary = "Get cohort plenary attendance workspace")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getPlenaryWorkspace(@PathVariable UUID cohortId,
+                                                                                Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            List<CompanyProgramCohortParticipantDto> participants = intakeService.getParticipants(cohortId);
+            List<CohortPlenaryAttendanceDto> attendance = intakeService.getPlenaryAttendance(cohortId);
+
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohort", cohort);
+            data.put("participants", participants);
+            data.put("attendance", attendance);
+            data.put("participantCount", participants.size());
+            data.put("attendedCount", attendance.stream()
+                    .filter(row -> row.getStatus() == CompanyProgramCohortPlenaryAttendance.AttendanceStatus.ATTENDED)
+                    .count());
+            return ResponseEntity.ok(ApiResponse.success("Cohort plenary workspace retrieved successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting cohort plenary workspace {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get cohort plenary workspace: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohorts/{cohortId}/plenary/link-event")
+    @Operation(summary = "Link cohort plenary event metadata")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortDto>> linkPlenaryEvent(@PathVariable UUID cohortId,
+                                                                                 @RequestBody UpdateCompanyProgramCohortRequest request,
+                                                                                 Authentication authentication) {
+        try {
+            CompanyProgramCohortDto existing = cohortService.getCohort(cohortId);
+            if (existing.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, existing.getCompanyId(), true);
+            }
+            CompanyProgramCohortDto updated = cohortService.updateCohort(cohortId, request);
+            return ResponseEntity.ok(ApiResponse.success("Cohort plenary event linked successfully", updated));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error linking plenary event for cohort {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to link cohort plenary event: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohorts/{cohortId}/plenary/attendance/import")
+    @Operation(summary = "Import cohort plenary attendance")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> importPlenaryAttendance(
+            @PathVariable UUID cohortId,
+            @RequestBody List<PlenaryAttendanceImportRow> rows,
+            Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            List<CompanyProgramCohortParticipantDto> updated = intakeService.importPlenaryAttendance(
+                    cohortId,
+                    rows,
+                    userDetails.getUserIdAsUuid()
+            );
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohortId", cohortId);
+            data.put("participants", updated);
+            data.put("updatedCount", updated.size());
+            return ResponseEntity.ok(ApiResponse.success("Cohort plenary attendance imported successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error importing plenary attendance for cohort {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to import cohort plenary attendance: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-program-cohort-participants/{participantId}/plenary-attendance")
+    @Operation(summary = "Record cohort participant plenary attendance")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> recordPlenaryAttendance(
+            @PathVariable UUID participantId,
+            @RequestBody(required = false) RecordPlenaryAttendanceRequest request,
+            Authentication authentication) {
+        try {
+            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            CompanyProgramCohortParticipantDto participant = intakeService.recordPlenaryAttendance(
+                    participantId,
+                    request != null ? request.getStatus() : null,
+                    request != null ? request.getAttendanceSource() : null,
+                    userDetails.getUserIdAsUuid()
+            );
+            return ResponseEntity.ok(ApiResponse.success("Cohort participant plenary attendance recorded successfully", participant));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error recording plenary attendance for cohort participant {}: {}", participantId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to record cohort participant plenary attendance: " + e.getMessage()));
         }
     }
 

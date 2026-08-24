@@ -2,13 +2,17 @@ package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
+import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramCohort;
 import com.prosper.prospermentor.entity.CompanyProgramCohortJoinRequest;
+import com.prosper.prospermentor.entity.CompanyProgramCohortParticipant;
+import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.repository.CompanyProgramCohortJoinRequestRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepository;
+import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanceRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.CompanyProgramParticipantRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
@@ -25,6 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +39,8 @@ class CompanyProgramCohortIntakeServiceTest {
     private CompanyProgramCohortRepository cohortRepository;
     @Mock
     private CompanyProgramCohortParticipantRepository cohortParticipantRepository;
+    @Mock
+    private CompanyProgramCohortPlenaryAttendanceRepository attendanceRepository;
     @Mock
     private CompanyProgramCohortJoinRequestRepository joinRequestRepository;
     @Mock
@@ -87,6 +94,33 @@ class CompanyProgramCohortIntakeServiceTest {
         assertThat(response.getStatus()).isEqualTo(CompanyProgramCohortJoinRequest.JoinRequestStatus.DUPLICATE_REVIEW);
         assertThat(response.isDuplicateReviewRequired()).isTrue();
         assertThat(response.getMatchedProfileId()).isEqualTo(existing.getId());
+    }
+
+    @Test
+    void recordPlenaryAttendance_shouldMarkConfirmedParticipantAsAttended() {
+        UUID participantId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+        UUID adminUserId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        CompanyProgramCohortParticipant participant = new CompanyProgramCohortParticipant();
+        participant.setId(participantId);
+        participant.setCohort(intakeOpenCohort(UUID.fromString("55555555-5555-5555-5555-555555555555")));
+        participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.CONFIRMED);
+
+        when(cohortParticipantRepository.findById(participantId)).thenReturn(Optional.of(participant));
+        when(attendanceRepository.findByCohortParticipant_Id(participantId)).thenReturn(Optional.empty());
+        when(attendanceRepository.save(any(CompanyProgramCohortPlenaryAttendance.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cohortParticipantRepository.save(any(CompanyProgramCohortParticipant.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        CompanyProgramCohortParticipantDto response = service.recordPlenaryAttendance(
+                participantId,
+                CompanyProgramCohortPlenaryAttendance.AttendanceStatus.ATTENDED,
+                CompanyProgramCohortPlenaryAttendance.AttendanceSource.ADMIN_OVERRIDE,
+                adminUserId
+        );
+
+        assertThat(response.getStatus()).isEqualTo(CompanyProgramCohortParticipant.CohortParticipantStatus.PLENARY_ATTENDED);
+        verify(attendanceRepository).save(any(CompanyProgramCohortPlenaryAttendance.class));
     }
 
     private CompanyProgramCohort intakeOpenCohort(UUID cohortId) {

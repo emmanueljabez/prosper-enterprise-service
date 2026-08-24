@@ -2,14 +2,17 @@ package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
+import com.prosper.prospermentor.dto.AddCohortRosterParticipantsRequest;
 import com.prosper.prospermentor.dto.CompanyProgramCohortJoinRequestDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
+import com.prosper.prospermentor.dto.CohortRosterParticipantRequest;
 import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramCohort;
 import com.prosper.prospermentor.entity.CompanyProgramCohortJoinRequest;
 import com.prosper.prospermentor.entity.CompanyProgramCohortParticipant;
 import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
+import com.prosper.prospermentor.entity.CompanyProgramParticipant;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.repository.CompanyProgramCohortJoinRequestRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepository;
@@ -28,8 +31,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +56,97 @@ class CompanyProgramCohortIntakeServiceTest {
 
     @InjectMocks
     private CompanyProgramCohortIntakeService service;
+
+    @Test
+    void addRosterParticipants_shouldCreatePendingRosterParticipantsFromUploadedRecords() {
+        UUID cohortId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+        UUID adminUserId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        CompanyProgramCohort cohort = intakeOpenCohort(cohortId);
+        Profile existing = companyProfile(
+                UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                cohort.getCompanyProgram().getCompany(),
+                "Amina",
+                "Otieno",
+                "amina@example.com",
+                "+254 712 000 000"
+        );
+
+        when(cohortRepository.findById(cohortId)).thenReturn(Optional.of(cohort));
+        when(profileRepository.findByEmailIgnoreCase("amina@example.com")).thenReturn(Optional.of(existing));
+        when(cohortParticipantRepository.findByCohort_IdAndProfile_Id(cohortId, existing.getId())).thenReturn(Optional.empty());
+        when(cohortParticipantRepository.save(any(CompanyProgramCohortParticipant.class))).thenAnswer(invocation -> {
+            CompanyProgramCohortParticipant participant = invocation.getArgument(0);
+            participant.setId(UUID.fromString("66666666-6666-6666-6666-666666666666"));
+            return participant;
+        });
+
+        List<CompanyProgramCohortParticipantDto> participants = service.addRosterParticipants(
+                cohortId,
+                AddCohortRosterParticipantsRequest.builder()
+                        .participants(List.of(CohortRosterParticipantRequest.builder()
+                                .firstName("Amina")
+                                .lastName("Otieno")
+                                .email(" AMINA@example.com ")
+                                .phone("+254 712 000 000")
+                                .chapter("Nairobi")
+                                .region("Kenya")
+                                .interestTags(List.of(" STEM ", "STEM", "Career readiness"))
+                                .build()))
+                        .build(),
+                adminUserId
+        );
+
+        assertThat(participants).hasSize(1);
+        CompanyProgramCohortParticipantDto participant = participants.get(0);
+        assertThat(participant.getProfileId()).isEqualTo(existing.getId());
+        assertThat(participant.getProfileEmail()).isEqualTo("amina@example.com");
+        assertThat(participant.getSource()).isEqualTo(CompanyProgramCohortParticipant.ParticipantSource.ROSTER_UPLOAD);
+        assertThat(participant.getStatus()).isEqualTo(CompanyProgramCohortParticipant.CohortParticipantStatus.PENDING);
+        assertThat(participant.getDuplicateStatus()).isEqualTo(CompanyProgramCohortParticipant.DuplicateStatus.CLEAR);
+        assertThat(participant.getInterestTags()).containsExactly("STEM", "Career readiness");
+        verify(programParticipantRepository, never()).save(any(CompanyProgramParticipant.class));
+    }
+
+    @Test
+    void addRosterParticipants_shouldCreateCompanyLinkedMenteeProfileWhenContactIsNew() {
+        UUID cohortId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+        UUID adminUserId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        CompanyProgramCohort cohort = intakeOpenCohort(cohortId);
+
+        when(cohortRepository.findById(cohortId)).thenReturn(Optional.of(cohort));
+        when(profileRepository.findByEmailIgnoreCase("new.mentee@example.com")).thenReturn(Optional.empty());
+        when(profileRepository.findByPhoneNormalized("254700000000")).thenReturn(Optional.empty());
+        when(profileRepository.save(any(Profile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(cohortParticipantRepository.findByCohort_IdAndProfile_Id(eq(cohortId), any(UUID.class))).thenReturn(Optional.empty());
+        when(cohortParticipantRepository.save(any(CompanyProgramCohortParticipant.class))).thenAnswer(invocation -> {
+            CompanyProgramCohortParticipant participant = invocation.getArgument(0);
+            participant.setId(UUID.fromString("77777777-7777-7777-7777-777777777777"));
+            return participant;
+        });
+
+        List<CompanyProgramCohortParticipantDto> participants = service.addRosterParticipants(
+                cohortId,
+                AddCohortRosterParticipantsRequest.builder()
+                        .participants(List.of(CohortRosterParticipantRequest.builder()
+                                .firstName("New")
+                                .lastName("Mentee")
+                                .email("new.mentee@example.com")
+                                .phone("+254 700 000 000")
+                                .chapter("Nairobi")
+                                .region("Kenya")
+                                .interestTags(List.of("Public speaking"))
+                                .build()))
+                        .build(),
+                adminUserId
+        );
+
+        assertThat(participants).hasSize(1);
+        verify(profileRepository).save(any(Profile.class));
+        CompanyProgramCohortParticipantDto participant = participants.get(0);
+        assertThat(participant.getProfileEmail()).isEqualTo("new.mentee@example.com");
+        assertThat(participant.getStatus()).isEqualTo(CompanyProgramCohortParticipant.CohortParticipantStatus.PENDING);
+        assertThat(participant.getSource()).isEqualTo(CompanyProgramCohortParticipant.ParticipantSource.ROSTER_UPLOAD);
+    }
 
     @Test
     void submitSelfJoin_shouldCreatePendingJoinRequestWhenNoDuplicateExists() {
@@ -167,5 +263,23 @@ class CompanyProgramCohortIntakeServiceTest {
         cohort.setSelfJoinEnabled(true);
         cohort.setSelfJoinCapacity(20);
         return cohort;
+    }
+
+    private Profile companyProfile(UUID profileId,
+                                   Company company,
+                                   String firstName,
+                                   String lastName,
+                                   String email,
+                                   String phone) {
+        Profile profile = new Profile();
+        profile.setId(profileId);
+        profile.setCompany(company);
+        profile.setFirstName(firstName);
+        profile.setLastName(lastName);
+        profile.setEmail(email);
+        profile.setPhone(phone);
+        profile.setUsername(email);
+        profile.setRole("mentee");
+        return profile;
     }
 }

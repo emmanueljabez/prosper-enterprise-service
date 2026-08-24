@@ -76,6 +76,8 @@ class CompanyProgramCohortSchemaTest {
 
         assertThat(controller).contains(
                 "/company-program-cohorts/join/{joinCode}",
+                "@PostMapping(\"/company-program-cohorts/{cohortId}/participants\")",
+                "addRosterParticipants",
                 "/company-program-cohorts/{cohortId}/participants",
                 "/company-program-cohort-join-requests/{joinRequestId}/confirm",
                 "/company-program-cohort-join-requests/{joinRequestId}/reject",

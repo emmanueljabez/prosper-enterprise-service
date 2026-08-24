@@ -3,6 +3,7 @@ package com.prosper.prospermentor.service;
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
 import com.prosper.prospermentor.dto.CohortPlenaryAttendanceDto;
+import com.prosper.prospermentor.dto.CompanyProgramCohortJoinRequestDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.dto.PlenaryAttendanceImportRow;
 import com.prosper.prospermentor.dto.ResolveCohortDuplicateRequest;
@@ -54,6 +55,8 @@ public class CompanyProgramCohortIntakeService {
     @Transactional(readOnly = true)
     public CohortSelfJoinResponseDto getSelfJoinPreview(String joinCode) {
         CompanyProgramCohort cohort = findJoinableCohort(joinCode);
+        ensureSelfJoinOpen(cohort);
+        ensureSelfJoinCapacity(cohort);
         return toSelfJoinResponse(cohort, null);
     }
 
@@ -93,6 +96,27 @@ public class CompanyProgramCohortIntakeService {
         return cohortParticipantRepository.findByCohort_Id(cohortId).stream()
                 .map(this::toParticipantDto)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompanyProgramCohortJoinRequestDto> getJoinRequests(UUID cohortId) {
+        return joinRequestRepository.findByCohort_IdOrderByCreatedAtDesc(cohortId).stream()
+                .map(this::toJoinRequestDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UUID getParticipantCompanyId(UUID participantId) {
+        CompanyProgramCohortParticipant participant = cohortParticipantRepository.findById(participantId)
+                .orElseThrow(() -> new NoSuchElementException("Cohort participant not found"));
+        return companyId(participant.getCohort());
+    }
+
+    @Transactional(readOnly = true)
+    public UUID getJoinRequestCompanyId(UUID joinRequestId) {
+        CompanyProgramCohortJoinRequest joinRequest = joinRequestRepository.findById(joinRequestId)
+                .orElseThrow(() -> new NoSuchElementException("Cohort join request not found"));
+        return companyId(joinRequest.getCohort());
     }
 
     @Transactional(readOnly = true)
@@ -291,6 +315,34 @@ public class CompanyProgramCohortIntakeService {
                 .build();
     }
 
+    public CompanyProgramCohortJoinRequestDto toJoinRequestDto(CompanyProgramCohortJoinRequest joinRequest) {
+        if (joinRequest == null) {
+            return null;
+        }
+        CompanyProgramCohort cohort = joinRequest.getCohort();
+        CompanyProgram companyProgram = cohort != null ? cohort.getCompanyProgram() : null;
+        Profile matchedProfile = joinRequest.getMatchedProfile();
+        return CompanyProgramCohortJoinRequestDto.builder()
+                .id(joinRequest.getId())
+                .cohortId(cohort != null ? cohort.getId() : null)
+                .companyProgramId(companyProgram != null ? companyProgram.getId() : null)
+                .submittedEmail(joinRequest.getSubmittedEmail())
+                .submittedPhone(joinRequest.getSubmittedPhone())
+                .submittedFirstName(joinRequest.getSubmittedFirstName())
+                .submittedLastName(joinRequest.getSubmittedLastName())
+                .submittedChapter(joinRequest.getSubmittedChapter())
+                .submittedRegion(joinRequest.getSubmittedRegion())
+                .interestTags(joinRequest.getSubmittedInterestTags() != null ? joinRequest.getSubmittedInterestTags() : List.of())
+                .matchedProfileId(matchedProfile != null ? matchedProfile.getId() : null)
+                .matchedProfileName(profileName(matchedProfile))
+                .status(joinRequest.getStatus())
+                .reviewedByUserId(joinRequest.getReviewedByUserId())
+                .reviewedAt(joinRequest.getReviewedAt())
+                .createdAt(joinRequest.getCreatedAt())
+                .updatedAt(joinRequest.getUpdatedAt())
+                .build();
+    }
+
     private Optional<CompanyProgramCohortParticipant> resolveImportParticipant(List<CompanyProgramCohortParticipant> participants,
                                                                                PlenaryAttendanceImportRow row) {
         if (row == null) {
@@ -407,6 +459,28 @@ public class CompanyProgramCohortIntakeService {
 
     private String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private UUID companyId(CompanyProgramCohort cohort) {
+        CompanyProgram companyProgram = cohort != null ? cohort.getCompanyProgram() : null;
+        Company company = companyProgram != null ? companyProgram.getCompany() : null;
+        UUID companyId = company != null ? company.getId() : null;
+        if (companyId == null) {
+            throw new NoSuchElementException("Company context not found for cohort");
+        }
+        return companyId;
+    }
+
+    private String profileName(Profile profile) {
+        if (profile == null) {
+            return null;
+        }
+        return Stream.of(profile.getFirstName(), profile.getLastName())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .reduce((first, second) -> first + " " + second)
+                .orElse(profile.getEmail());
     }
 
     private String normalizePhone(String phone) {

@@ -26,8 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
@@ -81,6 +86,7 @@ public class CompanyProgramCohortService {
         cohort.setStartsAt(request.getStartsAt());
         cohort.setEndsAt(request.getEndsAt());
         cohort.setSelfJoinEnabled(Boolean.TRUE.equals(request.getSelfJoinEnabled()));
+        applySelfJoinCodeHash(cohort);
         cohort.setSelfJoinExpiresAt(request.getSelfJoinExpiresAt());
         cohort.setSelfJoinCapacity(request.getSelfJoinCapacity());
         cohort.setCircleMinSize(request.getCircleMinSize() != null ? request.getCircleMinSize() : 5);
@@ -128,6 +134,7 @@ public class CompanyProgramCohortService {
         if (request.getSelfJoinEnabled() != null) {
             cohort.setSelfJoinEnabled(request.getSelfJoinEnabled());
         }
+        applySelfJoinCodeHash(cohort);
         if (request.getSelfJoinExpiresAt() != null) {
             cohort.setSelfJoinExpiresAt(request.getSelfJoinExpiresAt());
         }
@@ -480,6 +487,24 @@ public class CompanyProgramCohortService {
         }
         if (resolvedMax < resolvedMin) {
             throw new IllegalArgumentException("circleMaxSize must be greater than or equal to circleMinSize");
+        }
+    }
+
+    private void applySelfJoinCodeHash(CompanyProgramCohort cohort) {
+        if (Boolean.TRUE.equals(cohort.getSelfJoinEnabled())) {
+            cohort.setSelfJoinCodeHash(hashJoinCode(cohort.getCode()));
+            return;
+        }
+        cohort.setSelfJoinCodeHash(null);
+    }
+
+    private String hashJoinCode(String joinCode) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(String.valueOf(joinCode).trim().toUpperCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is unavailable", e);
         }
     }
 }

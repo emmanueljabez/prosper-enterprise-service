@@ -10,10 +10,12 @@ import com.prosper.prospermentor.entity.CommonInterestCircle;
 import com.prosper.prospermentor.entity.CommonInterestCircleMembership;
 import com.prosper.prospermentor.entity.CompanyProgramCohort;
 import com.prosper.prospermentor.entity.CompanyProgramCohortParticipant;
+import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.repository.CommonInterestCircleMembershipRepository;
 import com.prosper.prospermentor.repository.CommonInterestCircleRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepository;
+import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanceRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,7 @@ public class CommonInterestCircleService {
     private final CompanyProgramCohortParticipantRepository cohortParticipantRepository;
     private final CommonInterestCircleRepository circleRepository;
     private final CommonInterestCircleMembershipRepository membershipRepository;
+    private final CompanyProgramCohortPlenaryAttendanceRepository attendanceRepository;
     private final ProfileRepository profileRepository;
 
     @Transactional(readOnly = true)
@@ -119,6 +122,21 @@ public class CommonInterestCircleService {
     }
 
     @Transactional(readOnly = true)
+    public UUID getCircleCompanyId(UUID circleId) {
+        CommonInterestCircle circle = circleRepository.findById(circleId)
+                .orElseThrow(() -> new NoSuchElementException("Common interest circle not found"));
+        return companyId(circle.getCohort());
+    }
+
+    @Transactional(readOnly = true)
+    public UUID getMembershipCompanyId(UUID membershipId) {
+        CommonInterestCircleMembership membership = membershipRepository.findById(membershipId)
+                .orElseThrow(() -> new NoSuchElementException("Common interest circle membership not found"));
+        CommonInterestCircle circle = membership.getCircle();
+        return companyId(circle != null ? circle.getCohort() : null);
+    }
+
+    @Transactional(readOnly = true)
     public CircleSuggestionResultDto suggestCircles(UUID cohortId) {
         CompanyProgramCohort cohort = cohortRepository.findById(cohortId)
                 .orElseThrow(() -> new NoSuchElementException("Company program cohort not found"));
@@ -185,7 +203,9 @@ public class CommonInterestCircleService {
             throw new IllegalStateException("Participant is already placed in a circle");
         }
 
-        CommonInterestCircleMembership membership = new CommonInterestCircleMembership();
+        CommonInterestCircleMembership membership = membershipRepository
+                .findByCircle_IdAndCohortParticipant_Id(circleId, cohortParticipantId)
+                .orElseGet(CommonInterestCircleMembership::new);
         membership.setCircle(circle);
         membership.setCohortParticipant(participant);
         membership.setPlacementSource(source != null ? source : CommonInterestCircleMembership.PlacementSource.ADMIN_PLACED);
@@ -207,7 +227,9 @@ public class CommonInterestCircleService {
 
         CompanyProgramCohortParticipant participant = saved.getCohortParticipant();
         if (participant != null && isPlacedStatus(participant)) {
-            participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.CONFIRMED);
+            participant.setStatus(hasAttendedPlenary(participant)
+                    ? CompanyProgramCohortParticipant.CohortParticipantStatus.PLENARY_ATTENDED
+                    : CompanyProgramCohortParticipant.CohortParticipantStatus.CONFIRMED);
             cohortParticipantRepository.save(participant);
         }
         return toDto(saved.getCircle(), membershipsForCircle(saved.getCircle()));
@@ -344,7 +366,7 @@ public class CommonInterestCircleService {
         if (participant == null || isTerminalParticipantStatus(participant)) {
             return;
         }
-        if (isPlenaryAttended(participant) && isCohortFinalized(cohort)) {
+        if (hasAttendedPlenary(participant) && isCohortFinalized(cohort)) {
             participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.ELIGIBLE_FOR_MATCHING);
         } else {
             participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PLACED_IN_CIRCLE);
@@ -357,7 +379,7 @@ public class CommonInterestCircleService {
         if (participant == null || isTerminalParticipantStatus(participant)) {
             return;
         }
-        if (isPlenaryAttended(participant)) {
+        if (hasAttendedPlenary(participant)) {
             participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.ELIGIBLE_FOR_MATCHING);
         } else {
             participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PLACED_IN_CIRCLE);
@@ -379,15 +401,13 @@ public class CommonInterestCircleService {
         );
     }
 
-    private boolean isPlenaryAttended(CompanyProgramCohortParticipant participant) {
-        return List.of(
-                CompanyProgramCohortParticipant.CohortParticipantStatus.PLENARY_ATTENDED,
-                CompanyProgramCohortParticipant.CohortParticipantStatus.PLACED_IN_CIRCLE,
-                CompanyProgramCohortParticipant.CohortParticipantStatus.ELIGIBLE_FOR_MATCHING,
-                CompanyProgramCohortParticipant.CohortParticipantStatus.MATCHED,
-                CompanyProgramCohortParticipant.CohortParticipantStatus.ACTIVE,
-                CompanyProgramCohortParticipant.CohortParticipantStatus.COMPLETED
-        ).contains(participant.getStatus());
+    private boolean hasAttendedPlenary(CompanyProgramCohortParticipant participant) {
+        if (participant == null || participant.getId() == null) {
+            return false;
+        }
+        return attendanceRepository.findByCohortParticipant_Id(participant.getId())
+                .map(attendance -> attendance.getStatus() == CompanyProgramCohortPlenaryAttendance.AttendanceStatus.ATTENDED)
+                .orElse(false);
     }
 
     private boolean isPlacedStatus(CompanyProgramCohortParticipant participant) {
@@ -414,6 +434,18 @@ public class CommonInterestCircleService {
                 CompanyProgramCohort.CohortStatus.ACTIVE,
                 CompanyProgramCohort.CohortStatus.COMPLETED
         ).contains(cohort.getStatus());
+    }
+
+    private UUID companyId(CompanyProgramCohort cohort) {
+        UUID companyId = cohort != null
+                && cohort.getCompanyProgram() != null
+                && cohort.getCompanyProgram().getCompany() != null
+                ? cohort.getCompanyProgram().getCompany().getId()
+                : null;
+        if (companyId == null) {
+            throw new NoSuchElementException("Company context not found for cohort");
+        }
+        return companyId;
     }
 
     private void ensureParticipantBelongsToCircleCohort(CommonInterestCircle circle,

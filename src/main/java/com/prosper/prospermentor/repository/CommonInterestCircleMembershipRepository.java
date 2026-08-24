@@ -19,6 +19,10 @@ public interface CommonInterestCircleMembershipRepository extends JpaRepository<
     Optional<CommonInterestCircleMembership> findByCohortParticipant_IdAndStatus(UUID cohortParticipantId,
                                                                                  CommonInterestCircleMembership.MembershipStatus status);
 
+    @EntityGraph(attributePaths = {"circle", "cohortParticipant", "cohortParticipant.profile"})
+    Optional<CommonInterestCircleMembership> findByCircle_IdAndCohortParticipant_Id(UUID circleId,
+                                                                                    UUID cohortParticipantId);
+
     boolean existsByCohortParticipant_IdAndStatus(UUID cohortParticipantId,
                                                   CommonInterestCircleMembership.MembershipStatus status);
 

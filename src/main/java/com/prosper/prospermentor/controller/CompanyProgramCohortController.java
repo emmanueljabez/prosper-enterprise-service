@@ -7,6 +7,7 @@ import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
 import com.prosper.prospermentor.dto.CohortPlenaryAttendanceDto;
 import com.prosper.prospermentor.dto.CircleSuggestionResultDto;
 import com.prosper.prospermentor.dto.CommonInterestCircleDto;
+import com.prosper.prospermentor.dto.CompanyProgramCohortJoinRequestDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.dto.ConfirmCohortJoinRequest;
 import com.prosper.prospermentor.dto.CreateCommonInterestCircleRequest;
@@ -326,7 +327,7 @@ public class CompanyProgramCohortController {
             @RequestBody(required = false) RecordPlenaryAttendanceRequest request,
             Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, intakeService.getParticipantCompanyId(participantId), true);
             CompanyProgramCohortParticipantDto participant = intakeService.recordPlenaryAttendance(
                     participantId,
                     request != null ? request.getStatus() : null,
@@ -403,7 +404,7 @@ public class CompanyProgramCohortController {
                                                                             @RequestBody UpdateCommonInterestCircleRequest request,
                                                                             Authentication authentication) {
         try {
-            authorizeCohortOperatorRole(authentication);
+            authorizeCompanyAccess(authentication, circleService.getCircleCompanyId(circleId), true);
             CommonInterestCircleDto circle = circleService.updateCircle(circleId, request);
             return ResponseEntity.ok(ApiResponse.success("Common interest circle updated successfully", circle));
         } catch (SecurityException e) {
@@ -447,7 +448,7 @@ public class CompanyProgramCohortController {
                                                                                 @RequestBody PlaceCircleParticipantRequest request,
                                                                                 Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, circleService.getCircleCompanyId(circleId), true);
             CommonInterestCircleDto circle = circleService.placeParticipant(
                     circleId,
                     request.getCohortParticipantId(),
@@ -473,7 +474,7 @@ public class CompanyProgramCohortController {
     public ResponseEntity<ApiResponse<CommonInterestCircleDto>> removeMembership(@PathVariable UUID membershipId,
                                                                                 Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, circleService.getMembershipCompanyId(membershipId), true);
             CommonInterestCircleDto circle = circleService.removeMembership(membershipId, userDetails.getUserIdAsUuid());
             return ResponseEntity.ok(ApiResponse.success("Circle membership removed successfully", circle));
         } catch (SecurityException e) {
@@ -493,7 +494,7 @@ public class CompanyProgramCohortController {
                                                                               @RequestBody MoveCircleMembershipRequest request,
                                                                               Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, circleService.getMembershipCompanyId(membershipId), true);
             CommonInterestCircleDto circle = circleService.moveMembership(
                     membershipId,
                     request.getTargetCircleId(),
@@ -665,7 +666,7 @@ public class CompanyProgramCohortController {
             @Valid @RequestBody ConfirmCohortJoinRequest request,
             Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, intakeService.getJoinRequestCompanyId(joinRequestId), true);
             CompanyProgramCohortParticipantDto participant = intakeService.confirmJoinRequest(
                     joinRequestId,
                     request.getProfileId(),
@@ -688,7 +689,7 @@ public class CompanyProgramCohortController {
     public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> rejectJoinRequest(@PathVariable UUID joinRequestId,
                                                                                              Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, intakeService.getJoinRequestCompanyId(joinRequestId), true);
             CompanyProgramCohortParticipantDto participant = intakeService.rejectJoinRequest(joinRequestId, userDetails.getUserIdAsUuid());
             return ResponseEntity.ok(ApiResponse.success("Cohort join request rejected successfully", participant));
         } catch (SecurityException e) {
@@ -707,7 +708,7 @@ public class CompanyProgramCohortController {
     public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> confirmParticipant(@PathVariable UUID participantId,
                                                                                               Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, intakeService.getParticipantCompanyId(participantId), true);
             CompanyProgramCohortParticipantDto participant = intakeService.confirmParticipant(participantId, userDetails.getUserIdAsUuid());
             return ResponseEntity.ok(ApiResponse.success("Cohort participant confirmed successfully", participant));
         } catch (SecurityException e) {
@@ -726,7 +727,7 @@ public class CompanyProgramCohortController {
     public ResponseEntity<ApiResponse<CompanyProgramCohortParticipantDto>> rejectParticipant(@PathVariable UUID participantId,
                                                                                              Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, intakeService.getParticipantCompanyId(participantId), true);
             CompanyProgramCohortParticipantDto participant = intakeService.rejectParticipant(participantId, userDetails.getUserIdAsUuid());
             return ResponseEntity.ok(ApiResponse.success("Cohort participant rejected successfully", participant));
         } catch (SecurityException e) {
@@ -747,7 +748,7 @@ public class CompanyProgramCohortController {
             @Valid @RequestBody ResolveCohortDuplicateRequest request,
             Authentication authentication) {
         try {
-            SupabaseUserDetails userDetails = authorizeCohortOperatorRole(authentication);
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, intakeService.getParticipantCompanyId(participantId), true);
             CompanyProgramCohortParticipantDto participant = intakeService.resolveDuplicate(participantId, request, userDetails.getUserIdAsUuid());
             return ResponseEntity.ok(ApiResponse.success("Cohort participant duplicate resolved successfully", participant));
         } catch (SecurityException e) {
@@ -758,6 +759,32 @@ public class CompanyProgramCohortController {
             log.error("Error resolving cohort duplicate {}: {}", participantId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to resolve cohort duplicate: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/company-program-cohorts/{cohortId}/join-requests")
+    @Operation(summary = "Get cohort self-join requests")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getJoinRequests(@PathVariable UUID cohortId,
+                                                                            Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            List<CompanyProgramCohortJoinRequestDto> joinRequests = intakeService.getJoinRequests(cohortId);
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("cohortId", cohortId);
+            data.put("joinRequests", joinRequests);
+            data.put("count", joinRequests.size());
+            return ResponseEntity.ok(ApiResponse.success("Cohort join requests retrieved successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting cohort join requests {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get cohort join requests: " + e.getMessage()));
         }
     }
 

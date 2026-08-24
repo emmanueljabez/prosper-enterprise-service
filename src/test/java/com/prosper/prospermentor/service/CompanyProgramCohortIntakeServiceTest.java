@@ -2,6 +2,7 @@ package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
+import com.prosper.prospermentor.dto.CompanyProgramCohortJoinRequestDto;
 import com.prosper.prospermentor.dto.CompanyProgramCohortParticipantDto;
 import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.CompanyProgram;
@@ -121,6 +122,30 @@ class CompanyProgramCohortIntakeServiceTest {
 
         assertThat(response.getStatus()).isEqualTo(CompanyProgramCohortParticipant.CohortParticipantStatus.PLENARY_ATTENDED);
         verify(attendanceRepository).save(any(CompanyProgramCohortPlenaryAttendance.class));
+    }
+
+    @Test
+    void getJoinRequests_shouldExposePendingSelfJoinRequestsForAdminReview() {
+        UUID cohortId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+        CompanyProgramCohort cohort = intakeOpenCohort(cohortId);
+        CompanyProgramCohortJoinRequest joinRequest = new CompanyProgramCohortJoinRequest();
+        joinRequest.setId(UUID.fromString("77777777-7777-7777-7777-777777777777"));
+        joinRequest.setCohort(cohort);
+        joinRequest.setSubmittedEmail("amina@example.com");
+        joinRequest.setSubmittedFirstName("Amina");
+        joinRequest.setSubmittedLastName("Otieno");
+        joinRequest.setSubmittedInterestTags(List.of("STEM"));
+        joinRequest.setStatus(CompanyProgramCohortJoinRequest.JoinRequestStatus.PENDING);
+
+        when(joinRequestRepository.findByCohort_IdOrderByCreatedAtDesc(cohortId)).thenReturn(List.of(joinRequest));
+
+        List<CompanyProgramCohortJoinRequestDto> requests = service.getJoinRequests(cohortId);
+
+        assertThat(requests).hasSize(1);
+        assertThat(requests.get(0).getId()).isEqualTo(joinRequest.getId());
+        assertThat(requests.get(0).getSubmittedEmail()).isEqualTo("amina@example.com");
+        assertThat(requests.get(0).getStatus()).isEqualTo(CompanyProgramCohortJoinRequest.JoinRequestStatus.PENDING);
+        assertThat(requests.get(0).getInterestTags()).containsExactly("STEM");
     }
 
     private CompanyProgramCohort intakeOpenCohort(UUID cohortId) {

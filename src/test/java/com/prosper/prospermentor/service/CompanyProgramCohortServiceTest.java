@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -88,6 +89,25 @@ class CompanyProgramCohortServiceTest {
         assertThat(dto.getCircleMinSize()).isEqualTo(5);
         assertThat(dto.getCircleMaxSize()).isEqualTo(10);
         assertThat(dto.isSelfJoinEnabled()).isTrue();
+    }
+
+    @Test
+    void createCohort_shouldHashSelfJoinCodeWhenSelfJoinIsEnabled() {
+        UUID programId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        CompanyProgram program = new CompanyProgram();
+        program.setId(programId);
+
+        when(companyProgramRepository.findById(programId)).thenReturn(Optional.of(program));
+        when(cohortRepository.save(argThat(cohort ->
+                "fb1c4aff6ab042ebd20a88b815d25c987a481c59d1c37732489ab878e1d4b9f8".equals(cohort.getSelfJoinCodeHash())
+        ))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.createCohort(programId, CreateCompanyProgramCohortRequest.builder()
+                .name("G4G Nairobi - Q3 2026")
+                .code("join-code")
+                .selfJoinEnabled(true)
+                .build(), userId);
     }
 
     @Test

@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -58,8 +59,10 @@ public class CompanyMentorInvitation {
     @Column(name = "department")
     private String department;
 
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     @Column(name = "tags", columnDefinition = "text[]")
-    private List<String> tags;
+    private String[] tags;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "default_visibility", nullable = false)
@@ -127,6 +130,18 @@ public class CompanyMentorInvitation {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public List<String> getTags() {
+        return TextArrayMapping.toList(tags);
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = TextArrayMapping.fromList(tags);
+    }
+
+    public void setTags(String[] tags) {
+        this.tags = tags;
     }
 
     public enum InvitationStatus {

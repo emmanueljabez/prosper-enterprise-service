@@ -1,5 +1,6 @@
 package com.prosper.prospermentor.service;
 
+import com.prosper.prospermentor.dto.CohortGateStatusDto;
 import com.prosper.prospermentor.dto.CompanyProgramMentorCandidateDto;
 import com.prosper.prospermentor.dto.EmployeeMentorSelectionOptionsDto;
 import com.prosper.prospermentor.dto.MatchWorkspaceSummaryDto;
@@ -69,6 +70,7 @@ public class CompanyProgramMatchWorkspaceService {
     private final JourneyInstanceStepRepository journeyInstanceStepRepository;
     private final CompanyProgramMentorAssignmentService mentorAssignmentService;
     private final JourneyInstanceService journeyInstanceService;
+    private final CompanyProgramCohortGateService cohortGateService;
 
     @Value("${company-programs.employee-select.shortlist-size:5}")
     private int shortlistSize;
@@ -230,6 +232,19 @@ public class CompanyProgramMatchWorkspaceService {
         }
 
         CompanyProgramMatchWorkspace workspace = syncWorkspaceForParticipant(participant, false);
+        MatchWorkspaceSummaryDto summary = toSummary(workspace, resolveShortlistCount(workspace.getId()), false);
+        if (workspace.getStatus() == CompanyProgramMatchWorkspace.MatchStatus.INACTIVE) {
+            return EmployeeMentorSelectionOptionsDto.builder()
+                    .participantId(participantId)
+                    .companyProgramId(companyProgram.getId())
+                    .companyProgramName(companyProgram.getName())
+                    .matchingMode(companyProgram.getMatchingMode())
+                    .matchWorkspace(summary)
+                    .options(List.of())
+                    .count(0)
+                    .build();
+        }
+
         List<CompanyProgramMatchOption> options = optionRepository.findByWorkspace_IdAndActiveTrueOrderByRankOrderAsc(workspace.getId());
         List<CompanyProgramMentorCandidateDto> enrichedOptions = enrichOptions(companyProgram, options);
         boolean hasAssignment = assignmentRepository.findByParticipant_IdAndJourneyInstanceStepIsNull(participantId).isPresent();
@@ -254,6 +269,7 @@ public class CompanyProgramMatchWorkspaceService {
         if (companyProgram == null || companyProgram.getMatchingMode() != CompanyProgram.MatchingMode.EMPLOYEE_SELECT) {
             throw new IllegalStateException("Employee mentor selection is not enabled for this program");
         }
+        ensureCohortGateAllowsMatching(participant);
 
         CompanyProgramMatchWorkspace workspace = syncWorkspaceForParticipant(participant, false);
         LocalDateTime now = LocalDateTime.now();
@@ -308,6 +324,7 @@ public class CompanyProgramMatchWorkspaceService {
         if (!SELECTABLE_PARTICIPANT_STATUSES.contains(participant.getStatus())) {
             throw new IllegalStateException("Mentor selection is only available while you are enrolled or active in this program");
         }
+        ensureCohortGateAllowsMatching(participant);
 
         JourneyInstanceStep journeyInstanceStep = resolveJourneyInstanceStep(participantId, journeyInstanceStepId);
         boolean assignmentAlreadyExists = journeyInstanceStep != null
@@ -430,17 +447,16 @@ public class CompanyProgramMatchWorkspaceService {
             return workspaceRepository.save(workspace);
         }
 
+        CohortGateStatusDto gateStatus = resolveGateStatus(participant);
+        if (isGateBlocked(gateStatus)) {
+            markInactive(workspace);
+            return workspaceRepository.save(workspace);
+        }
+
         boolean programActiveForMatching = companyProgram != null && MATCHING_PROGRAM_STATUSES.contains(companyProgram.getStatus());
         boolean participantSelectable = SELECTABLE_PARTICIPANT_STATUSES.contains(participant.getStatus());
         if (!programActiveForMatching || !participantSelectable) {
-            workspace.setStatus(CompanyProgramMatchWorkspace.MatchStatus.INACTIVE);
-            workspace.setSelectionDeadlineAt(null);
-            workspace.setResolvedAt(null);
-            workspace.setResolvedBy(null);
-            workspace.setResolvedByUserId(null);
-            if (workspace.getId() != null) {
-                optionRepository.deleteByWorkspace_Id(workspace.getId());
-            }
+            markInactive(workspace);
             return workspaceRepository.save(workspace);
         }
 
@@ -596,6 +612,10 @@ public class CompanyProgramMatchWorkspaceService {
 
         CompanyProgramParticipant participant = workspace.getParticipant();
         CompanyProgram companyProgram = participant != null ? participant.getCompanyProgram() : null;
+        CohortGateStatusDto gateStatus = resolveGateStatus(participant);
+        if (!hasAssignment && isGateBlocked(gateStatus)) {
+            return blockedSummary(gateStatus);
+        }
 
         boolean selectionWindowExpired = workspace.getSelectionDeadlineAt() != null
                 && workspace.getSelectionDeadlineAt().isBefore(LocalDateTime.now())
@@ -626,6 +646,10 @@ public class CompanyProgramMatchWorkspaceService {
         if (participant == null || participant.getCompanyProgram() == null) {
             return null;
         }
+        CohortGateStatusDto gateStatus = resolveGateStatus(participant);
+        if (!hasAssignment && isGateBlocked(gateStatus)) {
+            return blockedSummary(gateStatus);
+        }
 
         CompanyProgram.MatchingMode matchingMode = participant.getCompanyProgram().getMatchingMode();
         CompanyProgramMatchWorkspace.MatchStatus status = hasAssignment
@@ -644,6 +668,45 @@ public class CompanyProgramMatchWorkspaceService {
                 .canEmployeeSelect(false)
                 .selectionWindowExpired(false)
                 .build();
+    }
+
+    private MatchWorkspaceSummaryDto blockedSummary(CohortGateStatusDto gateStatus) {
+        return MatchWorkspaceSummaryDto.builder()
+                .status(CompanyProgramMatchWorkspace.MatchStatus.INACTIVE)
+                .shortlistCount(0)
+                .canEmployeeSelect(false)
+                .selectionWindowExpired(false)
+                .blockedReason(gateStatus != null ? gateStatus.getBlockedReason() : null)
+                .build();
+    }
+
+    private void markInactive(CompanyProgramMatchWorkspace workspace) {
+        workspace.setStatus(CompanyProgramMatchWorkspace.MatchStatus.INACTIVE);
+        workspace.setSelectionDeadlineAt(null);
+        workspace.setResolvedAt(null);
+        workspace.setResolvedBy(null);
+        workspace.setResolvedByUserId(null);
+        if (workspace.getId() != null) {
+            optionRepository.deleteByWorkspace_Id(workspace.getId());
+        }
+    }
+
+    private void ensureCohortGateAllowsMatching(CompanyProgramParticipant participant) {
+        CohortGateStatusDto gateStatus = resolveGateStatus(participant);
+        if (isGateBlocked(gateStatus)) {
+            throw new IllegalStateException("Mentor matching is blocked: " + gateStatus.getBlockedReason());
+        }
+    }
+
+    private CohortGateStatusDto resolveGateStatus(CompanyProgramParticipant participant) {
+        if (participant == null || participant.getId() == null) {
+            return null;
+        }
+        return cohortGateService.resolveGateStatusForProgramParticipant(participant.getId());
+    }
+
+    private boolean isGateBlocked(CohortGateStatusDto gateStatus) {
+        return gateStatus != null && !gateStatus.isEligibleForMatching();
     }
 
     private List<CompanyProgramMentorCandidateDto> enrichOptions(CompanyProgram companyProgram, List<CompanyProgramMatchOption> options) {

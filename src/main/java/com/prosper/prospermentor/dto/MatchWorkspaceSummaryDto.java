@@ -21,4 +21,5 @@ public class MatchWorkspaceSummaryDto {
     private Integer shortlistCount;
     private Boolean canEmployeeSelect;
     private Boolean selectionWindowExpired;
+    private String blockedReason;
 }

@@ -1,15 +1,20 @@
 package com.prosper.prospermentor.service;
 
 import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
+import com.prosper.prospermentor.dto.CompanyProgramCohortWorkspaceDto;
 import com.prosper.prospermentor.dto.CreateCompanyProgramCohortRequest;
 import com.prosper.prospermentor.dto.UpdateCompanyProgramCohortRequest;
 import com.prosper.prospermentor.entity.CommonInterestCircle;
+import com.prosper.prospermentor.entity.CommonInterestCircleMembership;
 import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramCohort;
 import com.prosper.prospermentor.entity.CompanyProgramCohortParticipant;
+import com.prosper.prospermentor.entity.CompanyProgramCohortPlenaryAttendance;
+import com.prosper.prospermentor.repository.CommonInterestCircleMembershipRepository;
 import com.prosper.prospermentor.repository.CommonInterestCircleRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepository;
+import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanceRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.CompanyProgramRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +27,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +38,9 @@ public class CompanyProgramCohortService {
     private final CompanyProgramRepository companyProgramRepository;
     private final CompanyProgramCohortRepository cohortRepository;
     private final CompanyProgramCohortParticipantRepository cohortParticipantRepository;
+    private final CompanyProgramCohortPlenaryAttendanceRepository attendanceRepository;
     private final CommonInterestCircleRepository circleRepository;
+    private final CommonInterestCircleMembershipRepository membershipRepository;
 
     @Transactional(readOnly = true)
     public List<CompanyProgramCohortDto> getCohorts(UUID companyProgramId) {
@@ -166,6 +174,92 @@ public class CompanyProgramCohortService {
         return toDto(cohortRepository.save(cohort));
     }
 
+    @Transactional(readOnly = true)
+    public CompanyProgramCohortWorkspaceDto getCohortDashboard(UUID cohortId) {
+        CompanyProgramCohort cohort = cohortRepository.findById(cohortId)
+                .orElseThrow(() -> new NoSuchElementException("Company program cohort not found"));
+        List<CompanyProgramCohortParticipant> participants = cohortParticipantRepository.findByCohort_Id(cohortId);
+        List<CompanyProgramCohortParticipant> enrolledParticipants = participants.stream()
+                .filter(participant -> !List.of(
+                        CompanyProgramCohortParticipant.CohortParticipantStatus.REJECTED,
+                        CompanyProgramCohortParticipant.CohortParticipantStatus.WITHDRAWN
+                ).contains(participant.getStatus()))
+                .toList();
+        long enrolledCount = enrolledParticipants.size();
+        long selfJoinedCount = enrolledParticipants.stream()
+                .filter(participant -> participant.getSource() == CompanyProgramCohortParticipant.ParticipantSource.SELF_JOIN)
+                .count();
+        long pendingConfirmationCount = enrolledParticipants.stream()
+                .filter(participant -> participant.getStatus() == CompanyProgramCohortParticipant.CohortParticipantStatus.PENDING)
+                .count();
+        long duplicateReviewCount = enrolledParticipants.stream()
+                .filter(participant -> participant.getDuplicateStatus() == CompanyProgramCohortParticipant.DuplicateStatus.POSSIBLE_DUPLICATE)
+                .count();
+
+        long plenaryAttendedCount = attendanceRepository.findByCohort_Id(cohortId).stream()
+                .filter(attendance -> attendance.getStatus() == CompanyProgramCohortPlenaryAttendance.AttendanceStatus.ATTENDED)
+                .map(CompanyProgramCohortPlenaryAttendance::getCohortParticipant)
+                .filter(Objects::nonNull)
+                .map(CompanyProgramCohortParticipant::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .count();
+        List<CommonInterestCircle> circles = circleRepository.findByCohort_IdOrderByCreatedAtAsc(cohortId);
+        long placedParticipantCount = membershipRepository.findByCircle_Cohort_Id(cohortId).stream()
+                .filter(membership -> membership.getStatus() == CommonInterestCircleMembership.MembershipStatus.PLACED)
+                .map(CommonInterestCircleMembership::getCohortParticipant)
+                .filter(Objects::nonNull)
+                .map(CompanyProgramCohortParticipant::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet())
+                .size();
+        long matchedCount = enrolledParticipants.stream()
+                .filter(participant -> List.of(
+                        CompanyProgramCohortParticipant.CohortParticipantStatus.MATCHED,
+                        CompanyProgramCohortParticipant.CohortParticipantStatus.ACTIVE,
+                        CompanyProgramCohortParticipant.CohortParticipantStatus.COMPLETED
+                ).contains(participant.getStatus()))
+                .count();
+        long unplacedCount = Math.max(enrolledCount - placedParticipantCount, 0);
+
+        double plenaryAttendanceRate = percentage(plenaryAttendedCount, enrolledCount);
+        double matchCompletionRate = percentage(matchedCount, enrolledCount);
+        List<String> riskIndicators = new ArrayList<>();
+        if (enrolledCount > 0 && plenaryAttendanceRate < 70.0) {
+            riskIndicators.add("LOW_PLENARY_ATTENDANCE");
+        }
+        if (unplacedCount > 0 && cohort.getStatus() == CompanyProgramCohort.CohortStatus.CIRCLES_FINALIZED) {
+            riskIndicators.add("UNPLACED_AFTER_FINALIZATION");
+        } else if (unplacedCount > 0) {
+            riskIndicators.add("UNPLACED_PARTICIPANTS");
+        }
+        if (enrolledCount > 0 && matchCompletionRate < 50.0
+                && List.of(
+                        CompanyProgramCohort.CohortStatus.MATCHING,
+                        CompanyProgramCohort.CohortStatus.ACTIVE,
+                        CompanyProgramCohort.CohortStatus.COMPLETED
+                ).contains(cohort.getStatus())) {
+            riskIndicators.add("LOW_MATCH_COMPLETION");
+        }
+
+        return CompanyProgramCohortWorkspaceDto.builder()
+                .cohortId(cohortId)
+                .enrolledCount(enrolledCount)
+                .selfJoinedCount(selfJoinedCount)
+                .pendingConfirmationCount(pendingConfirmationCount)
+                .duplicateReviewCount(duplicateReviewCount)
+                .plenaryAttendedCount(plenaryAttendedCount)
+                .plenaryAttendanceRate(plenaryAttendanceRate)
+                .circleCount(circles.size())
+                .unplacedCount(unplacedCount)
+                .matchedCount(matchedCount)
+                .matchCompletionRate(matchCompletionRate)
+                .additionalSessionRequestCount(0)
+                .feedbackResponseRate(0.0)
+                .riskIndicators(riskIndicators)
+                .build();
+    }
+
     public CompanyProgramCohortDto toDto(CompanyProgramCohort cohort) {
         if (cohort == null) {
             return null;
@@ -232,6 +326,13 @@ public class CompanyProgramCohortService {
         return participants.stream()
                 .filter(participant -> participant.getStatus() == status)
                 .count();
+    }
+
+    private double percentage(long numerator, long denominator) {
+        if (denominator <= 0) {
+            return 0.0;
+        }
+        return Math.round(((double) numerator * 1000.0) / (double) denominator) / 10.0;
     }
 
     private List<String> normalizeTags(List<String> tags) {

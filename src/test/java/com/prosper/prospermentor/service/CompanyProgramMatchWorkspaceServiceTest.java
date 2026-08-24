@@ -1,6 +1,8 @@
 package com.prosper.prospermentor.service;
 
+import com.prosper.prospermentor.dto.CohortGateStatusDto;
 import com.prosper.prospermentor.dto.MentorAssignmentSummaryDto;
+import com.prosper.prospermentor.dto.MatchWorkspaceSummaryDto;
 import com.prosper.prospermentor.entity.CompanyProgram;
 import com.prosper.prospermentor.entity.CompanyProgramMatchWorkspace;
 import com.prosper.prospermentor.entity.CompanyProgramParticipant;
@@ -24,6 +26,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,9 +56,33 @@ class CompanyProgramMatchWorkspaceServiceTest {
     private CompanyProgramMentorAssignmentService mentorAssignmentService;
     @Mock
     private JourneyInstanceService journeyInstanceService;
+    @Mock
+    private CompanyProgramCohortGateService cohortGateService;
 
     @InjectMocks
     private CompanyProgramMatchWorkspaceService matchWorkspaceService;
+
+    @Test
+    void getWorkspaceSummaries_shouldExposeBlockedReasonWhenCohortGateBlocksMatching() {
+        UUID participantId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+        CompanyProgramParticipant participant = participant(participantId, UUID.fromString("22222222-2222-2222-2222-222222222222"));
+
+        when(participantRepository.findAllById(List.of(participantId))).thenReturn(List.of(participant));
+        when(workspaceRepository.findByParticipant_IdIn(List.of(participantId))).thenReturn(List.of());
+        when(assignmentRepository.findByParticipant_IdInAndJourneyInstanceStepIsNull(List.of(participantId))).thenReturn(List.of());
+        when(cohortGateService.resolveGateStatusForProgramParticipant(participantId)).thenReturn(
+                CohortGateStatusDto.builder()
+                        .companyProgramParticipantId(participantId)
+                        .eligibleForMatching(false)
+                        .blockedReason("PLENARY_NOT_ATTENDED")
+                        .build()
+        );
+
+        Map<UUID, MatchWorkspaceSummaryDto> summaries = matchWorkspaceService.getWorkspaceSummaries(List.of(participantId));
+
+        assertThat(summaries.get(participantId).getStatus()).isEqualTo(CompanyProgramMatchWorkspace.MatchStatus.INACTIVE);
+        assertThat(summaries.get(participantId).getBlockedReason()).isEqualTo("PLENARY_NOT_ATTENDED");
+    }
 
     @Test
     void selectMarketplaceMentorForEmployee_shouldAssignMentorOutsideShortlistForJourneyStep() {

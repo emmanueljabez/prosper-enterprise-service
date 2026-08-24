@@ -92,7 +92,8 @@ class CompanyProgramCohortSchemaTest {
                 "/common-interest-circles/{circleId}/members",
                 "/common-interest-circle-memberships/{membershipId}",
                 "/common-interest-circle-memberships/{membershipId}/move",
-                "/company-program-cohorts/{cohortId}/circles/finalize"
+                "/company-program-cohorts/{cohortId}/circles/finalize",
+                "/company-program-cohorts/{cohortId}/dashboard"
         );
     }
 }

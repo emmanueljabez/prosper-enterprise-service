@@ -1,6 +1,7 @@
 package com.prosper.prospermentor.controller;
 
 import com.prosper.prospermentor.dto.CompanyProgramCohortDto;
+import com.prosper.prospermentor.dto.CompanyProgramCohortWorkspaceDto;
 import com.prosper.prospermentor.dto.CohortSelfJoinRequest;
 import com.prosper.prospermentor.dto.CohortSelfJoinResponseDto;
 import com.prosper.prospermentor.dto.CohortPlenaryAttendanceDto;
@@ -536,6 +537,28 @@ public class CompanyProgramCohortController {
             log.error("Error finalizing circles for cohort {}: {}", cohortId, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to finalize cohort circles: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/company-program-cohorts/{cohortId}/dashboard")
+    @Operation(summary = "Get cohort dashboard metrics")
+    public ResponseEntity<ApiResponse<CompanyProgramCohortWorkspaceDto>> getCohortDashboard(@PathVariable UUID cohortId,
+                                                                                            Authentication authentication) {
+        try {
+            CompanyProgramCohortDto cohort = cohortService.getCohort(cohortId);
+            if (cohort.getCompanyId() != null) {
+                authorizeCompanyAccess(authentication, cohort.getCompanyId(), true);
+            }
+            CompanyProgramCohortWorkspaceDto dashboard = cohortService.getCohortDashboard(cohortId);
+            return ResponseEntity.ok(ApiResponse.success("Cohort dashboard retrieved successfully", dashboard));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting cohort dashboard {}: {}", cohortId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get cohort dashboard: " + e.getMessage()));
         }
     }
 

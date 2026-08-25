@@ -16,6 +16,9 @@ public interface CompanyProgramCohortRepository extends JpaRepository<CompanyPro
     List<CompanyProgramCohort> findByCompanyProgram_IdOrderByStartsAtDescCreatedAtDesc(UUID companyProgramId);
 
     @EntityGraph(attributePaths = {"companyProgram", "companyProgram.company", "companyProgram.program"})
+    List<CompanyProgramCohort> findByCompanyProgram_Company_IdOrderByStartsAtDescCreatedAtDesc(UUID companyId);
+
+    @EntityGraph(attributePaths = {"companyProgram", "companyProgram.company", "companyProgram.program"})
     Optional<CompanyProgramCohort> findByIdAndCompanyProgram_Company_Id(UUID cohortId, UUID companyId);
 
     @EntityGraph(attributePaths = {"companyProgram", "companyProgram.company", "companyProgram.program"})

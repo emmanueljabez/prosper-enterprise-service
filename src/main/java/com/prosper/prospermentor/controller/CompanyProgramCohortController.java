@@ -60,6 +60,29 @@ public class CompanyProgramCohortController {
     private final CompanyProgramService companyProgramService;
     private final ProfileService profileService;
 
+    @GetMapping("/companies/{companyId}/program-cohorts")
+    @Operation(summary = "Get company cohorts across programs")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getCompanyCohorts(@PathVariable UUID companyId,
+                                                                              Authentication authentication) {
+        try {
+            authorizeCompanyAccess(authentication, companyId, true);
+
+            List<CompanyProgramCohortDto> cohorts = cohortService.getCompanyCohorts(companyId);
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("companyId", companyId);
+            data.put("cohorts", cohorts);
+            data.put("count", cohorts.size());
+
+            return ResponseEntity.ok(ApiResponse.success("Company cohorts retrieved successfully", data));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting cohorts for company {}: {}", companyId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get company cohorts: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/company-programs/{companyProgramId}/cohorts")
     @Operation(summary = "Get company program cohorts")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getCohorts(@PathVariable UUID companyProgramId,

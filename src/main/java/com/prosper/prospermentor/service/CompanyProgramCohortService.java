@@ -64,6 +64,13 @@ public class CompanyProgramCohortService {
     }
 
     @Transactional(readOnly = true)
+    public List<CompanyProgramCohortDto> getCompanyCohorts(UUID companyId) {
+        return cohortRepository.findByCompanyProgram_Company_IdOrderByStartsAtDescCreatedAtDesc(companyId).stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public CompanyProgramCohortDto getCohort(UUID cohortId) {
         CompanyProgramCohort cohort = cohortRepository.findById(cohortId)
                 .orElseThrow(() -> new NoSuchElementException("Company program cohort not found"));

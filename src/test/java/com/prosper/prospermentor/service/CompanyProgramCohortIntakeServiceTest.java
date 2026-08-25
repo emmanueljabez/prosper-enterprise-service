@@ -203,6 +203,7 @@ class CompanyProgramCohortIntakeServiceTest {
                 .interestTags(List.of("STEM"))
                 .build());
 
+        assertThat(response.getCompanyId()).isEqualTo(cohort.getCompanyProgram().getCompany().getId());
         assertThat(response.getStatus()).isEqualTo(CompanyProgramCohortJoinRequest.JoinRequestStatus.PENDING);
         assertThat(response.isDuplicateReviewRequired()).isFalse();
     }

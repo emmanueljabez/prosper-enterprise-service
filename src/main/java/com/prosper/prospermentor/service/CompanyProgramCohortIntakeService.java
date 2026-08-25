@@ -23,10 +23,13 @@ import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanc
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.CompanyProgramParticipantRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
+import com.prosper.prospermentor.service.notification.CompanyProgramCohortNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -54,6 +57,7 @@ public class CompanyProgramCohortIntakeService {
     private final CompanyProgramCohortJoinRequestRepository joinRequestRepository;
     private final CompanyProgramParticipantRepository programParticipantRepository;
     private final ProfileRepository profileRepository;
+    private final CompanyProgramCohortNotificationService notificationService;
 
     @Transactional(readOnly = true)
     public CohortSelfJoinResponseDto getSelfJoinPreview(String joinCode) {
@@ -123,9 +127,10 @@ public class CompanyProgramCohortIntakeService {
 
             participant.setCohort(cohort);
             participant.setProfile(profile);
-            if (participant.getId() == null
+            boolean shouldNotifyAdded = participant.getId() == null
                     || participant.getStatus() == CompanyProgramCohortParticipant.CohortParticipantStatus.REJECTED
-                    || participant.getStatus() == CompanyProgramCohortParticipant.CohortParticipantStatus.WITHDRAWN) {
+                    || participant.getStatus() == CompanyProgramCohortParticipant.CohortParticipantStatus.WITHDRAWN;
+            if (shouldNotifyAdded) {
                 participant.setSource(CompanyProgramCohortParticipant.ParticipantSource.ROSTER_UPLOAD);
                 participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PENDING);
                 participant.setDuplicateStatus(CompanyProgramCohortParticipant.DuplicateStatus.CLEAR);
@@ -134,7 +139,11 @@ public class CompanyProgramCohortIntakeService {
             }
             applySnapshots(participant, profile, row.getChapter(), row.getRegion(), row.getInterestTags());
 
-            participants.add(toParticipantDto(cohortParticipantRepository.save(participant)));
+            CompanyProgramCohortParticipant savedParticipant = cohortParticipantRepository.save(participant);
+            if (shouldNotifyAdded) {
+                notifyCohortParticipantAdded(savedParticipant);
+            }
+            participants.add(toParticipantDto(savedParticipant));
         }
 
         log.info("Added {} roster participant rows to cohort {} by admin {}", participants.size(), cohortId, adminUserId);
@@ -195,7 +204,9 @@ public class CompanyProgramCohortIntakeService {
         joinRequest.setReviewedAt(LocalDateTime.now());
         joinRequestRepository.save(joinRequest);
 
-        return toParticipantDto(cohortParticipantRepository.save(participant));
+        CompanyProgramCohortParticipant savedParticipant = cohortParticipantRepository.save(participant);
+        notifyCohortParticipantConfirmed(savedParticipant);
+        return toParticipantDto(savedParticipant);
     }
 
     public CompanyProgramCohortParticipantDto rejectJoinRequest(UUID joinRequestId, UUID adminUserId) {
@@ -216,7 +227,9 @@ public class CompanyProgramCohortIntakeService {
         participant.setDuplicateStatus(CompanyProgramCohortParticipant.DuplicateStatus.CLEAR);
         participant.setConfirmedByUserId(adminUserId);
         participant.setConfirmedAt(LocalDateTime.now());
-        return toParticipantDto(cohortParticipantRepository.save(participant));
+        CompanyProgramCohortParticipant savedParticipant = cohortParticipantRepository.save(participant);
+        notifyCohortParticipantConfirmed(savedParticipant);
+        return toParticipantDto(savedParticipant);
     }
 
     public CompanyProgramCohortParticipantDto rejectParticipant(UUID cohortParticipantId, UUID adminUserId) {
@@ -300,6 +313,49 @@ public class CompanyProgramCohortIntakeService {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .toList();
+    }
+
+    private void notifyCohortParticipantAdded(CompanyProgramCohortParticipant participant) {
+        runAfterCommit(() -> sendCohortParticipantAddedNotification(participant));
+    }
+
+    private void notifyCohortParticipantConfirmed(CompanyProgramCohortParticipant participant) {
+        runAfterCommit(() -> sendCohortParticipantConfirmedNotification(participant));
+    }
+
+    private void runAfterCommit(Runnable callback) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            callback.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                callback.run();
+            }
+        });
+    }
+
+    private void sendCohortParticipantAddedNotification(CompanyProgramCohortParticipant participant) {
+        try {
+            notificationService.sendCohortParticipantAdded(participant);
+        } catch (Exception e) {
+            log.error("Failed to notify cohort participant {} after roster add: {}",
+                    participant != null ? participant.getId() : null,
+                    e.getMessage(),
+                    e);
+        }
+    }
+
+    private void sendCohortParticipantConfirmedNotification(CompanyProgramCohortParticipant participant) {
+        try {
+            notificationService.sendCohortParticipantConfirmed(participant);
+        } catch (Exception e) {
+            log.error("Failed to notify cohort participant {} after confirmation: {}",
+                    participant != null ? participant.getId() : null,
+                    e.getMessage(),
+                    e);
+        }
     }
 
     public CompanyProgramCohortParticipantDto toParticipantDto(CompanyProgramCohortParticipant participant) {

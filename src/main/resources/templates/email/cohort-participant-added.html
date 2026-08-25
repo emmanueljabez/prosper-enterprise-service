@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cohort Invite</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+            color: #2d3748;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .page {
+            width: 100%;
+            padding: 40px 16px 32px;
+        }
+        .shell {
+            max-width: 560px;
+            margin: 0 auto;
+        }
+        .logo-wrap {
+            margin-bottom: 22px;
+            text-align: center;
+        }
+        .logo {
+            width: 156px;
+            height: auto;
+        }
+        .chip {
+            width: fit-content;
+            margin: 0 auto 16px;
+            padding: 8px 13px;
+            border-radius: 999px;
+            background: rgba(155, 54, 153, 0.1);
+            color: #7d2a7b;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+        }
+        .headline {
+            margin: 0;
+            color: #2d3748;
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1.05;
+            text-align: center;
+        }
+        .subcopy {
+            max-width: 440px;
+            margin: 16px auto 24px;
+            color: #4a5568;
+            font-size: 15px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .card {
+            overflow: hidden;
+            border: 1px solid #ead2e4;
+            border-radius: 18px;
+            background: #ffffff;
+            box-shadow: 0 20px 48px rgba(45, 55, 72, 0.1);
+        }
+        .info {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #f1e3ed;
+            vertical-align: top;
+        }
+        .label {
+            display: block;
+            margin-bottom: 5px;
+            color: #8a337f;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .value {
+            display: block;
+            color: #2d3748;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+        .cta {
+            padding: 22px 18px 24px;
+            text-align: center;
+        }
+        .button {
+            display: inline-block;
+            width: 100%;
+            max-width: 300px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            background: #9b3699;
+            color: #ffffff !important;
+            font-size: 16px;
+            font-weight: 800;
+            text-decoration: none;
+        }
+        .next-card {
+            margin-top: 18px;
+            padding: 20px;
+            border: 1px solid #d1fae5;
+            border-radius: 16px;
+            background: #f0fdf4;
+            color: #166534;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .footer {
+            padding: 24px 10px 0;
+            color: #6b7280;
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: center;
+        }
+        .footer a {
+            color: #9b3699;
+            font-weight: 700;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="shell">
+        <div class="logo-wrap">
+            <img src="https://www.prospermentor.com/prosper-logo.png" alt="ProsperMentor Logo" class="logo">
+        </div>
+        <div class="chip">COHORT INVITE</div>
+        <h1 class="headline"><span th:text="${participantName}" th:remove="tag">Amina</span>, you have been added to<br><span th:text="${cohort.name}" th:remove="tag">G4G Nairobi - Q3 2026</span>.</h1>
+        <p class="subcopy" th:text="${company.name + ' added you to a ProsperMentor cohort.'}">
+            Kenya Airways added you to a ProsperMentor cohort.
+        </p>
+
+        <div class="card">
+            <table class="info" role="presentation">
+                <tr>
+                    <td>
+                        <span class="label">Company</span>
+                        <span class="value" th:text="${company.name}">Kenya Airways</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="label">Program</span>
+                        <span class="value" th:text="${companyProgram.name}">G4G Mentorship</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="label">Program brief</span>
+                        <span class="value" th:text="${companyProgram.objective}">Build a circle-based mentorship journey for emerging leaders.</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <span class="label">Cohort</span>
+                        <span class="value" th:text="${cohort.name}">G4G Nairobi - Q3 2026</span>
+                    </td>
+                </tr>
+            </table>
+            <div class="cta">
+                <a class="button" th:href="${actionUrl}" href="https://enterprise.prospermentor.com/app/employee/programs">View my program</a>
+            </div>
+        </div>
+
+        <div class="next-card">
+            Sign in to review your program. If your account setup is not complete yet, use your company invitation or create your account with this email first.
+        </div>
+
+        <div class="footer">
+            <p>You are receiving this email because your company added you to a cohort on <span th:text="${appName}">ProsperMentor</span>.</p>
+            <p>
+                <a href="mailto:customersuccess@prospermentor.com">Support</a>
+                &nbsp;|&nbsp;
+                <a href="https://www.prospermentor.com/privacy">Privacy Policy</a>
+                &nbsp;|&nbsp;
+                <a href="mailto:customersuccess@prospermentor.com?subject=Unsubscribe">Unsubscribe</a>
+            </p>
+            <p>&copy; <span th:text="${appName}">ProsperMentor</span></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

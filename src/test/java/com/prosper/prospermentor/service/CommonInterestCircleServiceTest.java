@@ -14,6 +14,7 @@ import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepos
 import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanceRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
+import com.prosper.prospermentor.service.notification.CompanyProgramCohortNotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -46,6 +47,8 @@ class CommonInterestCircleServiceTest {
     private CompanyProgramCohortPlenaryAttendanceRepository attendanceRepository;
     @Mock
     private ProfileRepository profileRepository;
+    @Mock
+    private CompanyProgramCohortNotificationService notificationService;
 
     @InjectMocks
     private CommonInterestCircleService service;
@@ -145,6 +148,7 @@ class CommonInterestCircleServiceTest {
         CommonInterestCircle circle = circle(cohort, "STEM Circle");
         circle.setId(circleId);
         CompanyProgramCohortParticipant participant = participant("Faith Mwangi", "STEM");
+        participant.setId(participantId);
         participant.setCohort(cohort);
         CommonInterestCircleMembership removedMembership = membership(circle, participant);
         removedMembership.setStatus(CommonInterestCircleMembership.MembershipStatus.REMOVED);
@@ -164,6 +168,38 @@ class CommonInterestCircleServiceTest {
 
         assertThat(removedMembership.getStatus()).isEqualTo(CommonInterestCircleMembership.MembershipStatus.PLACED);
         verify(membershipRepository).save(removedMembership);
+        verify(notificationService).sendCircleAssigned(removedMembership);
+    }
+
+    @Test
+    void moveMembership_shouldNotifyParticipantAfterCircleMove() {
+        UUID membershipId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID targetCircleId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        UUID movedByUserId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        CompanyProgramCohort cohort = cohort(UUID.fromString("55555555-5555-5555-5555-555555555555"));
+        CompanyProgramCohortParticipant participant = participant("Faith Mwangi", "STEM");
+        participant.setCohort(cohort);
+        CommonInterestCircle sourceCircle = circle(cohort, "STEM Circle");
+        CommonInterestCircle targetCircle = circle(cohort, "Leadership Lab");
+        targetCircle.setId(targetCircleId);
+        CommonInterestCircleMembership membership = membership(sourceCircle, participant);
+        membership.setId(membershipId);
+
+        when(membershipRepository.findById(membershipId)).thenReturn(Optional.of(membership));
+        when(circleRepository.findByIdForUpdate(targetCircleId)).thenReturn(Optional.of(targetCircle));
+        when(membershipRepository.countByCircle_IdAndStatus(targetCircleId, CommonInterestCircleMembership.MembershipStatus.PLACED))
+                .thenReturn(0L);
+        when(membershipRepository.save(any(CommonInterestCircleMembership.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(attendanceRepository.findByCohortParticipant_Id(participant.getId())).thenReturn(Optional.empty());
+        when(cohortParticipantRepository.save(any(CompanyProgramCohortParticipant.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(membershipRepository.findByCircle_Cohort_Id(cohort.getId())).thenReturn(List.of(membership));
+
+        CommonInterestCircleDto response = service.moveMembership(membershipId, targetCircleId, movedByUserId);
+
+        assertThat(response.getId()).isEqualTo(targetCircleId);
+        assertThat(membership.getCircle()).isEqualTo(targetCircle);
+        assertThat(membership.getPlacementSource()).isEqualTo(CommonInterestCircleMembership.PlacementSource.ADMIN_MOVED);
+        verify(notificationService).sendCircleAssigned(membership);
     }
 
     @Test

@@ -20,6 +20,7 @@ import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanc
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.CompanyProgramParticipantRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
+import com.prosper.prospermentor.service.notification.CompanyProgramCohortNotificationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -53,6 +54,8 @@ class CompanyProgramCohortIntakeServiceTest {
     private CompanyProgramParticipantRepository programParticipantRepository;
     @Mock
     private ProfileRepository profileRepository;
+    @Mock
+    private CompanyProgramCohortNotificationService notificationService;
 
     @InjectMocks
     private CompanyProgramCohortIntakeService service;
@@ -105,6 +108,7 @@ class CompanyProgramCohortIntakeServiceTest {
         assertThat(participant.getDuplicateStatus()).isEqualTo(CompanyProgramCohortParticipant.DuplicateStatus.CLEAR);
         assertThat(participant.getInterestTags()).containsExactly("STEM", "Career readiness");
         verify(programParticipantRepository, never()).save(any(CompanyProgramParticipant.class));
+        verify(notificationService).sendCohortParticipantAdded(any(CompanyProgramCohortParticipant.class));
     }
 
     @Test
@@ -146,6 +150,40 @@ class CompanyProgramCohortIntakeServiceTest {
         assertThat(participant.getProfileEmail()).isEqualTo("new.mentee@example.com");
         assertThat(participant.getStatus()).isEqualTo(CompanyProgramCohortParticipant.CohortParticipantStatus.PENDING);
         assertThat(participant.getSource()).isEqualTo(CompanyProgramCohortParticipant.ParticipantSource.ROSTER_UPLOAD);
+    }
+
+    @Test
+    void confirmParticipant_shouldNotifyParticipantAfterConfirmation() {
+        UUID cohortId = UUID.fromString("55555555-5555-5555-5555-555555555555");
+        UUID participantId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+        UUID adminUserId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        CompanyProgramCohort cohort = intakeOpenCohort(cohortId);
+        Profile profile = companyProfile(
+                UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                cohort.getCompanyProgram().getCompany(),
+                "Amina",
+                "Otieno",
+                "amina@example.com",
+                "+254 712 000 000"
+        );
+        CompanyProgramCohortParticipant participant = new CompanyProgramCohortParticipant();
+        participant.setId(participantId);
+        participant.setCohort(cohort);
+        participant.setProfile(profile);
+        participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PENDING);
+
+        when(cohortParticipantRepository.findById(participantId)).thenReturn(Optional.of(participant));
+        when(programParticipantRepository.findByCompanyProgram_IdAndProfile_IdIn(cohort.getCompanyProgram().getId(), List.of(profile.getId())))
+                .thenReturn(List.of());
+        when(programParticipantRepository.save(any(CompanyProgramParticipant.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cohortParticipantRepository.save(any(CompanyProgramCohortParticipant.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        CompanyProgramCohortParticipantDto response = service.confirmParticipant(participantId, adminUserId);
+
+        assertThat(response.getStatus()).isEqualTo(CompanyProgramCohortParticipant.CohortParticipantStatus.CONFIRMED);
+        verify(notificationService).sendCohortParticipantConfirmed(participant);
     }
 
     @Test
@@ -242,6 +280,50 @@ class CompanyProgramCohortIntakeServiceTest {
         assertThat(requests.get(0).getSubmittedEmail()).isEqualTo("amina@example.com");
         assertThat(requests.get(0).getStatus()).isEqualTo(CompanyProgramCohortJoinRequest.JoinRequestStatus.PENDING);
         assertThat(requests.get(0).getInterestTags()).containsExactly("STEM");
+    }
+
+    @Test
+    void confirmJoinRequest_shouldNotifyParticipantAfterConfirmation() {
+        UUID joinRequestId = UUID.fromString("77777777-7777-7777-7777-777777777777");
+        UUID profileId = UUID.fromString("22222222-2222-2222-2222-222222222222");
+        UUID adminUserId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        CompanyProgramCohort cohort = intakeOpenCohort(UUID.fromString("55555555-5555-5555-5555-555555555555"));
+        Profile profile = companyProfile(
+                profileId,
+                cohort.getCompanyProgram().getCompany(),
+                "Amina",
+                "Otieno",
+                "amina@example.com",
+                "+254 712 000 000"
+        );
+        CompanyProgramCohortJoinRequest joinRequest = new CompanyProgramCohortJoinRequest();
+        joinRequest.setId(joinRequestId);
+        joinRequest.setCohort(cohort);
+        joinRequest.setSubmittedEmail("amina@example.com");
+        joinRequest.setSubmittedFirstName("Amina");
+        joinRequest.setSubmittedLastName("Otieno");
+        joinRequest.setSubmittedInterestTags(List.of("STEM"));
+        joinRequest.setStatus(CompanyProgramCohortJoinRequest.JoinRequestStatus.PENDING);
+
+        when(joinRequestRepository.findById(joinRequestId)).thenReturn(Optional.of(joinRequest));
+        when(profileRepository.findById(profileId)).thenReturn(Optional.of(profile));
+        when(cohortParticipantRepository.findByCohort_IdAndProfile_Id(cohort.getId(), profileId)).thenReturn(Optional.empty());
+        when(programParticipantRepository.findByCompanyProgram_IdAndProfile_IdIn(cohort.getCompanyProgram().getId(), List.of(profileId)))
+                .thenReturn(List.of());
+        when(programParticipantRepository.save(any(CompanyProgramParticipant.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(joinRequestRepository.save(any(CompanyProgramCohortJoinRequest.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(cohortParticipantRepository.save(any(CompanyProgramCohortParticipant.class))).thenAnswer(invocation -> {
+            CompanyProgramCohortParticipant participant = invocation.getArgument(0);
+            participant.setId(UUID.fromString("66666666-6666-6666-6666-666666666666"));
+            return participant;
+        });
+
+        CompanyProgramCohortParticipantDto response = service.confirmJoinRequest(joinRequestId, profileId, adminUserId);
+
+        assertThat(response.getStatus()).isEqualTo(CompanyProgramCohortParticipant.CohortParticipantStatus.CONFIRMED);
+        verify(notificationService).sendCohortParticipantConfirmed(any(CompanyProgramCohortParticipant.class));
     }
 
     private CompanyProgramCohort intakeOpenCohort(UUID cohortId) {

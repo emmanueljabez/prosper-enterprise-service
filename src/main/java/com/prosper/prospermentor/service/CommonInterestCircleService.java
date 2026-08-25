@@ -18,10 +18,13 @@ import com.prosper.prospermentor.repository.CompanyProgramCohortParticipantRepos
 import com.prosper.prospermentor.repository.CompanyProgramCohortPlenaryAttendanceRepository;
 import com.prosper.prospermentor.repository.CompanyProgramCohortRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
+import com.prosper.prospermentor.service.notification.CompanyProgramCohortNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,6 +49,7 @@ public class CommonInterestCircleService {
     private final CommonInterestCircleMembershipRepository membershipRepository;
     private final CompanyProgramCohortPlenaryAttendanceRepository attendanceRepository;
     private final ProfileRepository profileRepository;
+    private final CompanyProgramCohortNotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<CommonInterestCircleDto> getCircles(UUID cohortId) {
@@ -215,6 +219,7 @@ public class CommonInterestCircleService {
         CommonInterestCircleMembership savedMembership = membershipRepository.save(membership);
 
         updateParticipantStatusAfterPlacement(participant, circle.getCohort());
+        notifyCircleAssigned(savedMembership);
         return toDto(circle, List.of(savedMembership));
     }
 
@@ -256,6 +261,7 @@ public class CommonInterestCircleService {
         membership.setPlacedAt(LocalDateTime.now());
         CommonInterestCircleMembership saved = membershipRepository.save(membership);
         updateParticipantStatusAfterPlacement(saved.getCohortParticipant(), targetCircle.getCohort());
+        notifyCircleAssigned(saved);
         return toDto(targetCircle, membershipsForCircle(targetCircle));
     }
 
@@ -385,6 +391,34 @@ public class CommonInterestCircleService {
             participant.setStatus(CompanyProgramCohortParticipant.CohortParticipantStatus.PLACED_IN_CIRCLE);
         }
         cohortParticipantRepository.save(participant);
+    }
+
+    private void notifyCircleAssigned(CommonInterestCircleMembership membership) {
+        runAfterCommit(() -> sendCircleAssignedNotification(membership));
+    }
+
+    private void runAfterCommit(Runnable callback) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            callback.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                callback.run();
+            }
+        });
+    }
+
+    private void sendCircleAssignedNotification(CommonInterestCircleMembership membership) {
+        try {
+            notificationService.sendCircleAssigned(membership);
+        } catch (Exception e) {
+            log.error("Failed to notify circle membership {} after assignment: {}",
+                    membership != null ? membership.getId() : null,
+                    e.getMessage(),
+                    e);
+        }
     }
 
     private boolean isSuggestionEligible(CompanyProgramCohortParticipant participant) {

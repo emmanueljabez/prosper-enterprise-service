@@ -111,6 +111,55 @@ class CompanyProgramCohortServiceTest {
     }
 
     @Test
+    void getCompanyCohorts_shouldReturnCohortsAcrossCompanyPrograms() {
+        UUID companyId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        Company company = new Company();
+        company.setId(companyId);
+        company.setName("Girls 4 Girls");
+
+        CompanyProgram mentorshipProgram = companyProgram(
+                UUID.fromString("44444444-4444-4444-4444-444444444444"),
+                company,
+                "G4G Mentorship"
+        );
+        CompanyProgram leadershipProgram = companyProgram(
+                UUID.fromString("33333333-3333-3333-3333-333333333333"),
+                company,
+                "Leadership Accelerator"
+        );
+        CompanyProgramCohort mentorshipCohort = companyCohort(
+                UUID.fromString("55555555-5555-5555-5555-555555555555"),
+                mentorshipProgram,
+                "G4G Nairobi - Q3 2026"
+        );
+        CompanyProgramCohort leadershipCohort = companyCohort(
+                UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                leadershipProgram,
+                "Leadership Nairobi - Q4 2026"
+        );
+
+        when(cohortRepository.findByCompanyProgram_Company_IdOrderByStartsAtDescCreatedAtDesc(companyId))
+                .thenReturn(List.of(mentorshipCohort, leadershipCohort));
+        when(cohortParticipantRepository.findByCohort_Id(mentorshipCohort.getId())).thenReturn(List.of(participant(
+                CompanyProgramCohortParticipant.ParticipantSource.MANUAL_ADD,
+                CompanyProgramCohortParticipant.CohortParticipantStatus.CONFIRMED,
+                CompanyProgramCohortParticipant.DuplicateStatus.CLEAR
+        )));
+        when(cohortParticipantRepository.findByCohort_Id(leadershipCohort.getId())).thenReturn(List.of());
+        when(circleRepository.findByCohort_IdOrderByCreatedAtAsc(mentorshipCohort.getId())).thenReturn(List.of(new CommonInterestCircle()));
+        when(circleRepository.findByCohort_IdOrderByCreatedAtAsc(leadershipCohort.getId())).thenReturn(List.of());
+
+        List<CompanyProgramCohortDto> cohorts = service.getCompanyCohorts(companyId);
+
+        assertThat(cohorts).hasSize(2);
+        assertThat(cohorts).extracting(CompanyProgramCohortDto::getName)
+                .containsExactly("G4G Nairobi - Q3 2026", "Leadership Nairobi - Q4 2026");
+        assertThat(cohorts).extracting(CompanyProgramCohortDto::getCompanyProgramName)
+                .containsExactly("G4G Mentorship", "Leadership Accelerator");
+        assertThat(cohorts).allSatisfy(cohort -> assertThat(cohort.getCompanyId()).isEqualTo(companyId));
+    }
+
+    @Test
     void getCohortDashboard_shouldSummarizeCohortProgress() {
         UUID cohortId = UUID.fromString("55555555-5555-5555-5555-555555555555");
         CompanyProgramCohort cohort = new CompanyProgramCohort();
@@ -196,6 +245,30 @@ class CompanyProgramCohortServiceTest {
         membership.setCohortParticipant(participant);
         membership.setStatus(CommonInterestCircleMembership.MembershipStatus.PLACED);
         return membership;
+    }
+
+    private CompanyProgram companyProgram(UUID id, Company company, String name) {
+        CompanyProgram companyProgram = new CompanyProgram();
+        companyProgram.setId(id);
+        companyProgram.setCompany(company);
+        companyProgram.setName(name);
+        return companyProgram;
+    }
+
+    private CompanyProgramCohort companyCohort(UUID id, CompanyProgram companyProgram, String name) {
+        CompanyProgramCohort cohort = new CompanyProgramCohort();
+        cohort.setId(id);
+        cohort.setCompanyProgram(companyProgram);
+        cohort.setName(name);
+        cohort.setCode(name.toUpperCase().replaceAll("[^A-Z0-9]+", "-"));
+        cohort.setChapter("Nairobi");
+        cohort.setRegion("Kenya");
+        cohort.setStatus(CompanyProgramCohort.CohortStatus.INTAKE_OPEN);
+        cohort.setSelfJoinEnabled(true);
+        cohort.setCircleMinSize(5);
+        cohort.setCircleMaxSize(10);
+        cohort.setInterestTagSet(List.of("STEM"));
+        return cohort;
     }
 
     private CompanyProgramCohortParticipant cohortParticipant(UUID profileId) {

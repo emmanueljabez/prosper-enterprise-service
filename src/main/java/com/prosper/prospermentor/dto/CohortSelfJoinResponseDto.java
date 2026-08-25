@@ -19,6 +19,7 @@ public class CohortSelfJoinResponseDto {
     private UUID joinRequestId;
     private UUID cohortId;
     private UUID companyProgramId;
+    private UUID companyId;
     private String companyProgramName;
     private String companyName;
     private String cohortName;

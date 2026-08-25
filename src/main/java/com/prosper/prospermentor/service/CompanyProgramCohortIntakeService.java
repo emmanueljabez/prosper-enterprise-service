@@ -659,6 +659,7 @@ public class CompanyProgramCohortIntakeService {
                 .joinRequestId(joinRequest != null ? joinRequest.getId() : null)
                 .cohortId(cohort.getId())
                 .companyProgramId(companyProgram != null ? companyProgram.getId() : null)
+                .companyId(company != null ? company.getId() : null)
                 .companyProgramName(companyProgram != null ? companyProgram.getName() : null)
                 .companyName(company != null ? company.getName() : null)
                 .cohortName(cohort.getName())

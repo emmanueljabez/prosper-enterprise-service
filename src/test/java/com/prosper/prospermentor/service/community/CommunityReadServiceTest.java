@@ -188,6 +188,52 @@ class CommunityReadServiceTest {
         assertThat(sqlCaptor.getValue())
                 .contains("FROM post_likes pl")
                 .contains("JOIN profiles liker ON liker.id = pl.user_id")
+                .doesNotContain("community_post_reactions")
+                .contains("community_blocks")
+                .contains("ORDER BY liked_at DESC");
+    }
+
+    @Test
+    void postLikesQueryReturnsVisibleCommunityPostLikers() {
+        UUID viewerId = UUID.randomUUID();
+        UUID postId = UUID.randomUUID();
+        UUID likerId = UUID.randomUUID();
+        OffsetDateTime likedAt = OffsetDateTime.now();
+        CommunityPostLikeItem liker = new CommunityPostLikeItem(
+                likerId,
+                likedAt,
+                new CommunityProfileSummary(
+                        likerId,
+                        "Grace",
+                        "Hopper",
+                        "https://cdn.example.com/grace.png",
+                        "MENTOR",
+                        "Compiler pioneer",
+                        "Technology",
+                        "Kenya",
+                        true
+                )
+        );
+        when(jdbc.queryForObject(contains("FROM community_posts p"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(true);
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of(liker));
+        when(jdbc.queryForObject(contains("FROM community_post_reactions cpr"), any(MapSqlParameterSource.class), eq(Integer.class)))
+                .thenReturn(1);
+
+        CommunityPostLikesResponse response = service.getPostLikes(viewerId, postId, 20);
+
+        assertThat(response.postId()).isEqualTo(postId);
+        assertThat(response.likesCount()).isEqualTo(1);
+        assertThat(response.people()).containsExactly(liker);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM community_post_reactions cpr")
+                .contains("JOIN profiles liker ON liker.id = cpr.user_profile_id")
+                .doesNotContain("FROM post_likes pl")
                 .contains("community_blocks")
                 .contains("ORDER BY liked_at DESC");
     }

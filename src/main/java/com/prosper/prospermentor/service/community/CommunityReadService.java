@@ -57,6 +57,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CommunityReadService {
+    private enum PostStorage {
+        LEGACY,
+        COMMUNITY
+    }
+
     private final NamedParameterJdbcTemplate jdbc;
 
     @Transactional(readOnly = true)
@@ -159,14 +164,25 @@ public class CommunityReadService {
         requireViewer(viewerId);
         requireId(postId, "postId is required");
         int limit = clampLimit(requestedLimit);
-        ensurePostVisibleForLikes(viewerId, postId);
+        PostStorage storage = resolveVisiblePostStorageForLikes(viewerId, postId);
 
         var parameters = new MapSqlParameterSource()
                 .addValue("viewerId", viewerId)
                 .addValue("postId", postId)
                 .addValue("limit", limit);
 
-        List<CommunityPostLikeItem> people = jdbc.query("""
+        List<CommunityPostLikeItem> people = storage == PostStorage.LEGACY
+                ? queryLegacyPostLikes(parameters)
+                : queryCommunityPostLikes(parameters);
+        int likesCount = storage == PostStorage.LEGACY
+                ? countVisibleLegacyPostLikes(viewerId, postId)
+                : countVisibleCommunityPostLikes(viewerId, postId);
+
+        return new CommunityPostLikesResponse(postId, likesCount, people, limit);
+    }
+
+    private List<CommunityPostLikeItem> queryLegacyPostLikes(MapSqlParameterSource parameters) {
+        return jdbc.query("""
                 SELECT
                     pl.user_id AS profile_id,
                     pl.created_at AS liked_at,
@@ -191,7 +207,13 @@ public class CommunityReadService {
                        OR (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = pl.user_id)
                        OR (b.blocker_profile_id = pl.user_id AND b.blocked_profile_id = :viewerId)
                   )
-                UNION ALL
+                ORDER BY liked_at DESC
+                LIMIT :limit
+                """, parameters, postLikeRowMapper());
+    }
+
+    private List<CommunityPostLikeItem> queryCommunityPostLikes(MapSqlParameterSource parameters) {
+        return jdbc.query("""
                 SELECT
                     cpr.user_profile_id AS profile_id,
                     cpr.created_at AS liked_at,
@@ -222,9 +244,6 @@ public class CommunityReadService {
                 ORDER BY liked_at DESC
                 LIMIT :limit
                 """, parameters, postLikeRowMapper());
-        int likesCount = countVisiblePostLikes(viewerId, postId);
-
-        return new CommunityPostLikesResponse(postId, likesCount, people, limit);
     }
 
     @Transactional(readOnly = true)
@@ -1554,8 +1573,18 @@ public class CommunityReadService {
         }
     }
 
-    private void ensurePostVisibleForLikes(UUID viewerId, UUID postId) {
-        Boolean visible = jdbc.queryForObject("""
+    private PostStorage resolveVisiblePostStorageForLikes(UUID viewerId, UUID postId) {
+        if (isLegacyPostVisibleForLikes(viewerId, postId)) {
+            return PostStorage.LEGACY;
+        }
+        if (isCommunityPostVisibleForLikes(viewerId, postId)) {
+            return PostStorage.COMMUNITY;
+        }
+        throw new NoSuchElementException("Community post not found");
+    }
+
+    private boolean isLegacyPostVisibleForLikes(UUID viewerId, UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
                 SELECT EXISTS (
                     SELECT 1
                     FROM posts p
@@ -1568,7 +1597,14 @@ public class CommunityReadService {
                            OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
                       )
                 )
-                OR EXISTS (
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Boolean.class));
+    }
+
+    private boolean isCommunityPostVisibleForLikes(UUID viewerId, UUID postId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
                     SELECT 1
                     FROM community_posts p
                     WHERE p.id = :postId
@@ -1584,43 +1620,48 @@ public class CommunityReadService {
                 )
                 """, new MapSqlParameterSource()
                 .addValue("viewerId", viewerId)
-                .addValue("postId", postId), Boolean.class);
-        if (!Boolean.TRUE.equals(visible)) {
-            throw new NoSuchElementException("Community post not found");
-        }
+                .addValue("postId", postId), Boolean.class));
     }
 
-    private int countVisiblePostLikes(UUID viewerId, UUID postId) {
+    private int countVisibleLegacyPostLikes(UUID viewerId, UUID postId) {
         Integer count = jdbc.queryForObject("""
-                SELECT COALESCE(SUM(like_count), 0)::int
-                FROM (
-                    SELECT COUNT(*)::int AS like_count
-                    FROM post_likes pl
-                    JOIN posts p ON p.id = pl.post_id
-                    WHERE pl.post_id = :postId
-                      AND (COALESCE(p.is_hidden, false) = false OR p.user_id = :viewerId)
-                      AND NOT EXISTS (
-                        SELECT 1
-                        FROM community_blocks b
-                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
-                           OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
-                      )
-                    UNION ALL
-                    SELECT COUNT(*)::int AS like_count
-                    FROM community_post_reactions cpr
-                    JOIN community_posts p ON p.id = cpr.post_id
-                    WHERE cpr.post_id = :postId
-                      AND cpr.reaction_type = 'LIKE'
-                      AND p.status = 'ACTIVE'
-                      AND p.moderation_status = 'APPROVED'
-                      AND (p.visibility = 'PUBLIC' OR p.author_profile_id = :viewerId)
-                      AND NOT EXISTS (
-                        SELECT 1
-                        FROM community_blocks b
-                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.author_profile_id)
-                           OR (b.blocker_profile_id = p.author_profile_id AND b.blocked_profile_id = :viewerId)
-                      )
-                ) counts
+                SELECT COUNT(*)::int
+                FROM post_likes pl
+                JOIN posts p ON p.id = pl.post_id
+                WHERE pl.post_id = :postId
+                  AND (COALESCE(p.is_hidden, false) = false OR p.user_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                       OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                       OR (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = pl.user_id)
+                       OR (b.blocker_profile_id = pl.user_id AND b.blocked_profile_id = :viewerId)
+                  )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Integer.class);
+        return count == null ? 0 : count;
+    }
+
+    private int countVisibleCommunityPostLikes(UUID viewerId, UUID postId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)::int
+                FROM community_post_reactions cpr
+                JOIN community_posts p ON p.id = cpr.post_id
+                WHERE cpr.post_id = :postId
+                  AND cpr.reaction_type = 'LIKE'
+                  AND p.status = 'ACTIVE'
+                  AND p.moderation_status = 'APPROVED'
+                  AND (p.visibility = 'PUBLIC' OR p.author_profile_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.author_profile_id)
+                       OR (b.blocker_profile_id = p.author_profile_id AND b.blocked_profile_id = :viewerId)
+                       OR (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = cpr.user_profile_id)
+                       OR (b.blocker_profile_id = cpr.user_profile_id AND b.blocked_profile_id = :viewerId)
+                  )
                 """, new MapSqlParameterSource()
                 .addValue("viewerId", viewerId)
                 .addValue("postId", postId), Integer.class);

@@ -3,8 +3,10 @@ package com.prosper.prospermentor.service.community;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityBlockRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewTrackRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionRequest;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -164,6 +166,55 @@ class CommunityMutationServiceTest {
                 isNull(),
                 anyMap()
         );
+    }
+
+    @Test
+    void trackProfileViewInsertsAnalyticsRowWhenAllowed() {
+        UUID viewerId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
+        when(jdbc.queryForObject(contains("FROM profiles"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(true);
+        when(jdbc.queryForObject(contains("track_profile_views"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(true);
+        when(jdbc.queryForObject(contains("allow_profile_view_tracking"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(true);
+        when(jdbc.update(contains("INSERT INTO profile_views"), any(MapSqlParameterSource.class)))
+                .thenReturn(1);
+
+        var result = service.trackProfileView(
+                viewerId,
+                profileId,
+                new CommunityProfileViewTrackRequest(" mentor_profile ", " recommendation ", true)
+        );
+
+        ArgumentCaptor<MapSqlParameterSource> paramsCaptor = ArgumentCaptor.forClass(MapSqlParameterSource.class);
+        verify(jdbc).update(contains("INSERT INTO profile_views"), paramsCaptor.capture());
+        MapSqlParameterSource params = paramsCaptor.getValue();
+
+        assertThat(result.profileId()).isEqualTo(profileId);
+        assertThat(result.viewerId()).isEqualTo(viewerId);
+        assertThat(result.tracked()).isTrue();
+        assertThat(params.getValue("viewerId")).isEqualTo(viewerId);
+        assertThat(params.getValue("profileId")).isEqualTo(profileId);
+        assertThat(params.getValue("source")).isEqualTo("mentor_profile");
+        assertThat(params.getValue("discoveryMethod")).isEqualTo("recommendation");
+        assertThat(params.getValue("sessionRelated")).isEqualTo(true);
+    }
+
+    @Test
+    void trackProfileViewSkipsSelfViewsWithoutDatabaseWrite() {
+        UUID viewerId = UUID.randomUUID();
+
+        var result = service.trackProfileView(
+                viewerId,
+                viewerId,
+                new CommunityProfileViewTrackRequest("direct", null, false)
+        );
+
+        assertThat(result.profileId()).isEqualTo(viewerId);
+        assertThat(result.viewerId()).isEqualTo(viewerId);
+        assertThat(result.tracked()).isFalse();
+        verify(jdbc, never()).update(contains("INSERT INTO profile_views"), any(MapSqlParameterSource.class));
     }
 
     @Test

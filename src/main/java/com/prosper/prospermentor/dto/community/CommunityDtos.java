@@ -324,6 +324,20 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityProfileViewTrackRequest(
+            String source,
+            String discoveryMethod,
+            Boolean sessionRelated
+    ) {
+    }
+
+    public record CommunityProfileViewTrackResponse(
+            UUID profileId,
+            UUID viewerId,
+            boolean tracked
+    ) {
+    }
+
     public record CommunityFollowResponse(
             UUID targetProfileId,
             boolean following

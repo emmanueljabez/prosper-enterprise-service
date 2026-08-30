@@ -16,6 +16,8 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHidden
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostMutationResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewTrackRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewTrackResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReportRequest;
@@ -1447,6 +1449,65 @@ public class CommunityMutationService {
         );
     }
 
+    @Transactional
+    public CommunityProfileViewTrackResponse trackProfileView(
+            UUID viewerId,
+            UUID profileId,
+            CommunityProfileViewTrackRequest request
+    ) {
+        requireViewer(viewerId);
+        requireId(profileId, "profileId is required");
+
+        if (viewerId.equals(profileId)) {
+            return new CommunityProfileViewTrackResponse(profileId, viewerId, false);
+        }
+
+        ensureProfileExists(profileId);
+        ensureProfilesCanInteract(viewerId, profileId);
+
+        if (!profileViewTrackingEnabled(viewerId) || !profileViewTrackingAllowed(profileId)) {
+            return new CommunityProfileViewTrackResponse(profileId, viewerId, false);
+        }
+
+        String source = normalizeAnalyticsValue(request == null ? null : request.source(), "direct");
+        String discoveryMethod = normalizeOptionalAnalyticsValue(request == null ? null : request.discoveryMethod());
+        boolean sessionRelated = request != null && Boolean.TRUE.equals(request.sessionRelated());
+
+        int inserted = jdbc.update("""
+                INSERT INTO profile_views (
+                    id,
+                    viewer_id,
+                    viewed_profile_id,
+                    viewed_date,
+                    source,
+                    discovery_method,
+                    session_related,
+                    viewed_at,
+                    created_at
+                )
+                VALUES (
+                    :id,
+                    :viewerId,
+                    :profileId,
+                    CURRENT_DATE,
+                    :source,
+                    :discoveryMethod,
+                    :sessionRelated,
+                    now(),
+                    now()
+                )
+                ON CONFLICT (viewer_id, viewed_profile_id, viewed_date) DO NOTHING
+                """, new MapSqlParameterSource()
+                .addValue("id", UUID.randomUUID())
+                .addValue("viewerId", viewerId)
+                .addValue("profileId", profileId)
+                .addValue("source", source)
+                .addValue("discoveryMethod", discoveryMethod)
+                .addValue("sessionRelated", sessionRelated));
+
+        return new CommunityProfileViewTrackResponse(profileId, viewerId, inserted > 0);
+    }
+
     public String normalizeReactionType(String reactionType) {
         String normalized = normalizeToken(reactionType, DEFAULT_REACTION_TYPE);
         if (!DEFAULT_REACTION_TYPE.equals(normalized)) {
@@ -2027,6 +2088,44 @@ public class CommunityMutationService {
             throw new IllegalArgumentException(message);
         }
         return trimmed;
+    }
+
+    private boolean profileViewTrackingEnabled(UUID viewerId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT COALESCE((
+                    SELECT track_profile_views
+                    FROM analytics_settings
+                    WHERE user_id = :viewerId
+                    LIMIT 1
+                ), true)
+                """, new MapSqlParameterSource("viewerId", viewerId), Boolean.class));
+    }
+
+    private boolean profileViewTrackingAllowed(UUID profileId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT COALESCE((
+                    SELECT allow_profile_view_tracking
+                    FROM analytics_settings
+                    WHERE user_id = :profileId
+                    LIMIT 1
+                ), true)
+                """, new MapSqlParameterSource("profileId", profileId), Boolean.class));
+    }
+
+    private String normalizeAnalyticsValue(String value, String fallback) {
+        String normalized = trimmed(value);
+        if (normalized == null) {
+            normalized = fallback;
+        }
+        return normalized.length() > 50 ? normalized.substring(0, 50) : normalized;
+    }
+
+    private String normalizeOptionalAnalyticsValue(String value) {
+        String normalized = trimmed(value);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.length() > 50 ? normalized.substring(0, 50) : normalized;
     }
 
     private UUID requireId(UUID value, String message) {

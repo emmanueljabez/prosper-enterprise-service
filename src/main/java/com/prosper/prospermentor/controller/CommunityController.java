@@ -6,6 +6,7 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnection
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificationPreferencesRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewTrackRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReportRequest;
 import com.prosper.prospermentor.model.ApiResponse;
@@ -108,6 +109,20 @@ public class CommunityController {
                 userId -> communityReadService.getProfileAnalytics(userId, profileId, limit),
                 "Community profile analytics retrieved successfully",
                 HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/profiles/{profileId}/views")
+    public ResponseEntity<ApiResponse<?>> trackProfileView(
+            Authentication authentication,
+            @PathVariable UUID profileId,
+            @RequestBody(required = false) CommunityProfileViewTrackRequest request
+    ) {
+        return execute(
+                authentication,
+                userId -> communityMutationService.trackProfileView(userId, profileId, request),
+                "Community profile view tracked successfully",
+                HttpStatus.CREATED
         );
     }
 

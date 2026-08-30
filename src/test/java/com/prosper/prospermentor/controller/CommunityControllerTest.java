@@ -5,6 +5,8 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnection
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileAnalyticsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewTrackRequest;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewTrackResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendedPeopleResponse;
@@ -157,6 +159,31 @@ class CommunityControllerTest {
         assertThat(body).isNotNull();
         assertThat(data.profileId()).isEqualTo(profileId);
         verify(communityReadService).getProfileAnalytics(viewerId, profileId, 50);
+    }
+
+    @Test
+    void profileViewTrackingUsesAuthenticatedViewerAndPathProfile() {
+        UUID viewerId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
+        var request = new CommunityProfileViewTrackRequest("mentor_profile", "recommendation", true);
+        when(communityMutationService.trackProfileView(eq(viewerId), eq(profileId), eq(request)))
+                .thenReturn(new CommunityProfileViewTrackResponse(profileId, viewerId, true));
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                new SupabaseUserDetails(viewerId.toString(), "member@example.com", "MENTEE"),
+                null
+        );
+
+        var response = controller.trackProfileView(auth, profileId, request);
+        var body = response.getBody();
+        var data = (CommunityProfileViewTrackResponse) body.getData();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(body).isNotNull();
+        assertThat(data.profileId()).isEqualTo(profileId);
+        assertThat(data.viewerId()).isEqualTo(viewerId);
+        assertThat(data.tracked()).isTrue();
+        verify(communityMutationService).trackProfileView(viewerId, profileId, request);
     }
 
     @Test

@@ -9,6 +9,8 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificati
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostHiddenResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostLikeItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostLikesResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostMutationResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
@@ -108,6 +110,41 @@ class CommunityControllerMutationTest {
         assertThat(result.getBody()).isNotNull();
         assertThat(result.getBody().getData()).isEqualTo(response);
         verify(readService).getPost(viewerId, postId);
+    }
+
+    @Test
+    void getPostLikesUsesAuthenticatedPrincipal() {
+        UUID viewerId = UUID.randomUUID();
+        UUID postId = UUID.randomUUID();
+        UUID likerId = UUID.randomUUID();
+        CommunityPostLikesResponse response = new CommunityPostLikesResponse(
+                postId,
+                1,
+                List.of(new CommunityPostLikeItem(
+                        likerId,
+                        OffsetDateTime.now(),
+                        new CommunityProfileSummary(
+                                likerId,
+                                "Ada",
+                                "Lovelace",
+                                "https://cdn.example.com/ada.png",
+                                "MENTEE",
+                                "Builder",
+                                "Technology",
+                                "Kenya",
+                                true
+                        )
+                )),
+                20
+        );
+        when(readService.getPostLikes(eq(viewerId), eq(postId), eq(20))).thenReturn(response);
+
+        ResponseEntity<ApiResponse<?>> result = controller.getPostLikes(authentication(viewerId), postId, 20);
+
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(result.getBody()).isNotNull();
+        assertThat(result.getBody().getData()).isEqualTo(response);
+        verify(readService).getPostLikes(viewerId, postId, 20);
     }
 
     @Test

@@ -14,6 +14,8 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHashtagIte
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityMyPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDiscoveryResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostLikeItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostLikesResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileAnalyticsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
@@ -150,6 +152,79 @@ public class CommunityReadService {
             throw new NoSuchElementException("Community post not found");
         }
         return posts.get(0);
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityPostLikesResponse getPostLikes(UUID viewerId, UUID postId, int requestedLimit) {
+        requireViewer(viewerId);
+        requireId(postId, "postId is required");
+        int limit = clampLimit(requestedLimit);
+        ensurePostVisibleForLikes(viewerId, postId);
+
+        var parameters = new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId)
+                .addValue("limit", limit);
+
+        List<CommunityPostLikeItem> people = jdbc.query("""
+                SELECT
+                    pl.user_id AS profile_id,
+                    pl.created_at AS liked_at,
+                    liker.first_name,
+                    liker.last_name,
+                    liker.avatar_url,
+                    liker.role::text AS role,
+                    COALESCE(liker.bio, '') AS headline,
+                    liker.industry,
+                    liker.country,
+                    COALESCE(liker.is_verified, false) AS is_verified
+                FROM post_likes pl
+                JOIN posts p ON p.id = pl.post_id
+                JOIN profiles liker ON liker.id = pl.user_id
+                WHERE pl.post_id = :postId
+                  AND (COALESCE(p.is_hidden, false) = false OR p.user_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                       OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                       OR (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = pl.user_id)
+                       OR (b.blocker_profile_id = pl.user_id AND b.blocked_profile_id = :viewerId)
+                  )
+                UNION ALL
+                SELECT
+                    cpr.user_profile_id AS profile_id,
+                    cpr.created_at AS liked_at,
+                    liker.first_name,
+                    liker.last_name,
+                    liker.avatar_url,
+                    liker.role::text AS role,
+                    COALESCE(liker.bio, '') AS headline,
+                    liker.industry,
+                    liker.country,
+                    COALESCE(liker.is_verified, false) AS is_verified
+                FROM community_post_reactions cpr
+                JOIN community_posts p ON p.id = cpr.post_id
+                JOIN profiles liker ON liker.id = cpr.user_profile_id
+                WHERE cpr.post_id = :postId
+                  AND cpr.reaction_type = 'LIKE'
+                  AND p.status = 'ACTIVE'
+                  AND p.moderation_status = 'APPROVED'
+                  AND (p.visibility = 'PUBLIC' OR p.author_profile_id = :viewerId)
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM community_blocks b
+                    WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.author_profile_id)
+                       OR (b.blocker_profile_id = p.author_profile_id AND b.blocked_profile_id = :viewerId)
+                       OR (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = cpr.user_profile_id)
+                       OR (b.blocker_profile_id = cpr.user_profile_id AND b.blocked_profile_id = :viewerId)
+                  )
+                ORDER BY liked_at DESC
+                LIMIT :limit
+                """, parameters, postLikeRowMapper());
+        int likesCount = countVisiblePostLikes(viewerId, postId);
+
+        return new CommunityPostLikesResponse(postId, likesCount, people, limit);
     }
 
     @Transactional(readOnly = true)
@@ -1334,6 +1409,27 @@ public class CommunityReadService {
         };
     }
 
+    private RowMapper<CommunityPostLikeItem> postLikeRowMapper() {
+        return (rs, rowNum) -> {
+            UUID profileId = uuid(rs, "profile_id");
+            return new CommunityPostLikeItem(
+                    profileId,
+                    rs.getObject("liked_at", OffsetDateTime.class),
+                    new CommunityProfileSummary(
+                            profileId,
+                            rs.getString("first_name"),
+                            rs.getString("last_name"),
+                            rs.getString("avatar_url"),
+                            rs.getString("role"),
+                            rs.getString("headline"),
+                            rs.getString("industry"),
+                            rs.getString("country"),
+                            rs.getBoolean("is_verified")
+                    )
+            );
+        };
+    }
+
     private CommunityConnectionProfile connectionProfile(ResultSet rs, String prefix) throws SQLException {
         return new CommunityConnectionProfile(
                 uuid(rs, prefix + "_profile_id"),
@@ -1456,6 +1552,79 @@ public class CommunityReadService {
         if (id == null) {
             throw new IllegalArgumentException(message);
         }
+    }
+
+    private void ensurePostVisibleForLikes(UUID viewerId, UUID postId) {
+        Boolean visible = jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM posts p
+                    WHERE p.id = :postId
+                      AND (COALESCE(p.is_hidden, false) = false OR p.user_id = :viewerId)
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                           OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                      )
+                )
+                OR EXISTS (
+                    SELECT 1
+                    FROM community_posts p
+                    WHERE p.id = :postId
+                      AND p.status = 'ACTIVE'
+                      AND p.moderation_status = 'APPROVED'
+                      AND (p.visibility = 'PUBLIC' OR p.author_profile_id = :viewerId)
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.author_profile_id)
+                           OR (b.blocker_profile_id = p.author_profile_id AND b.blocked_profile_id = :viewerId)
+                      )
+                )
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Boolean.class);
+        if (!Boolean.TRUE.equals(visible)) {
+            throw new NoSuchElementException("Community post not found");
+        }
+    }
+
+    private int countVisiblePostLikes(UUID viewerId, UUID postId) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COALESCE(SUM(like_count), 0)::int
+                FROM (
+                    SELECT COUNT(*)::int AS like_count
+                    FROM post_likes pl
+                    JOIN posts p ON p.id = pl.post_id
+                    WHERE pl.post_id = :postId
+                      AND (COALESCE(p.is_hidden, false) = false OR p.user_id = :viewerId)
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.user_id)
+                           OR (b.blocker_profile_id = p.user_id AND b.blocked_profile_id = :viewerId)
+                      )
+                    UNION ALL
+                    SELECT COUNT(*)::int AS like_count
+                    FROM community_post_reactions cpr
+                    JOIN community_posts p ON p.id = cpr.post_id
+                    WHERE cpr.post_id = :postId
+                      AND cpr.reaction_type = 'LIKE'
+                      AND p.status = 'ACTIVE'
+                      AND p.moderation_status = 'APPROVED'
+                      AND (p.visibility = 'PUBLIC' OR p.author_profile_id = :viewerId)
+                      AND NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.author_profile_id)
+                           OR (b.blocker_profile_id = p.author_profile_id AND b.blocked_profile_id = :viewerId)
+                      )
+                ) counts
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("postId", postId), Integer.class);
+        return count == null ? 0 : count;
     }
 
     private String requireSearchQuery(String query) {

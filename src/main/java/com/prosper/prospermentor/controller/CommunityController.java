@@ -294,6 +294,20 @@ public class CommunityController {
         );
     }
 
+    @GetMapping("/posts/{postId}/likes")
+    public ResponseEntity<ApiResponse<?>> getPostLikes(
+            Authentication authentication,
+            @PathVariable UUID postId,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getPostLikes(userId, postId, limit),
+                "Community post likes retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/posts/{postId}/comments")
     public ResponseEntity<ApiResponse<?>> getComments(
             Authentication authentication,

@@ -2,6 +2,9 @@ package com.prosper.prospermentor.service.community;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionProfile;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionRequestItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostLikeItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostLikesResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSummary;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.jdbc.core.RowMapper;
@@ -143,6 +146,50 @@ class CommunityReadServiceTest {
                 .contains("FROM posts p")
                 .contains("p.id = :postId")
                 .contains("community_blocks");
+    }
+
+    @Test
+    void postLikesQueryReturnsVisibleLegacyPostLikers() {
+        UUID viewerId = UUID.randomUUID();
+        UUID postId = UUID.randomUUID();
+        UUID likerId = UUID.randomUUID();
+        OffsetDateTime likedAt = OffsetDateTime.now();
+        CommunityPostLikeItem liker = new CommunityPostLikeItem(
+                likerId,
+                likedAt,
+                new CommunityProfileSummary(
+                        likerId,
+                        "Ada",
+                        "Lovelace",
+                        "https://cdn.example.com/ada.png",
+                        "MENTEE",
+                        "Builder",
+                        "Technology",
+                        "Kenya",
+                        true
+                )
+        );
+        when(jdbc.queryForObject(contains("SELECT EXISTS"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(true);
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of(liker));
+        when(jdbc.queryForObject(contains("FROM post_likes pl"), any(MapSqlParameterSource.class), eq(Integer.class)))
+                .thenReturn(1);
+
+        CommunityPostLikesResponse response = service.getPostLikes(viewerId, postId, 20);
+
+        assertThat(response.postId()).isEqualTo(postId);
+        assertThat(response.likesCount()).isEqualTo(1);
+        assertThat(response.people()).containsExactly(liker);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM post_likes pl")
+                .contains("JOIN profiles liker ON liker.id = pl.user_id")
+                .contains("community_blocks")
+                .contains("ORDER BY liked_at DESC");
     }
 
     @Test

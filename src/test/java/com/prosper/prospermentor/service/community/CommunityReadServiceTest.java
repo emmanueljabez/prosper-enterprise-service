@@ -129,6 +129,24 @@ class CommunityReadServiceTest {
     }
 
     @Test
+    void feedQueryCountsLegacyLikesFromLikeRows() {
+        UUID viewerId = UUID.randomUUID();
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        service.getFeed(viewerId, "latest", 20);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .doesNotContain("COALESCE(p.likes_count, 0) AS likes_count")
+                .contains("FROM post_likes like_counter")
+                .contains("like_counter.post_id = p.id")
+                .contains("AS likes_count");
+    }
+
+    @Test
     void singlePostQueryUsesLegacyPostsAndBlockFiltering() {
         UUID viewerId = UUID.randomUUID();
         UUID postId = UUID.randomUUID();

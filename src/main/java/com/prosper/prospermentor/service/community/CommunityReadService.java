@@ -939,7 +939,19 @@ public class CommunityReadService {
                     p.link_preview_title AS link_title,
                     p.link_preview_description AS link_description,
                     p.link_preview_image AS link_image,
-                    COALESCE(p.likes_count, 0) AS likes_count,
+                    COALESCE((
+                        SELECT COUNT(*)
+                        FROM post_likes like_counter
+                        WHERE like_counter.post_id = p.id
+                          AND NOT EXISTS (
+                            SELECT 1
+                            FROM community_blocks like_block
+                            WHERE (like_block.blocker_profile_id = :viewerId
+                                   AND like_block.blocked_profile_id = like_counter.user_id)
+                               OR (like_block.blocker_profile_id = like_counter.user_id
+                                   AND like_block.blocked_profile_id = :viewerId)
+                          )
+                    ), 0)::int AS likes_count,
                     COALESCE(p.comments_count, 0) AS comments_count,
                     p.created_at,
                     author.id AS author_id,

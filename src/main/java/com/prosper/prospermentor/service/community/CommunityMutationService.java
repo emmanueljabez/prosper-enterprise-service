@@ -87,7 +87,7 @@ public class CommunityMutationService {
             throw new IllegalArgumentException("Post request is required");
         }
 
-        String content = requireText(request.content(), "Post content is required");
+        String content = normalizePostContent(request);
         String visibility = normalizeVisibility(request.visibility());
         UUID categoryId = request.categoryId();
         ensureCategoryIsActive(categoryId);
@@ -189,7 +189,7 @@ public class CommunityMutationService {
             throw new IllegalArgumentException("Post request is required");
         }
 
-        String content = requireText(request.content(), "Post content is required");
+        String content = normalizePostContent(request);
         String visibility = normalizeVisibility(request.visibility());
         UUID categoryId = request.categoryId();
         ensureCategoryIsActive(categoryId);
@@ -2027,6 +2027,23 @@ public class CommunityMutationService {
             throw new IllegalArgumentException(message);
         }
         return trimmed;
+    }
+
+    private String normalizePostContent(CommunityPostRequest request) {
+        String content = trimmed(request.content());
+        if (content != null) {
+            return content;
+        }
+        if (hasPostAttachment(request)) {
+            return "";
+        }
+        throw new IllegalArgumentException("Post content is required");
+    }
+
+    private boolean hasPostAttachment(CommunityPostRequest request) {
+        return trimmed(request.mediaUrl()) != null
+                || trimmed(request.imageUrl()) != null
+                || trimmed(request.linkUrl()) != null;
     }
 
     private UUID requireId(UUID value, String message) {

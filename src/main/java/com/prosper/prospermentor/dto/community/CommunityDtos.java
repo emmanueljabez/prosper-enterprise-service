@@ -201,6 +201,21 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityPostLikeItem(
+            UUID profileId,
+            OffsetDateTime likedAt,
+            CommunityProfileSummary profile
+    ) {
+    }
+
+    public record CommunityPostLikesResponse(
+            UUID postId,
+            int likesCount,
+            List<CommunityPostLikeItem> people,
+            int limit
+    ) {
+    }
+
     public record CommunityPostHiddenRequest(
             Boolean hidden
     ) {

@@ -5,6 +5,7 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityNotificati
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPostRequest;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityReactionRequest;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -58,6 +59,34 @@ class CommunityMutationServiceTest {
         assertThatThrownBy(() -> service.createPost(viewerId, request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Post content is required");
+    }
+
+    @Test
+    void createPostAcceptsMediaWithoutCaption() {
+        UUID viewerId = UUID.randomUUID();
+        when(jdbc.update(contains("INSERT INTO posts"), any(MapSqlParameterSource.class)))
+                .thenReturn(1);
+
+        var result = service.createPost(viewerId, new CommunityPostRequest(
+                null,
+                "  ",
+                "PUBLIC",
+                "https://cdn.example.com/community/post.png",
+                "image",
+                "https://cdn.example.com/community/post.png",
+                null,
+                null,
+                null,
+                null,
+                List.of()
+        ));
+
+        ArgumentCaptor<MapSqlParameterSource> paramsCaptor = ArgumentCaptor.forClass(MapSqlParameterSource.class);
+        verify(jdbc).update(contains("INSERT INTO posts"), paramsCaptor.capture());
+
+        assertThat(result.content()).isEmpty();
+        assertThat(result.mediaUrl()).isEqualTo("https://cdn.example.com/community/post.png");
+        assertThat(paramsCaptor.getValue().getValue("content")).isEqualTo("");
     }
 
     @Test

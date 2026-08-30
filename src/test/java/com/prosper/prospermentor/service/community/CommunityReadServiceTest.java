@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -299,6 +300,73 @@ class CommunityReadServiceTest {
                         .contains("FROM follows f")
                         .contains("f.follower_id = :subjectId")
                         .contains("blocker_profile_id = :viewerId"));
+    }
+
+    @Test
+    void homeDashboardComposesFeedStatsRecommendationsAndLearningSummary() {
+        UUID viewerId = UUID.randomUUID();
+        UUID mentorId = UUID.randomUUID();
+        when(jdbc.query(contains("FROM posts p"), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+        when(jdbc.queryForMap(contains("SELECT id, role::text AS role"), any(MapSqlParameterSource.class)))
+                .thenReturn(Map.of(
+                        "id", viewerId,
+                        "role", "mentee",
+                        "industry", "Technology",
+                        "country", "Kenya",
+                        "interests", List.of("leadership")
+                ));
+        when(jdbc.queryForList(contains("FROM profiles p"), any(MapSqlParameterSource.class)))
+                .thenReturn(List.of(Map.of(
+                        "id", mentorId,
+                        "first_name", "Faith",
+                        "last_name", "Wainana",
+                        "avatar_url", "",
+                        "role", "mentor",
+                        "headline", "Leadership coach",
+                        "industry", "Technology",
+                        "country", "Kenya",
+                        "is_verified", true,
+                        "interests", List.of("leadership")
+                )));
+        when(jdbc.queryForMap(contains("connections_count"), any(MapSqlParameterSource.class)))
+                .thenReturn(Map.of(
+                        "connections_count", 2L,
+                        "followers_count", 3L,
+                        "following_count", 4L,
+                        "sessions_count", 5L,
+                        "posts_count", 6L
+                ));
+        when(jdbc.query(contains("FROM sessions s"), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+        when(jdbc.queryForObject(contains("to_regclass"), any(MapSqlParameterSource.class), eq(Boolean.class)))
+                .thenReturn(true);
+        when(jdbc.queryForObject(contains("FROM messages m"), any(MapSqlParameterSource.class), eq(Integer.class)))
+                .thenReturn(7);
+        when(jdbc.queryForObject(contains("FROM profile_views pv"), any(MapSqlParameterSource.class), eq(Integer.class)))
+                .thenReturn(8);
+        when(jdbc.queryForMap(contains("profile_completion_percent"), any(MapSqlParameterSource.class)))
+                .thenReturn(Map.of("profile_completion_percent", 65));
+
+        var response = service.getHome(viewerId, 12, 3);
+
+        assertThat(response.feed().mode()).isEqualTo("ranked");
+        assertThat(response.feed().limit()).isEqualTo(12);
+        assertThat(response.stats().connections()).isEqualTo(2);
+        assertThat(response.stats().followers()).isEqualTo(3);
+        assertThat(response.stats().following()).isEqualTo(4);
+        assertThat(response.stats().sessions()).isEqualTo(5);
+        assertThat(response.stats().articles()).isEqualTo(6);
+        assertThat(response.stats().messages()).isEqualTo(7);
+        assertThat(response.stats().profileViews()).isEqualTo(8);
+        assertThat(response.stats().recommendations()).isEqualTo(1);
+        assertThat(response.recommendedMentors()).hasSize(1);
+        assertThat(response.recommendedMentors().get(0).profile().role()).isEqualTo("mentor");
+        assertThat(response.profileCompletionPercent()).isEqualTo(65);
+        assertThat(response.learning().progressPercent()).isEqualTo(33);
+        assertThat(response.learning().assignments())
+                .extracting("title")
+                .contains("Complete your profile", "Book your next mentorship session", "Share a community post");
     }
 
     @Test

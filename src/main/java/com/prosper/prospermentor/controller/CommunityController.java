@@ -38,6 +38,20 @@ public class CommunityController {
     private final CommunityReadService communityReadService;
     private final CommunityMutationService communityMutationService;
 
+    @GetMapping("/home")
+    public ResponseEntity<ApiResponse<?>> getHome(
+            Authentication authentication,
+            @RequestParam(defaultValue = "20") int feedLimit,
+            @RequestParam(defaultValue = "3") int peopleLimit
+    ) {
+        return execute(
+                authentication,
+                userId -> communityReadService.getHome(userId, feedLimit, peopleLimit),
+                "Community home dashboard retrieved successfully",
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/feed")
     public ResponseEntity<ApiResponse<?>> getFeed(
             Authentication authentication,

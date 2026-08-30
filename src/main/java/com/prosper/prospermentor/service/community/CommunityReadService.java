@@ -1,6 +1,11 @@
 package com.prosper.prospermentor.service.community;
 
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityFeedResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeAssignment;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeLearningSummary;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeSession;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeStats;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityCategoryItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionProfile;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityConnectionRequestItem;
@@ -22,6 +27,7 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendationReaso
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendedPeopleResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendedPerson;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -37,17 +43,51 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class CommunityReadService {
     private final NamedParameterJdbcTemplate jdbc;
+
+    @Transactional(readOnly = true)
+    public CommunityHomeResponse getHome(UUID viewerId, int requestedFeedLimit, int requestedPeopleLimit) {
+        requireViewer(viewerId);
+        int feedLimit = clampLimit(requestedFeedLimit);
+        int peopleLimit = clampHomePeopleLimit(requestedPeopleLimit);
+
+        CommunityFeedResponse feed = getFeed(viewerId, "ranked", feedLimit);
+        List<RecommendedPerson> recommendedMentors = queryRecommendedPeople(viewerId, peopleLimit, true);
+        Map<String, Object> statsRow = queryHomeStats(viewerId);
+        CommunityHomeSession nextSession = queryNextSession(viewerId).orElse(null);
+        int profileCompletionPercent = queryProfileCompletionPercent(viewerId);
+        CommunityHomeStats stats = new CommunityHomeStats(
+                intValue(statsRow, "connections_count"),
+                intValue(statsRow, "followers_count"),
+                intValue(statsRow, "following_count"),
+                intValue(statsRow, "sessions_count"),
+                intValue(statsRow, "posts_count"),
+                intValue(statsRow, "unread_messages_count"),
+                recommendedMentors.size(),
+                intValue(statsRow, "profile_views_count")
+        );
+
+        return new CommunityHomeResponse(
+                feed,
+                stats,
+                nextSession,
+                recommendedMentors,
+                profileCompletionPercent,
+                buildLearningSummary(stats, nextSession, profileCompletionPercent)
+        );
+    }
 
     @Transactional(readOnly = true)
     public CommunityFeedResponse getFeed(UUID viewerId, String mode, int requestedLimit) {
@@ -166,6 +206,10 @@ public class CommunityReadService {
         requireViewer(viewerId);
         int limit = clampLimit(requestedLimit);
 
+        return new RecommendedPeopleResponse(queryRecommendedPeople(viewerId, limit, false), limit);
+    }
+
+    private List<RecommendedPerson> queryRecommendedPeople(UUID viewerId, int limit, boolean mentorsOnly) {
         Map<String, Object> viewer = jdbc.queryForMap("""
                 SELECT id, role::text AS role, industry, country, interests
                 FROM profiles
@@ -186,6 +230,7 @@ public class CommunityReadService {
                     p.interests
                 FROM profiles p
                 WHERE p.id <> :viewerId
+                  AND (:mentorsOnly = false OR LOWER(p.role::text) = 'mentor')
                   AND NOT EXISTS (
                     SELECT 1 FROM syncs s
                     WHERE ((s.mentor_id = :viewerId AND s.mentee_id = p.id)
@@ -204,16 +249,16 @@ public class CommunityReadService {
                        OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
                   )
                 LIMIT 100
-                """, new MapSqlParameterSource("viewerId", viewerId));
+                """, new MapSqlParameterSource()
+                .addValue("viewerId", viewerId)
+                .addValue("mentorsOnly", mentorsOnly));
 
-        List<RecommendedPerson> people = candidates.stream()
+        return candidates.stream()
                 .map(candidate -> toRecommendedPerson(viewer, candidate))
                 .filter(person -> person.score() > 0)
                 .sorted(Comparator.comparingInt(RecommendedPerson::score).reversed())
                 .limit(limit)
                 .toList();
-
-        return new RecommendedPeopleResponse(people, limit);
     }
 
     @Transactional(readOnly = true)
@@ -348,6 +393,235 @@ public class CommunityReadService {
         );
     }
 
+    private Map<String, Object> queryHomeStats(UUID viewerId) {
+        String sql = """
+                SELECT
+                    (
+                        SELECT COUNT(*)::int
+                        FROM syncs s
+                        JOIN profiles other_profile ON other_profile.id = CASE
+                            WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                            ELSE s.mentor_id
+                        END
+                        WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
+                          AND s.status = 'accepted'
+                          AND NOT EXISTS (
+                            SELECT 1
+                            FROM community_blocks b
+                            WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = other_profile.id)
+                               OR (b.blocker_profile_id = other_profile.id AND b.blocked_profile_id = :viewerId)
+                          )
+                    ) AS connections_count,
+                    (
+                        SELECT COUNT(*)::int
+                        FROM follows f
+                        JOIN profiles p ON p.id = f.follower_id
+                        WHERE f.following_id = :viewerId
+                          AND NOT EXISTS (
+                            SELECT 1
+                            FROM community_blocks b
+                            WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                               OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
+                          )
+                    ) AS followers_count,
+                    (
+                        SELECT COUNT(*)::int
+                        FROM follows f
+                        JOIN profiles p ON p.id = f.following_id
+                        WHERE f.follower_id = :viewerId
+                          AND NOT EXISTS (
+                            SELECT 1
+                            FROM community_blocks b
+                            WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = p.id)
+                               OR (b.blocker_profile_id = p.id AND b.blocked_profile_id = :viewerId)
+                          )
+                    ) AS following_count,
+                    (
+                        SELECT COUNT(*)::int
+                        FROM sessions s
+                        WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
+                          AND COALESCE(UPPER(s.status::text), '') NOT IN ('CANCELLED', 'NO_SHOW')
+                    ) AS sessions_count,
+                    (
+                        SELECT COUNT(*)::int
+                        FROM posts p
+                        WHERE p.user_id = :viewerId
+                          AND COALESCE(p.is_hidden, false) = false
+                    ) AS posts_count
+                """;
+
+        Map<String, Object> stats = new HashMap<>(
+                jdbc.queryForMap(sql, new MapSqlParameterSource("viewerId", viewerId))
+        );
+        stats.put("unread_messages_count", queryUnreadMessagesCount(viewerId));
+        stats.put("profile_views_count", queryProfileViewsCount(viewerId));
+        return stats;
+    }
+
+    private int queryUnreadMessagesCount(UUID viewerId) {
+        return queryOptionalTableCount(
+                "public.messages",
+                """
+                        SELECT COUNT(*)::int
+                        FROM messages m
+                        WHERE m.recipient_id = :viewerId
+                          AND m.read_at IS NULL
+                        """,
+                new MapSqlParameterSource("viewerId", viewerId)
+        );
+    }
+
+    private int queryProfileViewsCount(UUID viewerId) {
+        return queryOptionalTableCount(
+                "public.profile_views",
+                """
+                        SELECT COUNT(*)::int
+                        FROM profile_views pv
+                        WHERE pv.viewed_profile_id = :viewerId
+                          AND pv.viewer_id IS DISTINCT FROM :viewerId
+                          AND (
+                            pv.viewer_id IS NULL
+                            OR NOT EXISTS (
+                                SELECT 1
+                                FROM community_blocks b
+                                WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = pv.viewer_id)
+                                   OR (b.blocker_profile_id = pv.viewer_id AND b.blocked_profile_id = :viewerId)
+                            )
+                          )
+                        """,
+                new MapSqlParameterSource("viewerId", viewerId)
+        );
+    }
+
+    private int queryOptionalTableCount(String tableName, String countSql, MapSqlParameterSource parameters) {
+        if (!tableExists(tableName)) {
+            return 0;
+        }
+        try {
+            Integer count = jdbc.queryForObject(countSql, parameters, Integer.class);
+            return count == null ? 0 : count;
+        } catch (DataAccessException ignored) {
+            return 0;
+        }
+    }
+
+    private boolean tableExists(String tableName) {
+        try {
+            return Boolean.TRUE.equals(jdbc.queryForObject(
+                    "SELECT to_regclass(:tableName) IS NOT NULL",
+                    new MapSqlParameterSource("tableName", tableName),
+                    Boolean.class
+            ));
+        } catch (DataAccessException ignored) {
+            return false;
+        }
+    }
+
+    private Optional<CommunityHomeSession> queryNextSession(UUID viewerId) {
+        String sql = """
+                SELECT
+                    s.id,
+                    s.title,
+                    s.scheduled_start,
+                    s.scheduled_end,
+                    s.status::text AS status,
+                    s.meeting_url,
+                    participant.id AS participant_id,
+                    participant.first_name AS participant_first_name,
+                    participant.last_name AS participant_last_name,
+                    participant.avatar_url AS participant_avatar_url,
+                    participant.role::text AS participant_role,
+                    COALESCE(participant.bio, '') AS participant_headline,
+                    participant.industry AS participant_industry,
+                    participant.country AS participant_country,
+                    COALESCE(participant.is_verified, false) AS participant_is_verified
+                FROM sessions s
+                LEFT JOIN profiles participant ON participant.id = CASE
+                    WHEN s.mentor_id = :viewerId THEN s.mentee_id
+                    ELSE s.mentor_id
+                END
+                WHERE (s.mentor_id = :viewerId OR s.mentee_id = :viewerId)
+                  AND s.scheduled_start >= now()
+                  AND COALESCE(UPPER(s.status::text), '') IN ('PENDING', 'CONFIRMED', 'SCHEDULED', 'IN_PROGRESS')
+                  AND (
+                    participant.id IS NULL
+                    OR NOT EXISTS (
+                        SELECT 1
+                        FROM community_blocks b
+                        WHERE (b.blocker_profile_id = :viewerId AND b.blocked_profile_id = participant.id)
+                           OR (b.blocker_profile_id = participant.id AND b.blocked_profile_id = :viewerId)
+                    )
+                  )
+                ORDER BY s.scheduled_start ASC
+                LIMIT 1
+                """;
+
+        List<CommunityHomeSession> sessions = jdbc.query(
+                sql,
+                new MapSqlParameterSource("viewerId", viewerId),
+                homeSessionRowMapper()
+        );
+        return sessions.stream().findFirst();
+    }
+
+    private int queryProfileCompletionPercent(UUID viewerId) {
+        Map<String, Object> row = jdbc.queryForMap("""
+                SELECT ROUND((
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.first_name, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.last_name, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.username, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.avatar_url, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.bio, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.industry, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.country, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.phone, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN NULLIF(TRIM(COALESCE(p.location, '')), '') IS NOT NULL THEN 1 ELSE 0 END +
+                    CASE WHEN COALESCE(cardinality(p.interests), 0) > 0 THEN 1 ELSE 0 END
+                ) * 100.0 / 10)::int AS profile_completion_percent
+                FROM profiles p
+                WHERE p.id = :viewerId
+                """, new MapSqlParameterSource("viewerId", viewerId));
+        return Math.max(0, Math.min(100, intValue(row, "profile_completion_percent")));
+    }
+
+    private CommunityHomeLearningSummary buildLearningSummary(
+            CommunityHomeStats stats,
+            CommunityHomeSession nextSession,
+            int profileCompletionPercent
+    ) {
+        List<CommunityHomeAssignment> assignments = List.of(
+                new CommunityHomeAssignment(
+                        "complete-profile",
+                        "Complete your profile",
+                        profileCompletionPercent >= 80,
+                        "/profile"
+                ),
+                new CommunityHomeAssignment(
+                        "book-session",
+                        "Book your next mentorship session",
+                        nextSession != null,
+                        "/mentors"
+                ),
+                new CommunityHomeAssignment(
+                        "share-post",
+                        "Share a community post",
+                        stats.articles() > 0,
+                        "/dashboard"
+                )
+        );
+        long completedCount = assignments.stream().filter(CommunityHomeAssignment::completed).count();
+        int progress = assignments.isEmpty()
+                ? 0
+                : (int) Math.round((completedCount * 100.0) / assignments.size());
+
+        return new CommunityHomeLearningSummary(
+                "Mentorship Essentials",
+                "Profile, sessions, and community activity",
+                progress,
+                assignments
+        );
+    }
+
     public String normalizeFeedMode(String mode) {
         if ("ranked".equalsIgnoreCase(mode)) {
             return "ranked";
@@ -368,6 +642,13 @@ public class CommunityReadService {
             return 20;
         }
         return Math.min(requestedLimit, 50);
+    }
+
+    private int clampHomePeopleLimit(int requestedLimit) {
+        if (requestedLimit <= 0) {
+            return 3;
+        }
+        return Math.min(requestedLimit, 12);
     }
 
     private List<CommunityPostItem> searchPosts(UUID viewerId, String query, int limit) {
@@ -967,6 +1248,33 @@ public class CommunityReadService {
                 rs.getString("link_preview_site_name"),
                 rs.getInt("impressions_count")
         );
+    }
+
+    private RowMapper<CommunityHomeSession> homeSessionRowMapper() {
+        return (rs, rowNum) -> {
+            UUID participantId = uuidOrNull(rs, "participant_id");
+            CommunityProfileSummary participant = participantId == null ? null : new CommunityProfileSummary(
+                    participantId,
+                    rs.getString("participant_first_name"),
+                    rs.getString("participant_last_name"),
+                    rs.getString("participant_avatar_url"),
+                    rs.getString("participant_role"),
+                    rs.getString("participant_headline"),
+                    rs.getString("participant_industry"),
+                    rs.getString("participant_country"),
+                    rs.getBoolean("participant_is_verified")
+            );
+
+            return new CommunityHomeSession(
+                    uuid(rs, "id"),
+                    rs.getString("title"),
+                    rs.getObject("scheduled_start", OffsetDateTime.class),
+                    rs.getObject("scheduled_end", OffsetDateTime.class),
+                    rs.getString("status"),
+                    rs.getString("meeting_url"),
+                    participant
+            );
+        };
     }
 
     private RowMapper<NetworkMember> networkMemberRowMapper() {

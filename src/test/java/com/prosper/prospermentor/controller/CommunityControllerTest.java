@@ -6,6 +6,9 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityPeopleDisc
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileAnalyticsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileNetworkResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeLearningSummary;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeResponse;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityHomeStats;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.RecommendedPeopleResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
@@ -96,6 +99,41 @@ class CommunityControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(body).isNotNull();
         assertThat(data.connections()).isEmpty();
+    }
+
+    @Test
+    void homeDashboardUsesAuthenticatedUserIdAndLimits() {
+        UUID userId = UUID.randomUUID();
+        var dashboard = new CommunityHomeResponse(
+                new CommunityFeedResponse(List.of(), "ranked", 12),
+                new CommunityHomeStats(2, 3, 4, 5, 6, 7, 8, 9),
+                null,
+                List.of(),
+                65,
+                new CommunityHomeLearningSummary(
+                        "Leadership Essential",
+                        "Continue your mentorship journey",
+                        35,
+                        List.of()
+                )
+        );
+        when(communityReadService.getHome(eq(userId), eq(12), eq(3))).thenReturn(dashboard);
+
+        var auth = new UsernamePasswordAuthenticationToken(
+                new SupabaseUserDetails(userId.toString(), "member@example.com", "MENTEE"),
+                null
+        );
+
+        var response = controller.getHome(auth, 12, 3);
+        var body = response.getBody();
+        var data = (CommunityHomeResponse) body.getData();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body).isNotNull();
+        assertThat(data.feed().limit()).isEqualTo(12);
+        assertThat(data.stats().connections()).isEqualTo(2);
+        assertThat(data.profileCompletionPercent()).isEqualTo(65);
+        verify(communityReadService).getHome(userId, 12, 3);
     }
 
     @Test

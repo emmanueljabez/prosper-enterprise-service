@@ -65,6 +65,55 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunityHomeStats(
+            int connections,
+            int followers,
+            int following,
+            int sessions,
+            int articles,
+            int messages,
+            int recommendations,
+            int profileViews
+    ) {
+    }
+
+    public record CommunityHomeSession(
+            UUID id,
+            String title,
+            OffsetDateTime scheduledStart,
+            OffsetDateTime scheduledEnd,
+            String status,
+            String meetingUrl,
+            CommunityProfileSummary participant
+    ) {
+    }
+
+    public record CommunityHomeAssignment(
+            String id,
+            String title,
+            boolean completed,
+            String href
+    ) {
+    }
+
+    public record CommunityHomeLearningSummary(
+            String title,
+            String subtitle,
+            int progressPercent,
+            List<CommunityHomeAssignment> assignments
+    ) {
+    }
+
+    public record CommunityHomeResponse(
+            CommunityFeedResponse feed,
+            CommunityHomeStats stats,
+            CommunityHomeSession nextSession,
+            List<RecommendedPerson> recommendedMentors,
+            int profileCompletionPercent,
+            CommunityHomeLearningSummary learning
+    ) {
+    }
+
     public record CommunityCategoryItem(
             UUID id,
             String slug,

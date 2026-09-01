@@ -27,4 +27,21 @@ class MessageThreadRlsMigrationTest {
                 .contains("CREATE POLICY \"Users can view their own message threads\"")
                 .contains("CREATE POLICY \"Users can update their own message threads\"");
     }
+
+    @Test
+    void migration_shouldDedupeAndEnforceUniqueMessageThreadParticipantPairs() throws Exception {
+        Path migration = Path.of("src/main/resources/db/migration/V85__Enforce_unique_message_thread_pairs.sql");
+        assertThat(migration).exists();
+
+        String sql = Files.readString(migration);
+
+        assertThat(sql)
+                .contains("ROW_NUMBER() OVER")
+                .contains("PARTITION BY LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)")
+                .contains("UPDATE public.messages")
+                .contains("DELETE FROM public.message_threads")
+                .contains("CREATE UNIQUE INDEX IF NOT EXISTS uniq_message_threads_ordered_participants")
+                .contains("LEAST(user1_id, user2_id)")
+                .contains("GREATEST(user1_id, user2_id)");
+    }
 }

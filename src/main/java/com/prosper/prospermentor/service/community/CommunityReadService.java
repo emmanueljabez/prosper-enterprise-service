@@ -22,6 +22,7 @@ import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileSum
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunityProfileViewItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySavedPostsResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchPersonItem;
+import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchProgramItem;
 import com.prosper.prospermentor.dto.community.CommunityDtos.CommunitySearchResponse;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkMember;
 import com.prosper.prospermentor.dto.community.CommunityDtos.NetworkOverviewResponse;
@@ -469,6 +470,7 @@ public class CommunityReadService {
                 limit,
                 shouldSearch(normalizedType, "posts") ? searchPosts(viewerId, normalizedQuery, limit) : List.of(),
                 shouldSearch(normalizedType, "people") ? searchPeople(viewerId, normalizedQuery, limit) : List.of(),
+                shouldSearch(normalizedType, "programs") ? searchPrograms(normalizedQuery, limit) : List.of(),
                 shouldSearch(normalizedType, "categories") ? searchCategories(normalizedQuery, limit) : List.of(),
                 shouldSearch(normalizedType, "hashtags") ? searchHashtags(viewerId, normalizedQuery, limit) : List.of()
         );
@@ -726,7 +728,7 @@ public class CommunityReadService {
     public String normalizeSearchType(String type) {
         String normalized = normalize(type);
         return switch (normalized) {
-            case "posts", "people", "categories", "hashtags" -> normalized;
+            case "posts", "people", "programs", "categories", "hashtags" -> normalized;
             default -> "all";
         };
     }
@@ -838,6 +840,28 @@ public class CommunityReadService {
                 """;
 
         return jdbc.query(sql, searchParameters(viewerId, query, limit), searchPersonRowMapper(query));
+    }
+
+    private List<CommunitySearchProgramItem> searchPrograms(String query, int limit) {
+        String sql = """
+                SELECT p.id, p.legacy_id, p.name, p.description, p.image_url, p.status::text AS status, p.focus_areas
+                FROM programs p
+                WHERE p.status = 'LIVE'
+                  AND (p.name ILIKE :searchPattern
+                   OR COALESCE(p.description, '') ILIKE :searchPattern
+                   OR COALESCE(p.legacy_id, '') ILIKE :searchPattern
+                   OR EXISTS (
+                        SELECT 1
+                        FROM unnest(COALESCE(p.focus_areas, ARRAY[]::text[])) AS focus_area
+                        WHERE focus_area ILIKE :searchPattern
+                   ))
+                ORDER BY p.order_id ASC, p.name ASC
+                LIMIT :limit
+                """;
+
+        return jdbc.query(sql, new MapSqlParameterSource()
+                .addValue("searchPattern", searchPattern(query))
+                .addValue("limit", limit), programRowMapper());
     }
 
     private List<CommunityCategoryItem> searchCategories(String query, int limit) {
@@ -1506,6 +1530,18 @@ public class CommunityReadService {
                     searchReasons(profile, query)
             );
         };
+    }
+
+    private RowMapper<CommunitySearchProgramItem> programRowMapper() {
+        return (rs, rowNum) -> new CommunitySearchProgramItem(
+                uuid(rs, "id"),
+                rs.getString("legacy_id"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getString("image_url"),
+                rs.getString("status"),
+                toStringList(rs.getArray("focus_areas"))
+        );
     }
 
     private List<RecommendationReason> searchReasons(CommunityProfileSummary profile, String query) {

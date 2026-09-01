@@ -137,12 +137,24 @@ public final class CommunityDtos {
     ) {
     }
 
+    public record CommunitySearchProgramItem(
+            UUID id,
+            String legacyId,
+            String name,
+            String description,
+            String imageUrl,
+            String status,
+            List<String> focusAreas
+    ) {
+    }
+
     public record CommunitySearchResponse(
             String query,
             String type,
             int limit,
             List<CommunityPostItem> posts,
             List<CommunitySearchPersonItem> people,
+            List<CommunitySearchProgramItem> programs,
             List<CommunityCategoryItem> categories,
             List<CommunityHashtagItem> hashtags
     ) {

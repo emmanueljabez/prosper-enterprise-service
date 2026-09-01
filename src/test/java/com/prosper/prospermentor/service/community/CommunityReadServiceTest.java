@@ -304,6 +304,7 @@ class CommunityReadServiceTest {
     void normalizesSearchTypeToSupportedScopes() {
         assertThat(service.normalizeSearchType("posts")).isEqualTo("posts");
         assertThat(service.normalizeSearchType("people")).isEqualTo("people");
+        assertThat(service.normalizeSearchType("programs")).isEqualTo("programs");
         assertThat(service.normalizeSearchType("categories")).isEqualTo("categories");
         assertThat(service.normalizeSearchType("hashtags")).isEqualTo("hashtags");
         assertThat(service.normalizeSearchType("unknown")).isEqualTo("all");
@@ -318,7 +319,7 @@ class CommunityReadServiceTest {
     }
 
     @Test
-    void searchAllQueriesPostsPeopleCategoriesAndHashtagsWithBlockFiltering() {
+    void searchAllQueriesPostsPeopleProgramsCategoriesAndHashtagsWithBlockFiltering() {
         when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
                 .thenReturn(List.of());
 
@@ -337,11 +338,32 @@ class CommunityReadServiceTest {
                         .contains("community_blocks")
                         .contains("p.first_name ILIKE :searchPattern"))
                 .anySatisfy(sql -> assertThat(sql)
+                        .contains("FROM programs p")
+                        .contains("p.status = 'LIVE'")
+                        .contains("COALESCE(p.description, '') ILIKE :searchPattern"))
+                .anySatisfy(sql -> assertThat(sql)
                         .contains("FROM community_categories c")
                         .contains("c.is_active = true"))
                 .anySatisfy(sql -> assertThat(sql)
                         .contains("regexp_matches(p.content")
                         .contains("community_blocks"));
+    }
+
+    @Test
+    void searchProgramsOnlyQueriesLivePrograms() {
+        when(jdbc.query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        service.search(UUID.randomUUID(), "leadership", "programs", 7);
+
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).query(sqlCaptor.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
+
+        assertThat(sqlCaptor.getValue())
+                .contains("FROM programs p")
+                .contains("p.status = 'LIVE'")
+                .contains("p.name ILIKE :searchPattern")
+                .contains("unnest(COALESCE(p.focus_areas, ARRAY[]::text[]))");
     }
 
     @Test

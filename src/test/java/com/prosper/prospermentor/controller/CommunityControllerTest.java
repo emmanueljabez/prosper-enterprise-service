@@ -236,7 +236,7 @@ class CommunityControllerTest {
     void searchUsesAuthenticatedUserId() {
         UUID userId = UUID.randomUUID();
         when(communityReadService.search(eq(userId), eq("mentor"), eq("all"), eq(10)))
-                .thenReturn(new CommunitySearchResponse("mentor", "all", 10, List.of(), List.of(), List.of(), List.of()));
+                .thenReturn(new CommunitySearchResponse("mentor", "all", 10, List.of(), List.of(), List.of(), List.of(), List.of()));
 
         var auth = new UsernamePasswordAuthenticationToken(
                 new SupabaseUserDetails(userId.toString(), "member@example.com", "MENTEE"),

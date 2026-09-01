@@ -375,6 +375,9 @@ class CommunityMutationServiceLegacyBridgeTest {
         assertThat(response.relationshipId()).isEqualTo(relationshipId);
         assertThat(response.targetProfileId()).isEqualTo(targetProfileId);
         assertThat(response.relationshipStatus()).isEqualTo("connected");
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(jdbc).update(sqlCaptor.capture(), any(MapSqlParameterSource.class));
+        assertThat(sqlCaptor.getValue()).contains("CAST(:status AS sync_status)");
         verify(outboxService).recordEvent(
                 eq("COMMUNITY_CONNECTION_ACCEPTED"),
                 eq("SYNC"),

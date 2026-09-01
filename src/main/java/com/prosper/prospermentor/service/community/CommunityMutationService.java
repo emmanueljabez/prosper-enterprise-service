@@ -1105,7 +1105,7 @@ public class CommunityMutationService {
 
         jdbc.update("""
                 UPDATE syncs
-                SET status = :status,
+                SET status = CAST(:status AS sync_status),
                     updated_at = now()
                 WHERE id = :relationshipId
                 """, new MapSqlParameterSource()

@@ -6,6 +6,7 @@ import com.prosper.prospermentor.entity.CompanyEmployeeWhitelist;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
+import com.prosper.prospermentor.service.CompanyBrandingService;
 import com.prosper.prospermentor.service.CompanyService;
 import com.prosper.prospermentor.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -44,10 +47,12 @@ public class CompanyController {
 
     private final CompanyService companyService;
     private final ProfileService profileService;
+    private final CompanyBrandingService companyBrandingService;
 
-    public CompanyController(CompanyService companyService, ProfileService profileService) {
+    public CompanyController(CompanyService companyService, ProfileService profileService, CompanyBrandingService companyBrandingService) {
         this.companyService = companyService;
         this.profileService = profileService;
+        this.companyBrandingService = companyBrandingService;
     }
 
     /**
@@ -399,6 +404,76 @@ public class CompanyController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to update company: " + e.getMessage()));
         }
+    }
+
+    @PostMapping(value = "/{companyId}/branding/logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload company logo", description = "Upload or replace the company logo used in enterprise branding.")
+    public ResponseEntity<ApiResponse<Company>> uploadCompanyLogo(
+            @PathVariable UUID companyId,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+        log.info("Uploading company logo: {}", companyId);
+
+        try {
+            authorizeCompanyAccess(authentication, companyId, true);
+            ApiResponse<Company> response = companyBrandingService.uploadLogo(companyId, file);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            }
+
+            HttpStatus status = "Company not found".equals(response.getMessage())
+                    ? HttpStatus.NOT_FOUND
+                    : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(response);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error uploading company logo: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to upload company logo: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{companyId}/branding/logo")
+    @Operation(summary = "Delete company logo", description = "Remove the company logo from enterprise branding.")
+    public ResponseEntity<ApiResponse<Company>> deleteCompanyLogo(
+            @PathVariable UUID companyId,
+            Authentication authentication) {
+        log.info("Deleting company logo: {}", companyId);
+
+        try {
+            authorizeCompanyAccess(authentication, companyId, true);
+            ApiResponse<Company> response = companyBrandingService.deleteLogo(companyId);
+
+            if (response.isSuccess()) {
+                return ResponseEntity.ok(response);
+            }
+
+            HttpStatus status = "Company not found".equals(response.getMessage())
+                    ? HttpStatus.NOT_FOUND
+                    : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(response);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error deleting company logo: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to delete company logo: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{companyId}/branding/logo/{filename:.+}")
+    @Operation(summary = "Get company logo", description = "Read an uploaded company logo image.")
+    public ResponseEntity<Resource> downloadCompanyLogo(
+            @PathVariable UUID companyId,
+            @PathVariable String filename) {
+        return companyBrandingService.getStoredLogo(companyId, filename)
+                .map(storedLogo -> ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(storedLogo.contentType()))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + storedLogo.filename() + "\"")
+                        .body((Resource) new FileSystemResource(storedLogo.path())))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**

@@ -14,6 +14,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -235,6 +236,18 @@ public class SessionDtos {
         private long durationMinutes;
         private boolean canBeModified;
         private boolean isFutureBooking;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AgoraJoinTokenResponseDto {
+        private String appId;
+        private String channelName;
+        private String uid;
+        private String token;
+        private Instant expiresAt;
     }
 
     @Data

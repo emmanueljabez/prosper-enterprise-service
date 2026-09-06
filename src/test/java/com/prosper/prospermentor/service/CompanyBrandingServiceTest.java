@@ -3,6 +3,7 @@ package com.prosper.prospermentor.service;
 import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.repository.CompanyRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -11,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -93,6 +95,13 @@ class CompanyBrandingServiceTest {
         assertThat(response.getMessage()).containsIgnoringCase("image");
         assertThat(company.getLogoUrl()).isNull();
         verify(companyRepository, never()).save(any(Company.class));
+    }
+
+    @Test
+    void constructor_shouldDeclareAutowiredConstructorForSpringContext() throws Exception {
+        Constructor<CompanyBrandingService> constructor = CompanyBrandingService.class.getConstructor(CompanyRepository.class);
+
+        assertThat(constructor.isAnnotationPresent(Autowired.class)).isTrue();
     }
 
     @Test

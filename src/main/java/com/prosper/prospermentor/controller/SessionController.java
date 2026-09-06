@@ -11,9 +11,13 @@ import com.prosper.prospermentor.entity.SessionProposalSlot;
 import com.prosper.prospermentor.entity.SessionSupportRequest;
 import com.prosper.prospermentor.exception.SessionBookingException;
 import com.prosper.prospermentor.repository.SessionOutcomeRepository;
+import com.prosper.prospermentor.security.SupabaseUserDetails;
+import com.prosper.prospermentor.security.SupabaseUserPrincipal;
 import com.prosper.prospermentor.service.NautixWhatsAppService;
 import com.prosper.prospermentor.service.SessionBookingService;
 import com.prosper.prospermentor.service.SessionProposalSlotRequest;
+import com.prosper.prospermentor.service.meeting.AgoraSessionAccessService;
+import com.prosper.prospermentor.service.meeting.AgoraTokenService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +36,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,13 +73,16 @@ public class SessionController {
     private final SessionBookingService sessionBookingService;
     private final NautixWhatsAppService nautixWhatsAppService;
     private final SessionOutcomeRepository sessionOutcomeRepository;
+    private final AgoraSessionAccessService agoraSessionAccessService;
 
     public SessionController(SessionBookingService sessionBookingService,
                              NautixWhatsAppService nautixWhatsAppService,
-                             SessionOutcomeRepository sessionOutcomeRepository) {
+                             SessionOutcomeRepository sessionOutcomeRepository,
+                             AgoraSessionAccessService agoraSessionAccessService) {
         this.sessionBookingService = sessionBookingService;
         this.nautixWhatsAppService = nautixWhatsAppService;
         this.sessionOutcomeRepository = sessionOutcomeRepository;
+        this.agoraSessionAccessService = agoraSessionAccessService;
     }
 
     @PostMapping(value = "/context-documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -548,6 +556,40 @@ public class SessionController {
         }
     }
 
+    @PostMapping("/{sessionId}/agora/token")
+    @Operation(summary = "Create Agora RTC token",
+               description = "Creates a short-lived Agora token for an authenticated mentor or mentee in the session.")
+    public ResponseEntity<ApiResponse<AgoraJoinTokenResponseDto>> createAgoraToken(
+            @Parameter(description = "Session ID") @PathVariable UUID sessionId,
+            Authentication authentication) {
+        UUID profileId = authenticatedUserId(authentication);
+        if (profileId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Authentication required"));
+        }
+
+        try {
+            AgoraTokenService.AgoraJoinToken token = agoraSessionAccessService.createJoinToken(sessionId, profileId);
+            AgoraJoinTokenResponseDto response = AgoraJoinTokenResponseDto.builder()
+                    .appId(token.appId())
+                    .channelName(token.channelName())
+                    .uid(token.uid())
+                    .token(token.token())
+                    .expiresAt(token.expiresAt())
+                    .build();
+
+            return ResponseEntity.ok(ApiResponse.success(response, "Agora token generated successfully"));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            HttpStatus status = "Session not found".equals(e.getMessage()) ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
+            return ResponseEntity.status(status).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
     /**
      * Get mentor's sessions
      */
@@ -740,6 +782,33 @@ public class SessionController {
                     .toList();
         }
         return List.of("Test User");
+    }
+
+    private UUID authenticatedUserId(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+        String userId = null;
+
+        if (principal instanceof SupabaseUserDetails userDetails) {
+            userId = userDetails.getUserId();
+        } else if (principal instanceof SupabaseUserPrincipal supabaseUserPrincipal) {
+            userId = supabaseUserPrincipal.getUserId();
+        } else if (principal instanceof String stringPrincipal) {
+            userId = stringPrincipal;
+        }
+
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+
+        try {
+            return UUID.fromString(userId);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     /**

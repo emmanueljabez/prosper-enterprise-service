@@ -103,7 +103,7 @@ public class Session {
     private SessionStatus status = SessionStatus.PENDING;
 
     /**
-     * Meeting platform preference (ZOOM, GOOGLE_MEET)
+     * Meeting platform preference (ZOOM, GOOGLE_MEET, AGORA)
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "meeting_platform")
@@ -403,7 +403,8 @@ public class Session {
      */
     public enum MeetingPlatform {
         GOOGLE_MEET("Google Meet"),
-        ZOOM("Zoom");
+        ZOOM("Zoom"),
+        AGORA("Agora");
         
         private final String displayName;
         

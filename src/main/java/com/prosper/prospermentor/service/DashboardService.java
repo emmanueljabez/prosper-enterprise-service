@@ -1993,7 +1993,7 @@ public class DashboardService {
         }
 
         return switch (session.getMeetingPlatform()) {
-            case GOOGLE_MEET, ZOOM -> "Video Call";
+            case GOOGLE_MEET, ZOOM, AGORA -> "Video Call";
         };
     }
 

@@ -53,6 +53,7 @@ public class SessionBookingService {
     private final MenteeProfileRepository menteeProfileRepository;
     private final CompanyProgramParticipantRepository companyProgramParticipantRepository;
     private final CompanyProgramMentorAssignmentRepository companyProgramMentorAssignmentRepository;
+    private final CompanyProgramRepository companyProgramRepository;
     private final SessionOutcomeRepository sessionOutcomeRepository;
     private final SkillRepository skillRepository;
     private final MeetingService meetingService;
@@ -96,6 +97,7 @@ public class SessionBookingService {
                                 CurrencyService currencyService,
                                 CompanyProgramParticipantRepository companyProgramParticipantRepository,
                                 CompanyProgramMentorAssignmentRepository companyProgramMentorAssignmentRepository,
+                                CompanyProgramRepository companyProgramRepository,
                                 SessionOutcomeRepository sessionOutcomeRepository,
                                 NautixWhatsAppService nautixWhatsAppService,
                                 ReviewWorkflowService reviewWorkflowService,
@@ -119,6 +121,7 @@ public class SessionBookingService {
         this.currencyService = currencyService;
         this.companyProgramParticipantRepository = companyProgramParticipantRepository;
         this.companyProgramMentorAssignmentRepository = companyProgramMentorAssignmentRepository;
+        this.companyProgramRepository = companyProgramRepository;
         this.sessionOutcomeRepository = sessionOutcomeRepository;
         this.nautixWhatsAppService = nautixWhatsAppService;
         this.reviewWorkflowService = reviewWorkflowService;
@@ -884,6 +887,17 @@ public class SessionBookingService {
     public Session getSessionById(UUID sessionId) {
         return sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("Session not found with ID: " + sessionId));
+    }
+
+    @Transactional(readOnly = true)
+    public String getCompanyProgramName(UUID companyProgramId) {
+        if (companyProgramId == null) {
+            return null;
+        }
+
+        return companyProgramRepository.findById(companyProgramId)
+                .map(CompanyProgram::getName)
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)

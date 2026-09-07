@@ -74,6 +74,7 @@ class SessionBreakoutServiceTest {
         when(roomRepository.findBySessionIdOrderByCreatedAtAsc(SESSION_ID)).thenAnswer(invocation -> savedRooms);
         when(roomRepository.save(any(SessionBreakoutRoom.class))).thenAnswer(invocation -> {
             SessionBreakoutRoom room = invocation.getArgument(0);
+            assertThat(room.getId()).as("new breakout rooms should rely on JPA/database UUID generation").isNull();
             room.setId(savedRooms.isEmpty() ? ROOM_ID : ROOM_TWO_ID);
             savedRooms.add(room);
             return room;
@@ -92,6 +93,38 @@ class SessionBreakoutServiceTest {
         assertThat(state.getRooms()).extracting(SessionBreakoutDtos.SessionBreakoutRoomDto::getName)
                 .containsExactly("Room 1", "Room 2");
         assertThat(state.getRooms()).allMatch(room -> room.getAgoraChannelName().startsWith("pm-session-" + SESSION_ID + "-breakout-"));
+    }
+
+    @Test
+    void autoAssign_shouldSaveNewAssignmentsWithoutPreassignedIds() {
+        List<SessionBreakoutRoom> rooms = List.of(
+                draftRoom(ROOM_ID, "Room 1"),
+                draftRoom(ROOM_TWO_ID, "Room 2")
+        );
+        List<SessionBreakoutParticipant> savedAssignments = new ArrayList<>();
+        when(sessionRepository.findById(SESSION_ID)).thenReturn(Optional.of(corporateAgoraSession()));
+        when(roomRepository.findBySessionIdOrderByCreatedAtAsc(SESSION_ID)).thenReturn(rooms);
+        when(participantRepository.findBySessionId(SESSION_ID)).thenAnswer(invocation -> savedAssignments);
+        when(participantRepository.save(any(SessionBreakoutParticipant.class))).thenAnswer(invocation -> {
+            SessionBreakoutParticipant assignment = invocation.getArgument(0);
+            assertThat(assignment.getId()).as("new breakout assignments should rely on JPA/database UUID generation").isNull();
+            assignment.setId(UUID.randomUUID());
+            savedAssignments.add(assignment);
+            return assignment;
+        });
+        when(companyProgramParticipantRepository.findByCompanyProgram_IdAndStatusIn(
+                eq(PROGRAM_ID),
+                org.mockito.ArgumentMatchers.<Collection<CompanyProgramParticipant.ParticipantStatus>>any()))
+                .thenReturn(List.of(
+                        programParticipant(PARTICIPANT_ONE_ID, "Faith", "Wainaina"),
+                        programParticipant(PARTICIPANT_TWO_ID, "Marcus", "Chen")
+                ));
+
+        SessionBreakoutDtos.SessionBreakoutStateDto state = service.autoAssign(SESSION_ID, MENTOR_ID);
+
+        assertThat(savedAssignments).hasSize(2);
+        assertThat(state.getRooms()).extracting(room -> room.getParticipants().size())
+                .containsExactly(1, 1);
     }
 
     @Test
@@ -193,6 +226,17 @@ class SessionBreakoutServiceTest {
         room.setName("Room 1");
         room.setAgoraChannelName("pm-session-" + SESSION_ID + "-breakout-" + ROOM_ID);
         room.setStatus(SessionBreakoutRoom.RoomStatus.OPEN);
+        room.setCreatedBy(MENTOR_ID);
+        return room;
+    }
+
+    private SessionBreakoutRoom draftRoom(UUID roomId, String name) {
+        SessionBreakoutRoom room = new SessionBreakoutRoom();
+        room.setId(roomId);
+        room.setSessionId(SESSION_ID);
+        room.setName(name);
+        room.setAgoraChannelName("pm-session-" + SESSION_ID + "-breakout-" + roomId);
+        room.setStatus(SessionBreakoutRoom.RoomStatus.DRAFT);
         room.setCreatedBy(MENTOR_ID);
         return room;
     }

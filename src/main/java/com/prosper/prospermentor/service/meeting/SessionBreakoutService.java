@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -35,8 +38,10 @@ public class SessionBreakoutService {
 
     private static final int MAX_BREAKOUT_ROOMS = 12;
     private static final int DEFAULT_ROOM_COUNT = 2;
+    private static final int BREAKOUT_CHANNEL_HASH_HEX_LENGTH = 32;
     private static final long JOIN_WINDOW_MINUTES_BEFORE_START = 15;
     private static final long JOIN_WINDOW_MINUTES_AFTER_END = 30;
+    private static final char[] HEX = "0123456789abcdef".toCharArray();
 
     private static final EnumSet<Session.SessionStatus> JOINABLE_STATUSES = EnumSet.of(
             Session.SessionStatus.CONFIRMED,
@@ -278,7 +283,22 @@ public class SessionBreakoutService {
         if (sessionId == null || roomId == null) {
             throw new IllegalArgumentException("Session ID and room ID are required to build a breakout channel name");
         }
-        return AgoraMeetingProvider.channelNameFor(sessionId) + "-breakout-" + roomId;
+        return "pm-bo-" + sha256Hex(sessionId + ":" + roomId, BREAKOUT_CHANNEL_HASH_HEX_LENGTH);
+    }
+
+    private static String sha256Hex(String value, int length) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.US_ASCII));
+            StringBuilder builder = new StringBuilder(length);
+            for (int index = 0; index < digest.length && builder.length() < length; index++) {
+                int nextByte = digest[index] & 0xff;
+                builder.append(HEX[nextByte >>> 4]);
+                builder.append(HEX[nextByte & 0x0f]);
+            }
+            return builder.substring(0, length);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
     }
 
     private void assignParticipant(UUID sessionId, SessionBreakoutRoom room, UUID profileId) {

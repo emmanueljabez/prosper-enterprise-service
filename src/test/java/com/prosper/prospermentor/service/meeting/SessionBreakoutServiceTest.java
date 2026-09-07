@@ -92,7 +92,18 @@ class SessionBreakoutServiceTest {
         assertThat(state.isHost()).isTrue();
         assertThat(state.getRooms()).extracting(SessionBreakoutDtos.SessionBreakoutRoomDto::getName)
                 .containsExactly("Room 1", "Room 2");
-        assertThat(state.getRooms()).allMatch(room -> room.getAgoraChannelName().startsWith("pm-session-" + SESSION_ID + "-breakout-"));
+        assertThat(state.getRooms()).allMatch(room -> room.getAgoraChannelName().startsWith("pm-bo-"));
+        assertThat(state.getRooms()).allMatch(room -> room.getAgoraChannelName().length() <= 64);
+    }
+
+    @Test
+    void breakoutChannelName_shouldFitAgoraChannelLimit() {
+        String channelName = SessionBreakoutService.breakoutChannelName(SESSION_ID, ROOM_ID);
+
+        assertThat(channelName).startsWith("pm-bo-");
+        assertThat(channelName).hasSizeLessThanOrEqualTo(64);
+        assertThat(channelName).doesNotContain(SESSION_ID.toString());
+        assertThat(channelName).doesNotContain(ROOM_ID.toString());
     }
 
     @Test
@@ -224,7 +235,7 @@ class SessionBreakoutServiceTest {
         room.setId(ROOM_ID);
         room.setSessionId(SESSION_ID);
         room.setName("Room 1");
-        room.setAgoraChannelName("pm-session-" + SESSION_ID + "-breakout-" + ROOM_ID);
+        room.setAgoraChannelName(SessionBreakoutService.breakoutChannelName(SESSION_ID, ROOM_ID));
         room.setStatus(SessionBreakoutRoom.RoomStatus.OPEN);
         room.setCreatedBy(MENTOR_ID);
         return room;
@@ -235,7 +246,7 @@ class SessionBreakoutServiceTest {
         room.setId(roomId);
         room.setSessionId(SESSION_ID);
         room.setName(name);
-        room.setAgoraChannelName("pm-session-" + SESSION_ID + "-breakout-" + roomId);
+        room.setAgoraChannelName(SessionBreakoutService.breakoutChannelName(SESSION_ID, roomId));
         room.setStatus(SessionBreakoutRoom.RoomStatus.DRAFT);
         room.setCreatedBy(MENTOR_ID);
         return room;

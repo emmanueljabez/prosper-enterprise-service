@@ -852,7 +852,7 @@ public class SessionController {
                 .cancelledBy(session.getCancelledBy())
                 .createdAt(session.getCreatedAt())
                 .updatedAt(session.getUpdatedAt())
-                .companyProgramName(session.getCompanyProgram() != null ? session.getCompanyProgram().getName() : null)
+                .companyProgramName(resolveCompanyProgramName(session))
                 .outcome(outcome)
                 .activeProposal(sessionBookingService.getActiveProposal(session.getId())
                         .map(this::toProposalDto)
@@ -861,6 +861,12 @@ public class SessionController {
                 .canBeModified(session.canBeModified())
                 .isFutureBooking(session.getScheduledStart() != null && session.isFutureSession())
                 .build();
+    }
+
+    private String resolveCompanyProgramName(Session session) {
+        return session.getCompanyProgramId() != null
+                ? sessionBookingService.getCompanyProgramName(session.getCompanyProgramId())
+                : null;
     }
 
     private Map<String, Object> buildQuestionnaireResponses(Session session) {

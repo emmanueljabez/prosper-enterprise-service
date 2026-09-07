@@ -110,12 +110,11 @@ public class SessionBreakoutService {
         List<String> roomNames = resolveRoomNames(request);
         int existingRoomCount = roomRepository.findBySessionIdOrderByCreatedAtAsc(sessionId).size();
         for (int index = 0; index < roomNames.size(); index++) {
-            UUID roomId = UUID.randomUUID();
+            UUID channelSuffix = UUID.randomUUID();
             SessionBreakoutRoom room = new SessionBreakoutRoom();
-            room.setId(roomId);
             room.setSessionId(sessionId);
             room.setName(roomNames.get(index).isBlank() ? "Room " + (existingRoomCount + index + 1) : roomNames.get(index));
-            room.setAgoraChannelName(breakoutChannelName(sessionId, roomId));
+            room.setAgoraChannelName(breakoutChannelName(sessionId, channelSuffix));
             room.setStatus(SessionBreakoutRoom.RoomStatus.DRAFT);
             room.setCreatedBy(requesterProfileId);
             roomRepository.save(room);
@@ -286,7 +285,6 @@ public class SessionBreakoutService {
         participantRepository.deleteBySessionIdAndProfileIdAndStatusIn(sessionId, profileId, ACTIVE_ASSIGNMENT_STATUSES);
 
         SessionBreakoutParticipant assignment = new SessionBreakoutParticipant();
-        assignment.setId(UUID.randomUUID());
         assignment.setSessionId(sessionId);
         assignment.setRoomId(room.getId());
         assignment.setStatus(SessionBreakoutParticipant.AssignmentStatus.ASSIGNED);

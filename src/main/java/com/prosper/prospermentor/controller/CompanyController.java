@@ -7,6 +7,7 @@ import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
 import com.prosper.prospermentor.service.CompanyBrandingService;
+import com.prosper.prospermentor.service.CompanyJoinLinkService;
 import com.prosper.prospermentor.service.CompanyService;
 import com.prosper.prospermentor.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,11 +49,13 @@ public class CompanyController {
     private final CompanyService companyService;
     private final ProfileService profileService;
     private final CompanyBrandingService companyBrandingService;
+    private final CompanyJoinLinkService companyJoinLinkService;
 
-    public CompanyController(CompanyService companyService, ProfileService profileService, CompanyBrandingService companyBrandingService) {
+    public CompanyController(CompanyService companyService, ProfileService profileService, CompanyBrandingService companyBrandingService, CompanyJoinLinkService companyJoinLinkService) {
         this.companyService = companyService;
         this.profileService = profileService;
         this.companyBrandingService = companyBrandingService;
+        this.companyJoinLinkService = companyJoinLinkService;
     }
 
     /**
@@ -463,6 +466,50 @@ public class CompanyController {
         }
     }
 
+    @GetMapping("/{companyId}/join-link")
+    @Operation(summary = "Get company join link", description = "Create or retrieve the active reusable QR join link for a company.")
+    public ResponseEntity<ApiResponse<CompanyJoinLinkDto>> getCompanyJoinLink(
+            @PathVariable UUID companyId,
+            Authentication authentication) {
+        log.info("Getting company join link: {}", companyId);
+
+        try {
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, companyId, true);
+            CompanyJoinLinkDto response = companyJoinLinkService.getOrCreateJoinLink(companyId, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Company join link retrieved successfully", response));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error getting company join link {}: {}", companyId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to get company join link: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{companyId}/join-link/regenerate")
+    @Operation(summary = "Regenerate company join link", description = "Revoke the current company QR join link and create a replacement.")
+    public ResponseEntity<ApiResponse<CompanyJoinLinkDto>> regenerateCompanyJoinLink(
+            @PathVariable UUID companyId,
+            Authentication authentication) {
+        log.info("Regenerating company join link: {}", companyId);
+
+        try {
+            SupabaseUserDetails userDetails = authorizeCompanyAccess(authentication, companyId, true);
+            CompanyJoinLinkDto response = companyJoinLinkService.regenerateJoinLink(companyId, userDetails.getUserIdAsUuid());
+            return ResponseEntity.ok(ApiResponse.success("Company join link regenerated successfully", response));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error regenerating company join link {}: {}", companyId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to regenerate company join link: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/{companyId}/branding/logo/{filename:.+}")
     @Operation(summary = "Get company logo", description = "Read an uploaded company logo image.")
     public ResponseEntity<Resource> downloadCompanyLogo(
@@ -702,14 +749,14 @@ public class CompanyController {
         }
     }
 
-    private void authorizeCompanyAccess(Authentication authentication, UUID companyId, boolean companyAdminRequired) {
+    private SupabaseUserDetails authorizeCompanyAccess(Authentication authentication, UUID companyId, boolean companyAdminRequired) {
         if (authentication == null || !authentication.isAuthenticated()
                 || !(authentication.getPrincipal() instanceof SupabaseUserDetails userDetails)) {
             throw new SecurityException("Authentication required");
         }
 
         if (userDetails.isAdmin()) {
-            return;
+            return userDetails;
         }
 
         if (companyAdminRequired && !userDetails.isCompanyAdmin()) {
@@ -728,6 +775,8 @@ public class CompanyController {
         if (profileCompanyId == null || !profileCompanyId.equals(companyId)) {
             throw new SecurityException("Not authorized to access this company");
         }
+
+        return userDetails;
     }
 
     // ==================== Employee Whitelist Endpoints ====================

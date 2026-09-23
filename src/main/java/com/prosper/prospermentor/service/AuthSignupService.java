@@ -48,7 +48,10 @@ public class AuthSignupService {
 
         String role = normalizeRole(signupRequest.getRole());
         boolean freeTrialRequested = isFreeTrialRequested(signupRequest);
-        String emailVerificationRedirectUrl = buildEmailVerificationRedirectUrl(freeTrialRequested);
+        String emailVerificationRedirectUrl = buildEmailVerificationRedirectUrl(
+                freeTrialRequested,
+                signupRequest.getCompanyJoinToken()
+        );
 
         return supabaseAuthService.generateSignupConfirmationLink(
                         signupRequest.getEmail(),
@@ -102,7 +105,7 @@ public class AuthSignupService {
                     request.getFirstName(),
                     role,
                     freeTrialRequested,
-                    toFrontendConfirmationUrl(authResponse, actionLink, freeTrialRequested, role)
+                    toFrontendConfirmationUrl(authResponse, actionLink, freeTrialRequested, role, request.getCompanyJoinToken())
             );
 
             Map<String, Object> response = authSessionMapper.toSignupResponse(
@@ -111,7 +114,7 @@ public class AuthSignupService {
                     freeTrial,
                     freeTrialRequested,
                     signupMessage(freeTrialRequested),
-                    emailVerificationDestination(email, freeTrialRequested, role)
+                    emailVerificationDestination(email, freeTrialRequested, role, request.getCompanyJoinToken())
             );
 
             log.info("Signup created pending email verification account for: {}", email);
@@ -177,15 +180,17 @@ public class AuthSignupService {
         return normalized;
     }
 
-    private String buildEmailVerificationRedirectUrl(boolean freeTrialRequested) {
-        String base = normalizeBaseUrl(frontendUrl) + "/auth/login?email_verified=1";
-        if (!freeTrialRequested) {
-            return base;
+    private String buildEmailVerificationRedirectUrl(boolean freeTrialRequested, String companyJoinToken) {
+        StringBuilder url = new StringBuilder(normalizeBaseUrl(frontendUrl))
+                .append("/auth/login?email_verified=1");
+        if (freeTrialRequested) {
+            url.append("&audience=mentee&trial=1&product=FREE_TRIAL");
         }
-        return base + "&audience=mentee&trial=1&product=FREE_TRIAL";
+        appendCompanyJoinToken(url, companyJoinToken);
+        return url.toString();
     }
 
-    private String emailVerificationDestination(String email, boolean freeTrialRequested, String role) {
+    private String emailVerificationDestination(String email, boolean freeTrialRequested, String role, String companyJoinToken) {
         StringBuilder url = new StringBuilder(normalizeBaseUrl(frontendUrl))
                 .append("/auth/email-verification?email=")
                 .append(URLEncoder.encode(email, StandardCharsets.UTF_8));
@@ -194,13 +199,15 @@ public class AuthSignupService {
         } else if (role != null && !role.isBlank()) {
             url.append("&audience=").append(URLEncoder.encode(role.trim().toLowerCase(), StandardCharsets.UTF_8));
         }
+        appendCompanyJoinToken(url, companyJoinToken);
         return url.toString();
     }
 
     private String toFrontendConfirmationUrl(JsonNode signupResponse,
                                              String actionLink,
                                              boolean freeTrialRequested,
-                                             String role) {
+                                             String role,
+                                             String companyJoinToken) {
         String tokenHash = resolveTokenHash(signupResponse, actionLink);
         String type = resolveVerificationType(signupResponse, actionLink);
         StringBuilder url = new StringBuilder(normalizeBaseUrl(frontendUrl))
@@ -214,7 +221,16 @@ public class AuthSignupService {
         } else if (role != null && !role.isBlank()) {
             url.append("&audience=").append(URLEncoder.encode(role.trim().toLowerCase(), StandardCharsets.UTF_8));
         }
+        appendCompanyJoinToken(url, companyJoinToken);
         return url.toString();
+    }
+
+    private void appendCompanyJoinToken(StringBuilder url, String companyJoinToken) {
+        if (companyJoinToken == null || companyJoinToken.trim().isEmpty()) {
+            return;
+        }
+        url.append("&companyJoinToken=")
+                .append(URLEncoder.encode(companyJoinToken.trim(), StandardCharsets.UTF_8));
     }
 
     private String resolveTokenHash(JsonNode signupResponse, String actionLink) {

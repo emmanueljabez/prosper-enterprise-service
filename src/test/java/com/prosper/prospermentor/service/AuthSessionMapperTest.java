@@ -119,4 +119,56 @@ class AuthSessionMapperTest {
                 .containsEntry("product", "b2c")
                 .containsEntry("url", "https://prospermentor.com/mentors");
     }
+
+    @Test
+    void toSignupResponse_shouldReturnPendingVerificationEnvelope() throws Exception {
+        UUID userId = UUID.fromString("44444444-4444-4444-4444-444444444444");
+        JsonNode signupResponse = objectMapper.readTree("""
+                {
+                  "user": {
+                    "id": "44444444-4444-4444-4444-444444444444",
+                    "email": "mentee@example.com",
+                    "user_metadata": {
+                      "first_name": "Mentee",
+                      "last_name": "Signup"
+                    }
+                  }
+                }
+                """);
+        Map<String, Object> profile = Map.of(
+                "id", userId,
+                "email", "mentee@example.com",
+                "firstName", "Mentee",
+                "lastName", "Signup",
+                "role", "mentee"
+        );
+        Map<String, Object> freeTrial = Map.of(
+                "requested", true,
+                "activated", true,
+                "remainingSessions", 1,
+                "sessionDurationMinutes", 30
+        );
+
+        Map<String, Object> response = mapper.toSignupResponse(
+                signupResponse,
+                profile,
+                freeTrial,
+                true,
+                "Account created. Verify your email, then sign in to continue.",
+                "https://enterprise.prospermentor.com/auth/email-verification?email=mentee%40example.com"
+        );
+
+        assertThat(response)
+                .containsEntry("status", "PENDING_EMAIL_VERIFICATION")
+                .containsEntry("emailVerificationRequired", true)
+                .containsEntry("message", "Account created. Verify your email, then sign in to continue.")
+                .containsKeys("user", "profile", "memberships", "entitlements", "defaultDestination", "freeTrial");
+        assertThat(response).doesNotContainKeys("accessToken", "refreshToken", "access_token", "refresh_token");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> destination = (Map<String, Object>) response.get("defaultDestination");
+        assertThat(destination)
+                .containsEntry("product", "b2c")
+                .containsEntry("url", "https://enterprise.prospermentor.com/auth/email-verification?email=mentee%40example.com");
+    }
 }

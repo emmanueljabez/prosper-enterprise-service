@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.prospermentor.dto.auth.UnifiedAuthSession;
+import com.prosper.prospermentor.dto.auth.UnifiedSignupResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -68,6 +69,42 @@ public class AuthSessionMapper {
         return toLoginResponse(authResponse, null, null, false);
     }
 
+    public Map<String, Object> toSignupResponse(JsonNode signupResponse,
+                                                Map<String, Object> profile,
+                                                Map<String, Object> freeTrial,
+                                                boolean freeTrialRequested,
+                                                String message,
+                                                String destinationUrl) {
+        JsonNode userNode = signupResponse != null && signupResponse.has("user")
+                ? signupResponse.get("user")
+                : signupResponse;
+
+        UnifiedAuthSession.UserPayload user = buildUser(userNode, profile);
+        String normalizedRole = normalizeRole(value(profile, "role"));
+        List<UnifiedAuthSession.MembershipPayload> memberships = buildMemberships(normalizedRole, profile);
+        List<UnifiedAuthSession.EntitlementPayload> entitlements = buildEntitlements(freeTrial);
+        UnifiedAuthSession.DestinationPayload destination = new UnifiedAuthSession.DestinationPayload(
+                productForSignup(normalizedRole, freeTrialRequested),
+                destinationUrl
+        );
+
+        UnifiedSignupResult result = new UnifiedSignupResult(
+                "PENDING_EMAIL_VERIFICATION",
+                true,
+                message,
+                user,
+                profile,
+                memberships,
+                entitlements,
+                destination,
+                freeTrial
+        );
+
+        Map<String, Object> normalized = objectMapper.convertValue(result, new TypeReference<LinkedHashMap<String, Object>>() {});
+        normalized.entrySet().removeIf(entry -> entry.getValue() == null);
+        return normalized;
+    }
+
     private UnifiedAuthSession.UserPayload buildUser(JsonNode userNode, Map<String, Object> profile) {
         String id = firstNonBlank(text(userNode, "id"), value(profile, "id"));
         String email = firstNonBlank(text(userNode, "email"), value(profile, "email"));
@@ -123,6 +160,16 @@ public class AuthSessionMapper {
             return new UnifiedAuthSession.DestinationPayload("enterprise", ENTERPRISE_BASE_URL + "/app/employee");
         }
         return new UnifiedAuthSession.DestinationPayload("b2c", B2C_BASE_URL + "/dashboard");
+    }
+
+    private String productForSignup(String role, boolean freeTrialRequested) {
+        if (freeTrialRequested) {
+            return "b2c";
+        }
+        if ("corporate_admin".equals(role) || "employee".equals(role)) {
+            return "enterprise";
+        }
+        return "b2c";
     }
 
     private String normalizeRole(String rawRole) {

@@ -3,6 +3,7 @@ package com.prosper.prospermentor.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.prospermentor.entity.Subscription;
 import com.prosper.prospermentor.model.ApiResponse;
+import com.prosper.prospermentor.service.AuthSessionMapper;
 import com.prosper.prospermentor.service.CompanyAdminRegistrationService;
 import com.prosper.prospermentor.service.CompanyService;
 import com.prosper.prospermentor.service.PasswordResetService;
@@ -54,7 +55,8 @@ class AuthControllerFreeTrialTest {
                 subscriptionService,
                 objectMapper,
                 menteeNotificationService,
-                passwordResetService
+                passwordResetService,
+                new AuthSessionMapper(objectMapper)
         );
         ReflectionTestUtils.setField(authController, "frontendUrl", "https://enterprise.prospermentor.com");
     }

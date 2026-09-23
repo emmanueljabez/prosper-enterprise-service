@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.prosper.prospermentor.controller.AuthController;
 import com.prosper.prospermentor.entity.Subscription;
 import com.prosper.prospermentor.model.ApiResponse;
+import com.prosper.prospermentor.service.notification.AuthVerificationNotificationService;
 import com.prosper.prospermentor.service.notification.MenteeNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class AuthSignupService {
     private final ProfileService profileService;
     private final SubscriptionService subscriptionService;
     private final MenteeNotificationService menteeNotificationService;
+    private final AuthVerificationNotificationService authVerificationNotificationService;
     private final AuthSessionMapper authSessionMapper;
 
     @Value("${app.frontend-url:http://localhost:3000}")
@@ -95,9 +97,10 @@ public class AuthSignupService {
                         .<Object>body(Map.of("error", "Signup provider did not return a confirmation link", "errorCode", "SIGNUP_PROVIDER_ERROR")));
             }
 
-            menteeNotificationService.sendMenteeEmailConfirmation(
+            sendEmailConfirmation(
                     email,
                     request.getFirstName(),
+                    role,
                     freeTrialRequested,
                     toFrontendConfirmationUrl(authResponse, actionLink, freeTrialRequested, role)
             );
@@ -118,6 +121,29 @@ public class AuthSignupService {
             return Mono.just(ResponseEntity.internalServerError()
                     .<Object>body(Map.of("error", "Failed to process signup. Please try again or contact support.", "errorCode", "SIGNUP_PROCESSING_ERROR")));
         }
+    }
+
+    private void sendEmailConfirmation(String email,
+                                       String firstName,
+                                       String role,
+                                       boolean freeTrialRequested,
+                                       String confirmationUrl) {
+        if (freeTrialRequested || "mentee".equals(role)) {
+            menteeNotificationService.sendMenteeEmailConfirmation(
+                    email,
+                    firstName,
+                    freeTrialRequested,
+                    confirmationUrl
+            );
+            return;
+        }
+
+        authVerificationNotificationService.sendEmailConfirmation(
+                email,
+                firstName,
+                role,
+                confirmationUrl
+        );
     }
 
     private ResponseEntity<Object> mapSignupError(Throwable error) {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.prospermentor.controller.AuthController;
 import com.prosper.prospermentor.entity.Subscription;
 import com.prosper.prospermentor.model.ApiResponse;
+import com.prosper.prospermentor.service.notification.AuthVerificationNotificationService;
 import com.prosper.prospermentor.service.notification.MenteeNotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +32,7 @@ class AuthSignupServiceTest {
     @Mock private ProfileService profileService;
     @Mock private SubscriptionService subscriptionService;
     @Mock private MenteeNotificationService menteeNotificationService;
+    @Mock private AuthVerificationNotificationService authVerificationNotificationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private AuthSignupService service;
@@ -41,6 +44,7 @@ class AuthSignupServiceTest {
                 profileService,
                 subscriptionService,
                 menteeNotificationService,
+                authVerificationNotificationService,
                 new AuthSessionMapper(objectMapper)
         );
         ReflectionTestUtils.setField(service, "frontendUrl", "https://enterprise.prospermentor.com");
@@ -124,6 +128,74 @@ class AuthSignupServiceTest {
                 "Mentee",
                 true,
                 "https://enterprise.prospermentor.com/auth/confirm-email?token_hash=hashed-abc&type=signup&audience=mentee&trial=1&product=FREE_TRIAL"
+        );
+    }
+
+    @Test
+    void signup_shouldSendRoleAwareVerificationForMentorSignup() throws Exception {
+        UUID userId = UUID.fromString("66666666-6666-6666-6666-666666666666");
+        AuthController.SignupRequest request = new AuthController.SignupRequest();
+        request.setEmail("mentor@example.com");
+        request.setPassword("Password123!");
+        request.setRole("mentor");
+        request.setAudience("b2c");
+        request.setFirstName("Mentor");
+        request.setLastName("Signup");
+        request.setPhoneNumber("+254711111111");
+
+        when(supabaseAuthService.generateSignupConfirmationLink(
+                "mentor@example.com",
+                "Password123!",
+                "mentor",
+                "Mentor",
+                "Signup",
+                "+254711111111",
+                "https://enterprise.prospermentor.com/auth/login?email_verified=1"
+        )).thenReturn(Mono.just(objectMapper.readTree("""
+                {
+                  "action_link": "https://supabase.example.com/auth/v1/verify?token=mentor-token&type=signup",
+                  "hashed_token": "hashed-mentor",
+                  "user": {
+                    "id": "66666666-6666-6666-6666-666666666666",
+                    "email": "mentor@example.com",
+                    "user_metadata": {
+                      "first_name": "Mentor",
+                      "last_name": "Signup"
+                    }
+                  }
+                }
+                """)));
+        when(profileService.createProfileWithDetails(
+                userId,
+                "mentor@example.com",
+                "mentor",
+                "Mentor",
+                "Signup",
+                "+254711111111",
+                null
+        )).thenReturn(Optional.of(Map.of(
+                "id", userId,
+                "email", "mentor@example.com",
+                "role", "mentor",
+                "firstName", "Mentor",
+                "lastName", "Signup"
+        )));
+
+        ResponseEntity<Object> response = service.signup(request).block();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        verify(authVerificationNotificationService).sendEmailConfirmation(
+                "mentor@example.com",
+                "Mentor",
+                "mentor",
+                "https://enterprise.prospermentor.com/auth/confirm-email?token_hash=hashed-mentor&type=signup&audience=mentor"
+        );
+        verify(menteeNotificationService, never()).sendMenteeEmailConfirmation(
+                "mentor@example.com",
+                "Mentor",
+                false,
+                "https://enterprise.prospermentor.com/auth/confirm-email?token_hash=hashed-mentor&type=signup&audience=mentor"
         );
     }
 

@@ -1,8 +1,10 @@
 package com.prosper.prospermentor.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.prosper.prospermentor.dto.CompanyJoinLinkDto;
 import com.prosper.prospermentor.dto.ConfirmEmailRequest;
 import com.prosper.prospermentor.model.ApiResponse;
+import com.prosper.prospermentor.service.CompanyJoinLinkService;
 import com.prosper.prospermentor.service.SupabaseAuthService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -23,6 +26,8 @@ class PublicAuthControllerTest {
 
     @Mock
     private SupabaseAuthService supabaseAuthService;
+    @Mock
+    private CompanyJoinLinkService companyJoinLinkService;
 
     @InjectMocks
     private PublicAuthController publicAuthController;
@@ -55,6 +60,49 @@ class PublicAuthControllerTest {
         assertThat(response.getBody().isSuccess()).isTrue();
         assertThat(response.getBody().getData()).containsEntry("emailVerified", true);
         assertThat(response.getBody().getData()).doesNotContainKeys("access_token", "refresh_token");
+    }
+
+    @Test
+    void confirmEmail_shouldCompleteCompanyJoinAfterVerification() throws Exception {
+        UUID profileId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        UUID companyId = UUID.fromString("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+        ConfirmEmailRequest request = new ConfirmEmailRequest();
+        request.setTokenHash("hashed-join");
+        request.setType("signup");
+        request.setCompanyJoinToken("join-token");
+
+        when(supabaseAuthService.verifyEmailTokenHash("hashed-join", "signup"))
+                .thenReturn(Mono.just(objectMapper.readTree("""
+                        {
+                          "access_token": "secret",
+                          "refresh_token": "secret",
+                          "user": {
+                            "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                            "email": "mentee@example.com"
+                          }
+                        }
+                        """)));
+        when(companyJoinLinkService.completeJoinAfterVerification("join-token", profileId, "mentee@example.com"))
+                .thenReturn(CompanyJoinLinkDto.builder()
+                        .companyId(companyId)
+                        .companyName("Girls for Girls")
+                        .linked(true)
+                        .status("ACTIVE")
+                        .build());
+
+        ResponseEntity<ApiResponse<Map<String, Object>>> response = publicAuthController.confirmEmail(request).block();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isTrue();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> companyJoin = (Map<String, Object>) response.getBody().getData().get("companyJoin");
+        assertThat(companyJoin)
+                .containsEntry("linked", true)
+                .containsEntry("companyId", companyId)
+                .containsEntry("companyName", "Girls for Girls");
     }
 
     @Test

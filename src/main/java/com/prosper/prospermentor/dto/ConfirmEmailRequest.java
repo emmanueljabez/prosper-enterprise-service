@@ -9,4 +9,6 @@ public class ConfirmEmailRequest {
     private String tokenHash;
 
     private String type = "signup";
+
+    private String companyJoinToken;
 }

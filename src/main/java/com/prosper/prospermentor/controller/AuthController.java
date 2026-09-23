@@ -820,6 +820,7 @@ public class AuthController {
         private String lastName;
         private String phoneNumber;
         private String dateOfBirth;
+        private String companyJoinToken;
 
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
@@ -841,6 +842,8 @@ public class AuthController {
         public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
         public String getDateOfBirth() { return dateOfBirth; }
         public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+        public String getCompanyJoinToken() { return companyJoinToken; }
+        public void setCompanyJoinToken(String companyJoinToken) { this.companyJoinToken = companyJoinToken; }
     }
 
     public static class RefreshTokenRequest {

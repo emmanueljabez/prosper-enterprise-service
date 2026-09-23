@@ -200,6 +200,77 @@ class AuthSignupServiceTest {
     }
 
     @Test
+    void signup_shouldCarryCompanyJoinTokenToVerificationUrls() throws Exception {
+        UUID userId = UUID.fromString("77777777-7777-7777-7777-777777777777");
+        AuthController.SignupRequest request = new AuthController.SignupRequest();
+        request.setEmail("join@example.com");
+        request.setPassword("Password123!");
+        request.setRole("mentee");
+        request.setAudience("mentee");
+        request.setFirstName("Join");
+        request.setLastName("Signup");
+        request.setPhoneNumber("+254722222222");
+        request.setCompanyJoinToken("join.token.value");
+
+        when(supabaseAuthService.generateSignupConfirmationLink(
+                "join@example.com",
+                "Password123!",
+                "mentee",
+                "Join",
+                "Signup",
+                "+254722222222",
+                "https://enterprise.prospermentor.com/auth/login?email_verified=1&companyJoinToken=join.token.value"
+        )).thenReturn(Mono.just(objectMapper.readTree("""
+                {
+                  "action_link": "https://supabase.example.com/auth/v1/verify?token=join-token&type=signup",
+                  "hashed_token": "hashed-join",
+                  "user": {
+                    "id": "77777777-7777-7777-7777-777777777777",
+                    "email": "join@example.com",
+                    "user_metadata": {
+                      "first_name": "Join",
+                      "last_name": "Signup"
+                    }
+                  }
+                }
+                """)));
+        when(profileService.createProfileWithDetails(
+                userId,
+                "join@example.com",
+                "mentee",
+                "Join",
+                "Signup",
+                "+254722222222",
+                null
+        )).thenReturn(Optional.of(Map.of(
+                "id", userId,
+                "email", "join@example.com",
+                "role", "mentee",
+                "firstName", "Join",
+                "lastName", "Signup"
+        )));
+
+        ResponseEntity<Object> response = service.signup(request).block();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> destination = (Map<String, Object>) body.get("defaultDestination");
+        assertThat(destination)
+                .containsEntry("url", "https://enterprise.prospermentor.com/auth/email-verification?email=join%40example.com&audience=mentee&companyJoinToken=join.token.value");
+
+        verify(menteeNotificationService).sendMenteeEmailConfirmation(
+                "join@example.com",
+                "Join",
+                false,
+                "https://enterprise.prospermentor.com/auth/confirm-email?token_hash=hashed-join&type=signup&audience=mentee&companyJoinToken=join.token.value"
+        );
+    }
+
+    @Test
     void signup_shouldReturnStableDuplicateEmailErrorCode() {
         AuthController.SignupRequest request = new AuthController.SignupRequest();
         request.setEmail("existing@example.com");

@@ -7,6 +7,7 @@ import com.prosper.prospermentor.entity.Subscription;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
 import com.prosper.prospermentor.security.SupabaseUserPrincipal;
+import com.prosper.prospermentor.service.AuthSessionMapper;
 import com.prosper.prospermentor.service.CompanyAdminRegistrationService;
 import com.prosper.prospermentor.service.PasswordResetService;
 import com.prosper.prospermentor.service.SupabaseAuthService;
@@ -48,6 +49,7 @@ public class AuthController {
     private final ObjectMapper objectMapper;
     private final MenteeNotificationService menteeNotificationService;
     private final PasswordResetService passwordResetService;
+    private final AuthSessionMapper authSessionMapper;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -302,25 +304,34 @@ public class AuthController {
                         // Fetch the profile from database
                         Optional<Map<String, Object>> profileOpt = profileService.getCompleteProfile(userUuid);
 
-                        // Create enhanced response with profile
-                        Map<String, Object> enhancedResponse = objectMapper.convertValue(authResponse, Map.class);
-
-                        // Add profile to response if found
-                        if (profileOpt.isPresent()) {
-                            enhancedResponse.put("profile", profileOpt.get());
-                        } else {
-                            log.warn("Profile not found for user ID: {}", userId);
+                        Map<String, Object> freeTrial = null;
+                        boolean freeTrialRequested = isFreeTrialRequested(loginRequest);
+                        if (freeTrialRequested) {
+                            freeTrial = activateFreeTrial(userUuid);
                         }
 
-                        if (isFreeTrialRequested(loginRequest)) {
-                            enhancedResponse.put("freeTrial", activateFreeTrial(userUuid));
+                        Map<String, Object> enhancedResponse = authSessionMapper.toLoginResponse(
+                                authResponse,
+                                profileOpt.orElse(null),
+                                freeTrial,
+                                freeTrialRequested
+                        );
+
+                        // Add profile to response if found
+                        if (profileOpt.isEmpty()) {
+                            log.warn("Profile not found for user ID: {}", userId);
                         }
 
                         return Mono.just(ResponseEntity.ok((Object) enhancedResponse));
                     } catch (Exception e) {
                         log.error("Error enriching login response with profile: {}", e.getMessage());
                         // Return original response if profile fetch fails
-                        return Mono.just(ResponseEntity.ok((Object) authResponse));
+                        return Mono.just(ResponseEntity.ok((Object) authSessionMapper.toLoginResponse(
+                                authResponse,
+                                null,
+                                null,
+                                isFreeTrialRequested(loginRequest)
+                        )));
                     }
                 })
                 .onErrorResume(error -> {
@@ -716,7 +727,7 @@ public class AuthController {
         }
 
         return supabaseAuthService.refreshToken(refreshRequest.getRefreshToken())
-                .map(result -> ResponseEntity.ok((Object) result))
+                .map(result -> ResponseEntity.ok((Object) authSessionMapper.toRefreshResponse(result)))
                 .onErrorResume(error -> {
                     String errorMessage = error.getMessage();
                     if (errorMessage.contains("Invalid refresh token") || errorMessage.contains("401")) {

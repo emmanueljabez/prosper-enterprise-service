@@ -8,6 +8,7 @@ import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
 import com.prosper.prospermentor.security.SupabaseUserPrincipal;
 import com.prosper.prospermentor.service.AuthSessionMapper;
+import com.prosper.prospermentor.service.AuthSignupService;
 import com.prosper.prospermentor.service.CompanyAdminRegistrationService;
 import com.prosper.prospermentor.service.PasswordResetService;
 import com.prosper.prospermentor.service.SupabaseAuthService;
@@ -50,6 +51,7 @@ public class AuthController {
     private final MenteeNotificationService menteeNotificationService;
     private final PasswordResetService passwordResetService;
     private final AuthSessionMapper authSessionMapper;
+    private final AuthSignupService authSignupService;
 
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
@@ -350,109 +352,7 @@ public class AuthController {
      */
     @PostMapping("/signup")
     public Mono<ResponseEntity<Object>> signup(@RequestBody SignupRequest signupRequest) {
-        if (signupRequest.getEmail() == null || signupRequest.getPassword() == null) {
-            return Mono.just(ResponseEntity.badRequest()
-                    .<Object>body(Map.of("error", "Email and password are required")));
-        }
-
-        // Validate password strength
-        if (signupRequest.getPassword().length() < 6) {
-            return Mono.just(ResponseEntity.badRequest()
-                    .<Object>body(Map.of("error", "Password must be at least 6 characters long")));
-        }
-
-        String role = signupRequest.getRole() != null ? signupRequest.getRole() : "mentee";
-        boolean freeTrialRequested = isFreeTrialRequested(signupRequest);
-        String emailVerificationRedirectUrl = buildEmailVerificationRedirectUrl(freeTrialRequested);
-
-        return supabaseAuthService.generateSignupConfirmationLink(
-                        signupRequest.getEmail(),
-                        signupRequest.getPassword(),
-                        role,
-                        signupRequest.getFirstName(),
-                        signupRequest.getLastName(),
-                        signupRequest.getPhoneNumber(),
-                        emailVerificationRedirectUrl
-                )
-                .flatMap(authResponse -> {
-                    try {
-                        JsonNode userNode = authResponse.has("user") ? authResponse.get("user") : authResponse;
-                        if (userNode == null || userNode.isNull() || !userNode.hasNonNull("id")) {
-                            return Mono.just(ResponseEntity.internalServerError()
-                                    .<Object>body(Map.of("error", "Signup provider did not return a user id")));
-                        }
-
-                        String userId = userNode.get("id").asText();
-                        String email = userNode.hasNonNull("email")
-                                ? userNode.get("email").asText()
-                                : signupRequest.getEmail().trim().toLowerCase();
-                        UUID userUuid = UUID.fromString(userId);
-
-                        var profile = profileService.createProfileWithDetails(
-                                userUuid,
-                                email,
-                                role,
-                                signupRequest.getFirstName(),
-                                signupRequest.getLastName(),
-                                signupRequest.getPhoneNumber(),
-                                signupRequest.getDateOfBirth()
-                        );
-
-                        Map<String, Object> enhancedResponse = new LinkedHashMap<>();
-                        enhancedResponse.put("user", toPublicUserPayload(userNode, email));
-                        if (profile.isPresent()) {
-                            enhancedResponse.put("profile", profile.get());
-                        }
-                        enhancedResponse.put("emailVerificationRequired", true);
-                        enhancedResponse.put("message", "Mentee account created. Verify your email, then sign in to continue.");
-
-                        if (freeTrialRequested) {
-                            enhancedResponse.put("freeTrial", activateFreeTrial(userUuid));
-                        }
-
-                        String actionLink = authResponse.hasNonNull("action_link")
-                                ? authResponse.get("action_link").asText()
-                                : null;
-                        if (actionLink == null || actionLink.isBlank()) {
-                            return Mono.just(ResponseEntity.internalServerError()
-                                    .<Object>body(Map.of("error", "Signup provider did not return a confirmation link")));
-                        }
-
-                        menteeNotificationService.sendMenteeEmailConfirmation(
-                                email,
-                                signupRequest.getFirstName(),
-                                freeTrialRequested,
-                                toFrontendConfirmationUrl(authResponse, actionLink, freeTrialRequested, role)
-                        );
-
-                        log.info("User created successfully: {} with profile", email);
-                        return Mono.just(ResponseEntity.ok((Object) enhancedResponse));
-                    } catch (Exception e) {
-                        log.error("Error creating profile after signup: {}", e.getMessage());
-                        return Mono.just(ResponseEntity.internalServerError()
-                                .<Object>body(Map.of("error", "Failed to process signup. Please try again or contact support.")));
-                    }
-                })
-                .onErrorResume(error -> {
-                    String errorMessage = error.getMessage();
-                    log.error("Supabase signup error: {}", errorMessage);
-
-                    // Handle user already exists scenarios
-                    if (errorMessage.contains("User already registered") ||
-                        errorMessage.contains("already exists") ||
-                        errorMessage.contains("email_exists") ||
-                        errorMessage.contains("422") ||
-                        errorMessage.contains("Database error saving new user") ||
-                        errorMessage.contains("unexpected_failure")) {
-                        return Mono.just(ResponseEntity.status(409)
-                                .<Object>body(Map.of("error", "User already exists with this email")));
-                    } else if (errorMessage.contains("Invalid email format")) {
-                        return Mono.just(ResponseEntity.badRequest()
-                                .<Object>body(Map.of("error", "Invalid email format")));
-                    }
-                    return Mono.just(ResponseEntity.internalServerError()
-                            .<Object>body(Map.of("error", "Signup service error. Please try again or contact support.")));
-                });
+        return authSignupService.signup(signupRequest);
     }
 
     /**

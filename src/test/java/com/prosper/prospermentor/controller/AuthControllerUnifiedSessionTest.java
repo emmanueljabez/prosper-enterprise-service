@@ -2,6 +2,7 @@ package com.prosper.prospermentor.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.prosper.prospermentor.service.AuthSessionMapper;
+import com.prosper.prospermentor.service.AuthSignupService;
 import com.prosper.prospermentor.service.CompanyAdminRegistrationService;
 import com.prosper.prospermentor.service.CompanyService;
 import com.prosper.prospermentor.service.PasswordResetService;
@@ -35,6 +36,7 @@ class AuthControllerUnifiedSessionTest {
     @Mock private SubscriptionService subscriptionService;
     @Mock private MenteeNotificationService menteeNotificationService;
     @Mock private PasswordResetService passwordResetService;
+    @Mock private AuthSignupService authSignupService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private AuthController authController;
@@ -50,7 +52,8 @@ class AuthControllerUnifiedSessionTest {
                 objectMapper,
                 menteeNotificationService,
                 passwordResetService,
-                new AuthSessionMapper(objectMapper)
+                new AuthSessionMapper(objectMapper),
+                authSignupService
         );
     }
 

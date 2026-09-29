@@ -4,6 +4,7 @@ import com.prosper.prospermentor.controller.BadgeAdminController;
 import com.prosper.prospermentor.controller.ProfileBadgeController;
 import com.prosper.prospermentor.dto.badge.BadgeAwardDto;
 import com.prosper.prospermentor.dto.badge.BadgeTypeDto;
+import com.prosper.prospermentor.dto.badge.BadgeTypeUpsertRequest;
 import com.prosper.prospermentor.dto.badge.ManualBadgeGrantRequest;
 import com.prosper.prospermentor.model.ApiResponse;
 import com.prosper.prospermentor.security.SupabaseUserDetails;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -129,6 +131,82 @@ class BadgeControllerTest {
         assertThat(response.getBody().getData()).containsEntry("count", 1);
     }
 
+    @Test
+    void adminUpdateTypeReturnsBadRequestForValidationError() {
+        UUID adminId = UUID.randomUUID();
+        UUID badgeTypeId = UUID.randomUUID();
+        BadgeTypeUpsertRequest request = badgeTypeRequest("Top Contributor", "top-contributor");
+        when(badgeService.updateBadgeType(any(), any(), any()))
+                .thenThrow(new IllegalArgumentException("Badge type slug already exists"));
+
+        BadgeAdminController controller = new BadgeAdminController(badgeService);
+        ResponseEntity<ApiResponse<BadgeTypeDto>> response = controller.updateType(
+                badgeTypeId,
+                request,
+                authentication(adminId, "ADMIN")
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isFalse();
+        assertThat(response.getBody().getMessage()).isEqualTo("Badge type slug already exists");
+    }
+
+    @Test
+    void adminUpdateTypeCallsServiceForProsperAdmin() {
+        UUID adminId = UUID.randomUUID();
+        UUID badgeTypeId = UUID.randomUUID();
+        BadgeTypeUpsertRequest request = badgeTypeRequest("Updated Contributor", "updated-contributor");
+        BadgeTypeDto updated = new BadgeTypeDto(
+                badgeTypeId,
+                "Updated Contributor",
+                "updated-contributor",
+                "Badge description",
+                "RECOGNITION",
+                "MANUAL",
+                "ACTIVE",
+                "Updated Contributor",
+                "#8f1f74",
+                "#f7e8f3",
+                "#6f1859",
+                100
+        );
+        when(badgeService.updateBadgeType(badgeTypeId, request, adminId)).thenReturn(updated);
+
+        BadgeAdminController controller = new BadgeAdminController(badgeService);
+        ResponseEntity<ApiResponse<BadgeTypeDto>> response = controller.updateType(
+                badgeTypeId,
+                request,
+                authentication(adminId, "ADMIN")
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getData()).isSameAs(updated);
+        verify(badgeService).updateBadgeType(badgeTypeId, request, adminId);
+    }
+
+    @Test
+    void adminGrantBadgeReturnsBadRequestForInactiveBadgeType() {
+        UUID adminId = UUID.randomUUID();
+        UUID profileId = UUID.randomUUID();
+        UUID badgeTypeId = UUID.randomUUID();
+        when(badgeService.grantManualBadge(profileId, badgeTypeId, "Founding mentor", adminId))
+                .thenThrow(new IllegalStateException("Badge type is not active"));
+
+        BadgeAdminController controller = new BadgeAdminController(badgeService);
+        ResponseEntity<ApiResponse<BadgeAwardDto>> response = controller.grantBadge(
+                profileId,
+                new ManualBadgeGrantRequest(badgeTypeId, "Founding mentor"),
+                authentication(adminId, "ADMIN")
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().isSuccess()).isFalse();
+        assertThat(response.getBody().getMessage()).isEqualTo("Badge type is not active");
+    }
+
     private Authentication authentication(UUID userId, String role) {
         SupabaseUserDetails userDetails = new SupabaseUserDetails(
                 userId.toString(),
@@ -154,6 +232,21 @@ class BadgeControllerTest {
                 true,
                 false,
                 "SHOWN"
+        );
+    }
+
+    private BadgeTypeUpsertRequest badgeTypeRequest(String name, String slug) {
+        return new BadgeTypeUpsertRequest(
+                name,
+                slug,
+                "Badge description",
+                "RECOGNITION",
+                "MANUAL",
+                name,
+                "#8f1f74",
+                "#f7e8f3",
+                "#6f1859",
+                100
         );
     }
 }

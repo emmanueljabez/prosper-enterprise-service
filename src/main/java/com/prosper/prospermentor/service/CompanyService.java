@@ -50,6 +50,7 @@ public class CompanyService {
     private final SessionRepository sessionRepository;
     private final ReviewCycleRepository reviewCycleRepository;
     private final ReviewRequestRepository reviewRequestRepository;
+    private final BadgeService badgeService;
 
     public CompanyService(CompanyRepository companyRepository,
                          ProgramRepository programRepository,
@@ -59,7 +60,8 @@ public class CompanyService {
                          ProfileService profileService,
                          SessionRepository sessionRepository,
                          ReviewCycleRepository reviewCycleRepository,
-                         ReviewRequestRepository reviewRequestRepository) {
+                         ReviewRequestRepository reviewRequestRepository,
+                         BadgeService badgeService) {
         this.companyRepository = companyRepository;
         this.programRepository = programRepository;
         this.profileRepository = profileRepository;
@@ -69,6 +71,7 @@ public class CompanyService {
         this.sessionRepository = sessionRepository;
         this.reviewCycleRepository = reviewCycleRepository;
         this.reviewRequestRepository = reviewRequestRepository;
+        this.badgeService = badgeService;
     }
 
     /**
@@ -1169,6 +1172,16 @@ public class CompanyService {
         // Fetch updated profile
         Profile updatedProfile = profileRepository.findById(profileId).orElse(profile);
 
+        if (badgeService != null) {
+            badgeService.awardAffiliationBadgesForCompanyLink(
+                    companyId,
+                    profileId,
+                    updatedProfile.getRole(),
+                    companyId,
+                    "Automatic - company link confirmed"
+            );
+        }
+
         log.info("Profile {} successfully linked to company {}", profileId, companyId);
         return ApiResponse.success("Profile successfully linked to company", updatedProfile);
     }
@@ -2058,6 +2071,16 @@ public class CompanyService {
 
         // Fetch updated profile
         Profile updatedProfile = profileRepository.findById(profileId).orElse(profile);
+
+        if (badgeService != null) {
+            badgeService.awardAffiliationBadgesForCompanyLink(
+                    whitelist.getCompany().getId(),
+                    profileId,
+                    updatedProfile.getRole(),
+                    whitelist.getId(),
+                    "Automatic - company invitation confirmed"
+            );
+        }
 
         log.info("Invitation signup completed successfully for profile: {}", profileId);
         return ApiResponse.success("Signup completed successfully", updatedProfile);

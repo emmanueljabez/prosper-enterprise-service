@@ -31,6 +31,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -59,6 +60,8 @@ class CompanyProgramMentorAssignmentServiceCompanyPoolTest {
     private MentorProfileRepository mentorProfileRepository;
     @Mock
     private CompanyMentorEnrollmentService companyMentorEnrollmentService;
+    @Mock
+    private BadgeService badgeService;
 
     @InjectMocks
     private CompanyProgramMentorAssignmentService service;
@@ -132,6 +135,13 @@ class CompanyProgramMentorAssignmentServiceCompanyPoolTest {
         ApiResponse<MentorAssignmentSummaryDto> response = service.assignMentor(PARTICIPANT_ID, MENTOR_ID, ADMIN_ID);
 
         assertThat(response.isSuccess()).isTrue();
+        verify(badgeService).awardAffiliationBadgesForCompanyLink(
+                COMPANY_ID,
+                MENTOR_ID,
+                "MENTOR",
+                savedAssignment.getId(),
+                "Automatic - company program mentor assignment confirmed"
+        );
     }
 
     private CompanyProgram companyProgram(UUID programId, UUID companyId) {

@@ -114,6 +114,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/public/b2b-demo-requests").permitAll()
                 // Public mentor endpoints (to browse mentors)
                 .requestMatchers( "/api/v1/profiles/mentors/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/profiles/*/badges").permitAll()
 
                     .requestMatchers("/api/v1/programs/**").permitAll()
                     .requestMatchers("/api/v1/subscriptions/**").permitAll()

@@ -1,6 +1,10 @@
 package com.prosper.prospermentor.badge;
 
+import com.prosper.prospermentor.dto.badge.BadgeAffiliationRuleDto;
+import com.prosper.prospermentor.dto.badge.BadgeAffiliationRuleRequest;
 import com.prosper.prospermentor.dto.badge.BadgeAwardDto;
+import com.prosper.prospermentor.dto.badge.BadgeTypeDto;
+import com.prosper.prospermentor.dto.badge.BadgeTypeUpsertRequest;
 import com.prosper.prospermentor.entity.BadgeAffiliationRule;
 import com.prosper.prospermentor.entity.BadgeType;
 import com.prosper.prospermentor.entity.Company;
@@ -9,6 +13,7 @@ import com.prosper.prospermentor.entity.ProfileBadgeAward;
 import com.prosper.prospermentor.repository.BadgeAffiliationRuleRepository;
 import com.prosper.prospermentor.repository.BadgeAuditEventRepository;
 import com.prosper.prospermentor.repository.BadgeTypeRepository;
+import com.prosper.prospermentor.repository.CompanyRepository;
 import com.prosper.prospermentor.repository.ProfileBadgeAwardRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
 import com.prosper.prospermentor.service.BadgeService;
@@ -48,6 +53,9 @@ class BadgeServiceTest {
     @Mock
     ProfileRepository profileRepository;
 
+    @Mock
+    CompanyRepository companyRepository;
+
     BadgeService service;
 
     UUID profileId;
@@ -63,7 +71,8 @@ class BadgeServiceTest {
                 awardRepository,
                 affiliationRuleRepository,
                 auditEventRepository,
-                profileRepository
+                profileRepository,
+                companyRepository
         );
         profileId = UUID.randomUUID();
         badgeTypeId = UUID.randomUUID();
@@ -77,6 +86,73 @@ class BadgeServiceTest {
         assertThatThrownBy(() -> service.grantManualBadge(profileId, badgeTypeId, " ", actorId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Manual badge grants require a note");
+    }
+
+    @Test
+    void getBadgeTypesReturnsActiveTypesInDisplayOrder() {
+        when(badgeTypeRepository.findByStatusOrderByDisplayOrderAscNameAsc("ACTIVE"))
+                .thenReturn(List.of(affiliationBadge));
+
+        List<BadgeTypeDto> types = service.getBadgeTypes();
+
+        assertThat(types).hasSize(1);
+        assertThat(types.get(0).slug()).isEqualTo("g4g-mentee");
+        assertThat(types.get(0).colorHex()).isEqualTo("#8f1f74");
+    }
+
+    @Test
+    void createBadgeTypePersistsDefaultsAndAudits() {
+        BadgeTypeUpsertRequest request = new BadgeTypeUpsertRequest(
+                "Founding Mentor",
+                "founding-mentor",
+                "Manually granted founding mentor badge",
+                "ROLE_STATUS",
+                "MANUAL",
+                "Founding Mentor",
+                null,
+                null,
+                null,
+                null
+        );
+        when(badgeTypeRepository.existsBySlug("founding-mentor")).thenReturn(false);
+        when(badgeTypeRepository.save(any(BadgeType.class))).thenAnswer(invocation -> {
+            BadgeType saved = invocation.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+
+        BadgeTypeDto dto = service.createBadgeType(request, actorId);
+
+        assertThat(dto.slug()).isEqualTo("founding-mentor");
+        assertThat(dto.colorHex()).isEqualTo("#8f1f74");
+        assertThat(dto.backgroundHex()).isEqualTo("#f7e8f3");
+        assertThat(dto.displayOrder()).isEqualTo(100);
+        verify(auditEventRepository).save(any());
+    }
+
+    @Test
+    void createAffiliationRulePersistsUppercaseRole() {
+        UUID companyId = UUID.randomUUID();
+        Company company = new Company();
+        company.setId(companyId);
+        company.setName("Girls for Girls");
+        BadgeAffiliationRuleRequest request = new BadgeAffiliationRuleRequest(companyId, "mentor", badgeTypeId);
+
+        when(companyRepository.findById(companyId)).thenReturn(Optional.of(company));
+        when(badgeTypeRepository.findById(badgeTypeId)).thenReturn(Optional.of(affiliationBadge));
+        when(affiliationRuleRepository.save(any(BadgeAffiliationRule.class))).thenAnswer(invocation -> {
+            BadgeAffiliationRule saved = invocation.getArgument(0);
+            saved.setId(UUID.randomUUID());
+            return saved;
+        });
+
+        BadgeAffiliationRuleDto dto = service.createAffiliationRule(request, actorId);
+
+        assertThat(dto.companyId()).isEqualTo(companyId);
+        assertThat(dto.companyName()).isEqualTo("Girls for Girls");
+        assertThat(dto.profileRole()).isEqualTo("MENTOR");
+        assertThat(dto.badgeTypeId()).isEqualTo(badgeTypeId);
+        verify(auditEventRepository).save(any());
     }
 
     @Test

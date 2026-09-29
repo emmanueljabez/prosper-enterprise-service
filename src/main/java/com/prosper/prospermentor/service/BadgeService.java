@@ -1,14 +1,20 @@
 package com.prosper.prospermentor.service;
 
+import com.prosper.prospermentor.dto.badge.BadgeAffiliationRuleDto;
+import com.prosper.prospermentor.dto.badge.BadgeAffiliationRuleRequest;
 import com.prosper.prospermentor.dto.badge.BadgeAwardDto;
+import com.prosper.prospermentor.dto.badge.BadgeTypeDto;
+import com.prosper.prospermentor.dto.badge.BadgeTypeUpsertRequest;
 import com.prosper.prospermentor.entity.BadgeAffiliationRule;
 import com.prosper.prospermentor.entity.BadgeAuditEvent;
 import com.prosper.prospermentor.entity.BadgeType;
+import com.prosper.prospermentor.entity.Company;
 import com.prosper.prospermentor.entity.Profile;
 import com.prosper.prospermentor.entity.ProfileBadgeAward;
 import com.prosper.prospermentor.repository.BadgeAffiliationRuleRepository;
 import com.prosper.prospermentor.repository.BadgeAuditEventRepository;
 import com.prosper.prospermentor.repository.BadgeTypeRepository;
+import com.prosper.prospermentor.repository.CompanyRepository;
 import com.prosper.prospermentor.repository.ProfileBadgeAwardRepository;
 import com.prosper.prospermentor.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +44,75 @@ public class BadgeService {
     private final BadgeAffiliationRuleRepository affiliationRuleRepository;
     private final BadgeAuditEventRepository auditEventRepository;
     private final ProfileRepository profileRepository;
+    private final CompanyRepository companyRepository;
+
+    @Transactional(readOnly = true)
+    public List<BadgeTypeDto> getBadgeTypes() {
+        return badgeTypeRepository.findByStatusOrderByDisplayOrderAscNameAsc("ACTIVE").stream()
+                .map(this::toBadgeTypeDto)
+                .toList();
+    }
+
+    public BadgeTypeDto createBadgeType(BadgeTypeUpsertRequest request, UUID actorId) {
+        String slug = normalizeSlug(request.slug());
+        if (badgeTypeRepository.existsBySlug(slug)) {
+            throw new IllegalArgumentException("Badge type slug already exists");
+        }
+        BadgeType badgeType = new BadgeType();
+        applyBadgeTypeRequest(badgeType, request, slug);
+        BadgeType saved = badgeTypeRepository.save(badgeType);
+        auditBadgeType(saved, actorId, "BADGE_TYPE_CREATED", "Badge type created");
+        return toBadgeTypeDto(saved);
+    }
+
+    public BadgeTypeDto updateBadgeType(UUID badgeTypeId, BadgeTypeUpsertRequest request, UUID actorId) {
+        BadgeType badgeType = badgeTypeRepository.findById(badgeTypeId)
+                .orElseThrow(() -> new NoSuchElementException("Badge type not found"));
+        String slug = normalizeSlug(request.slug());
+        if (!slug.equals(badgeType.getSlug()) && badgeTypeRepository.existsBySlug(slug)) {
+            throw new IllegalArgumentException("Badge type slug already exists");
+        }
+        applyBadgeTypeRequest(badgeType, request, slug);
+        BadgeType saved = badgeTypeRepository.save(badgeType);
+        auditBadgeType(saved, actorId, "BADGE_TYPE_UPDATED", "Badge type updated");
+        return toBadgeTypeDto(saved);
+    }
+
+    public BadgeTypeDto retireBadgeType(UUID badgeTypeId, UUID actorId) {
+        BadgeType badgeType = badgeTypeRepository.findById(badgeTypeId)
+                .orElseThrow(() -> new NoSuchElementException("Badge type not found"));
+        badgeType.setStatus("RETIRED");
+        badgeType.setRetiredAt(LocalDateTime.now());
+        BadgeType saved = badgeTypeRepository.save(badgeType);
+        auditBadgeType(saved, actorId, "BADGE_TYPE_RETIRED", "Badge type retired");
+        return toBadgeTypeDto(saved);
+    }
+
+    public BadgeAffiliationRuleDto createAffiliationRule(BadgeAffiliationRuleRequest request, UUID actorId) {
+        Company company = companyRepository.findById(request.companyId())
+                .orElseThrow(() -> new NoSuchElementException("Company not found"));
+        BadgeType badgeType = badgeTypeRepository.findById(request.badgeTypeId())
+                .orElseThrow(() -> new NoSuchElementException("Badge type not found"));
+        if (!"ACTIVE".equals(badgeType.getStatus())) {
+            throw new IllegalStateException("Badge type is not active");
+        }
+        BadgeAffiliationRule rule = new BadgeAffiliationRule();
+        rule.setCompany(company);
+        rule.setBadgeType(badgeType);
+        rule.setProfileRole(normalizeAffiliationRole(request.profileRole()));
+        rule.setStatus("ACTIVE");
+        rule.setCreatedBy(actorId);
+        BadgeAffiliationRule saved = affiliationRuleRepository.save(rule);
+        auditBadgeType(badgeType, actorId, "AFFILIATION_RULE_CREATED", "Affiliation rule created");
+        return toAffiliationRuleDto(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BadgeAffiliationRuleDto> getAffiliationRules() {
+        return affiliationRuleRepository.findByStatusOrderByCreatedAtDesc("ACTIVE").stream()
+                .map(this::toAffiliationRuleDto)
+                .toList();
+    }
 
     @Transactional(readOnly = true)
     public List<BadgeAwardDto> getMyBadges(UUID profileId) {
@@ -209,6 +284,31 @@ public class BadgeService {
         return index >= 0 ? index : 99;
     }
 
+    private void applyBadgeTypeRequest(BadgeType badgeType, BadgeTypeUpsertRequest request, String slug) {
+        badgeType.setName(request.name().trim());
+        badgeType.setSlug(slug);
+        badgeType.setDescription(request.description());
+        badgeType.setCategory(request.category().trim().toUpperCase(Locale.ROOT));
+        badgeType.setAwardMethod(request.awardMethod().trim().toUpperCase(Locale.ROOT));
+        badgeType.setStatus("ACTIVE");
+        badgeType.setLabel(request.label().trim());
+        badgeType.setColorHex(defaultColor(request.colorHex(), "#8f1f74"));
+        badgeType.setBackgroundHex(defaultColor(request.backgroundHex(), "#f7e8f3"));
+        badgeType.setTextHex(defaultColor(request.textHex(), "#6f1859"));
+        badgeType.setDisplayOrder(request.displayOrder() != null ? request.displayOrder() : 100);
+    }
+
+    private String normalizeSlug(String slug) {
+        if (slug == null || slug.trim().isEmpty()) {
+            throw new IllegalArgumentException("Badge type slug is required");
+        }
+        return slug.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String defaultColor(String value, String fallback) {
+        return value == null || value.trim().isEmpty() ? fallback : value.trim();
+    }
+
     private String normalizeAffiliationRole(String rawRole) {
         if (rawRole == null) {
             return "EMPLOYEE";
@@ -221,6 +321,37 @@ public class BadgeService {
             return "MENTOR";
         }
         return "EMPLOYEE";
+    }
+
+    private BadgeTypeDto toBadgeTypeDto(BadgeType badgeType) {
+        return new BadgeTypeDto(
+                badgeType.getId(),
+                badgeType.getName(),
+                badgeType.getSlug(),
+                badgeType.getDescription(),
+                badgeType.getCategory(),
+                badgeType.getAwardMethod(),
+                badgeType.getStatus(),
+                badgeType.getLabel(),
+                badgeType.getColorHex(),
+                badgeType.getBackgroundHex(),
+                badgeType.getTextHex(),
+                badgeType.getDisplayOrder()
+        );
+    }
+
+    private BadgeAffiliationRuleDto toAffiliationRuleDto(BadgeAffiliationRule rule) {
+        Company company = rule.getCompany();
+        BadgeType badgeType = rule.getBadgeType();
+        return new BadgeAffiliationRuleDto(
+                rule.getId(),
+                company != null ? company.getId() : null,
+                company != null ? company.getName() : null,
+                rule.getProfileRole(),
+                badgeType != null ? badgeType.getId() : null,
+                badgeType != null ? badgeType.getName() : null,
+                rule.getStatus()
+        );
     }
 
     private BadgeAwardDto toAwardDto(ProfileBadgeAward award) {
@@ -241,6 +372,15 @@ public class BadgeService {
                 Boolean.TRUE.equals(award.getPrimarySelectedByUser()),
                 award.getVisibility()
         );
+    }
+
+    private void auditBadgeType(BadgeType badgeType, UUID actorId, String eventType, String reason) {
+        BadgeAuditEvent event = new BadgeAuditEvent();
+        event.setBadgeType(badgeType);
+        event.setActorId(actorId);
+        event.setEventType(eventType);
+        event.setReason(reason);
+        auditEventRepository.save(event);
     }
 
     private void audit(ProfileBadgeAward award, UUID actorId, String eventType, String reason) {

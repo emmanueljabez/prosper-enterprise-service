@@ -47,6 +47,7 @@ public class CompanyProgramMentorAssignmentService {
     private final ProfileRepository profileRepository;
     private final MentorProfileRepository mentorProfileRepository;
     private final CompanyMentorEnrollmentService companyMentorEnrollmentService;
+    private final BadgeService badgeService;
 
     @Transactional(readOnly = true)
     public List<CompanyProgramMentorCandidateDto> getMentorCandidates(UUID companyProgramId, String search) {
@@ -140,6 +141,16 @@ public class CompanyProgramMentorAssignmentService {
         assignment.setAssignedAt(LocalDateTime.now());
 
         CompanyProgramMentorAssignment saved = assignmentRepository.save(assignment);
+        UUID companyId = companyProgram.getCompany() != null ? companyProgram.getCompany().getId() : null;
+        if (companyId != null) {
+            badgeService.awardAffiliationBadgesForCompanyLink(
+                    companyId,
+                    mentorId,
+                    "MENTOR",
+                    saved.getId(),
+                    "Automatic - company program mentor assignment confirmed"
+            );
+        }
         log.info("Assigned mentor {} to participant {} for company program {}",
                 mentorId, participantId, companyProgram.getId());
 
